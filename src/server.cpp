@@ -6,54 +6,13 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/11 20:31:55 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/11 20:36:54 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/11 23:21:38 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "../include/server.hpp"
 
-#include <iostream>
-#include <cstring>
-#include <cstdlib>
-#include <cstdio>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <ctime>
-
-enum LogLevel
-{
-	ERROR,
-	WARNING,
-	INFO,
-	DEBUG
-};
-
-void logMessage(LogLevel level, const std::string &message)
-{
-	std::string levelStr;
-	switch (level)
-	{
-	case ERROR:
-		levelStr = "ERROR";
-		break;
-	case WARNING:
-		levelStr = "WARNING";
-		break;
-	case INFO:
-		levelStr = "INFO";
-		break;
-	case DEBUG:
-		levelStr = "DEBUG";
-		break;
-	}
-	time_t currentTime = time(nullptr);
-	struct tm *localTime = localtime(&currentTime);
-	char timestamp[20];
-	strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localTime);
-	std::cout << "[" << timestamp << "] [" << levelStr << "] " << message << std::endl;
-}
-
-const int PORT = 8088;
+const int PORT = 8089;
 const int BACKLOG = 10;
 
 int main()
@@ -90,6 +49,17 @@ int main()
 		}
 		std::string clientIP = inet_ntoa(clientAddr.sin_addr);
 		logMessage(INFO, "Received connection from " + clientIP);
+
+		char buffer[4096]; // Adjust the buffer size as needed
+		int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+		if (bytesRead == -1)
+		{
+			std::cerr << "Error reading from socket" << std::endl;
+			close(clientSocket);
+			continue;
+		}
+		buffer[bytesRead] = '\0';
+		std::cout << buffer << std::endl;
 		pid_t pid = fork();
 		if (pid == -1)
 		{
@@ -99,8 +69,10 @@ int main()
 		}
 		else if (pid == 0)
 		{
+			// dup2(clientSocket, STDOUT_FILENO);
+			close(serverSocket); // Close the server socket in the child process
 			dup2(clientSocket, STDOUT_FILENO);
-			close(clientSocket);
+			close(clientSocket); // Close the client socket in the child process
 			const char *perl_script = "/Users/ael-mouz/Desktop/webserv/www/cgi_test_file/index_cookie.pl";
 			char *const args[] = {(char *)"perl", (char *)perl_script, NULL};
 			execve("/usr/bin/perl", args, NULL);
