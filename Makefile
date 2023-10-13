@@ -2,7 +2,8 @@ CXX = c++
 CXXFLAGS = -std=c++98 -Wall -Wextra -Werror
 
 TARGET = server
-SRC = ./src/server.cpp ./utils/logger.cpp
+# SRC = ./src/server.cpp ./utils/logger.cpp ./utils/convertText.cpp
+SRC = ./src/main.cpp ./src/Config.cpp
 OBJS = $(SRC:.cpp=.o)
 
 all: $(TARGET)

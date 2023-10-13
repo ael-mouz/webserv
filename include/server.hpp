@@ -11,6 +11,7 @@
 #include <map>
 #include <string>
 #include <iomanip>
+#include <sstream>
 
 enum LogLevel
 {
@@ -21,3 +22,4 @@ enum LogLevel
 };
 
 void logMessage(LogLevel level, const std::string &message);
+std::string convertText(std::string a);

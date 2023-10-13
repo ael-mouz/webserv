@@ -57,3 +57,9 @@ sub generate_token {
 	}
 	return $token;
 }
+# print "\r\n";
+# while (1) {
+#     # Code inside the infinite loop
+#     print "This loop will run infinitely.\n";
+#     # You may want to include a way to break out of the loop, such as a condition or signal.
+# }

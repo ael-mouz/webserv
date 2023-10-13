@@ -1,0 +1,4 @@
+// TODO: must : Transfer-Encoding: chunked;
+// TODO: 
+
+const char* homeDir = std::getenv("HOME");
