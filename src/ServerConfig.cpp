@@ -1,24 +1,31 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   main.cpp                                           :+:      :+:    :+:   */
+/*   ServerConfig.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/10/13 19:47:52 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/14 22:35:42 by ael-mouz         ###   ########.fr       */
+/*   Created: 2023/10/14 22:36:08 by ael-mouz          #+#    #+#             */
+/*   Updated: 2023/10/14 22:36:23 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/Config.hpp"
-void ft()
+#include "../include/ServerConfig.hpp"
+
+ServerConfig::ServerConfig()
 {
-	system("leaks server");
+	std::string dir;
+	const char *homeDir = std::getenv("HOME");
+	homeDir != NULL ? dir = homeDir : dir = "";
+	Port = 80;
+	Host = "127.0.0.1";
+	ServerNames = "webserver";
+	GlobalRoot = dir + "/www/";
+	LimitClientBodySize = "10M";
+	ErrorPage = dir + "/www/error/error.html";
 }
 
-int main()
+ServerConfig::~ServerConfig()
 {
-	// atexit(ft);
-	Config conf("config/config.conf");
-	return 0;
+
 }

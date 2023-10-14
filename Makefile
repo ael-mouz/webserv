@@ -1,23 +1,34 @@
 CXX = c++
-CXXFLAGS = -std=c++98 -Wall -Wextra -Werror
+
+CXXFLAGS = -std=c++98 -Wall -Wextra -Werror #-fsanitize=address
 
 TARGET = server
-# SRC = ./src/server.cpp ./utils/logger.cpp ./utils/convertText.cpp
-SRC = ./src/main.cpp ./src/Config.cpp
-OBJS = $(SRC:.cpp=.o)
+
+BIN = obj/
+
+# SRC = src/server.cpp utils/logger.cpp utils/convertText.cpp
+
+SRC = src/main.cpp src/Config.cpp src/ServerConfig.cpp utils/Utils.cpp
+
+HEADERS = include/Config.hpp include/ServerConfig.hpp
+
+# OBJS =$(SRC:.cpp=.o)
+OBJS =$(addprefix $(BIN),$(SRC:.cpp=.o))
 
 all: $(TARGET)
 
-$(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
+$(TARGET): $(OBJS) $(HEADERS)
+	@$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
 
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+$(BIN)%.o: %.cpp
+	@mkdir -p $(@D)
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS)
+	@rm -rf $(BIN)
+	@rm -f $(OBJS)
 
 fclean: clean
-	rm -f $(TARGET)
+	@rm -f $(TARGET)
 
 re: fclean all
