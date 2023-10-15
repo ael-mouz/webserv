@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/11 20:31:55 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/13 19:47:38 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/15 16:58:54 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,50 +142,50 @@ int main()
 		// 	// (char *)"SERVER_NAME=your_server_name_or_IP",
 		// 	// (char *)"SERVER_SOFTWARE=YourServerSoftware/1.0",
 		// 	NULL};
-		char *const env[] = {
-			strdup(("CONTENT_TYPE=" + headers.find("Content-Type")->second).c_str()),
-			strdup(("CONTENT_LENGTH=" + headers.find("Content-Length")->second).c_str()),
-			strdup(("HTTP_COOKIE=" + headers.find("Cookie")->second).c_str()),
-			NULL};
-		// Create a pipe for communication
-		int pipefd[2];
-		if (pipe(pipefd) == -1)
-		{
-			std::cerr << "Error creating pipe" << std::endl;
-			return 1;
-		}
+		// char *const env[] = {
+		// 	strdup(("CONTENT_TYPE=" + headers.find("Content-Type")->second).c_str()),
+		// 	strdup(("CONTENT_LENGTH=" + headers.find("Content-Length")->second).c_str()),
+		// 	strdup(("HTTP_COOKIE=" + headers.find("Cookie")->second).c_str()),
+		// 	NULL};
+		// // Create a pipe for communication
+		// int pipefd[2];
+		// if (pipe(pipefd) == -1)
+		// {
+		// 	std::cerr << "Error creating pipe" << std::endl;
+		// 	return 1;
+		// }
 
-		pid_t pid = fork();
-		if (pid == -1)
-		{
-			std::cerr << "Error forking" << std::endl;
-			return 1;
-		}
-		else if (pid == 0)
-		{						 // Child process
-			close(clientSocket); // Close the server socket in the child process
-			close(pipefd[1]);	 // Close the write end of the pipe
+		// pid_t pid = fork();
+		// if (pid == -1)
+		// {
+		// 	std::cerr << "Error forking" << std::endl;
+		// 	return 1;
+		// }
+		// else if (pid == 0)
+		// {						 // Child process
+		// 	close(clientSocket); // Close the server socket in the child process
+		// 	close(pipefd[1]);	 // Close the write end of the pipe
 
-			// Redirect the read end of the pipe to stdin
-			dup2(pipefd[0], STDIN_FILENO);
-			close(pipefd[0]); // Close the read end of the pipe
+		// 	// Redirect the read end of the pipe to stdin
+		// 	dup2(pipefd[0], STDIN_FILENO);
+		// 	close(pipefd[0]); // Close the read end of the pipe
 
-			alarm(5);
-			const char *perl_script = "/Users/ael-mouz/Desktop/webserv/www/cgi_test_file/upload.pl"; // Replace with the actual path to your Perl script
-			char *const args[] = {(char *)"perl", (char *)perl_script, NULL};
-			execve("/usr/bin/perl", args, env);
-			std::cerr << "Error executing Perl script" << std::endl;
-			exit(1);
-		}
-		else
-		{ // Parent process
-			close(clientSocket);
-			close(pipefd[0]); // Close the read end of the pipe
+		// 	alarm(5);
+		// 	const char *perl_script = "/Users/ael-mouz/Desktop/webserv/www/cgi_test_file/upload.pl"; // Replace with the actual path to your Perl script
+		// 	char *const args[] = {(char *)"perl", (char *)perl_script, NULL};
+		// 	execve("/usr/bin/perl", args, env);
+		// 	std::cerr << "Error executing Perl script" << std::endl;
+		// 	exit(1);
+		// }
+		// else
+		// { // Parent process
+		// 	close(clientSocket);
+		// 	close(pipefd[0]); // Close the read end of the pipe
 
-			// Write the request body to the write end of the pipe
-			write(pipefd[1], requestBody.c_str(), requestBody.size());
-			close(pipefd[1]); // Close the write end of the pipe
-		}
+		// 	// Write the request body to the write end of the pipe
+		// 	write(pipefd[1], requestBody.c_str(), requestBody.size());
+		// 	close(pipefd[1]); // Close the write end of the pipe
+		// }
 		// pid_t pid = fork();
 		// if (pid == -1)
 		// {
