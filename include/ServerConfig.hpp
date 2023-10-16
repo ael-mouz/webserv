@@ -6,14 +6,14 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/12 15:00:24 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/14 21:57:52 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/16 20:15:49 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 #include <iostream>
 #include <vector>
-
+#include <cstdlib>
 struct Route
 {
 	std::string Root;
