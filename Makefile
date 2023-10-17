@@ -6,13 +6,13 @@ TARGET = server
 
 BIN = obj/
 
-# SRC = src/server.cpp utils/logger.cpp utils/convertText.cpp
+SRC = src/server.cpp  utils/logger.cpp utils/convertText.cpp #src/Client.cpp
+HEADERS = include/server.hpp
 
-SRC = src/main.cpp src/Config.cpp src/ServerConfig.cpp utils/Utils.cpp
+# SRC = src/main.cpp src/Config.cpp src/ServerConfig.cpp utils/Utils.cpp
+# HEADERS = include/Config.hpp include/ServerConfig.hpp
 
-HEADERS = include/Config.hpp include/ServerConfig.hpp
 
-# OBJS =$(SRC:.cpp=.o)
 OBJS =$(addprefix $(BIN),$(SRC:.cpp=.o))
 
 all: $(TARGET)

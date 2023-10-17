@@ -23,3 +23,4 @@ enum LogLevel
 
 void logMessage(LogLevel level, const std::string &message);
 std::string convertText(std::string a);
+// void handleClient(int clientSocket);

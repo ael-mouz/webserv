@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/11 20:31:55 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/15 16:58:54 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/17 22:31:09 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,22 +26,16 @@ int main()
 		exit(1);
 	}
 	int reuse = 1;
-	if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) // reuse the same port without probleme
+	if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
 		throw std::runtime_error("Error: Failed to setsockopt for reuse");
 	memset(&serverAddr, 0, sizeof(serverAddr));
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_port = htons(PORT);
 	serverAddr.sin_addr.s_addr = INADDR_ANY;
 	if (bind(serverSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
-	{
-		logMessage(ERROR, "Error binding");
-		exit(1);
-	}
+		logMessage(ERROR, "Error binding"), exit(1);
 	if (listen(serverSocket, BACKLOG) == -1)
-	{
-		logMessage(ERROR, "Error listening");
-		exit(1);
-	}
+		logMessage(ERROR, "Error listening"), exit(1);
 	logMessage(INFO, "Server listening on http://localhost:" + std::to_string(PORT));
 	while (true)
 	{
@@ -126,114 +120,82 @@ int main()
 		std::cout << std::setfill('-') << std::setw(30) << "\n"
 				  << std::endl;
 
-		// std::cout << "body :\n" << convertText(requestBody) << std::endl;
-		// char *const env[] = {
-		// 	// (char *)"CONTENT_TYPE=multipart/form-data; boundary=--------------------------157068096586764982468991",
-		// 	// (char *)"CONTENT_LENGTH=831",
-		// 	(char *)"HTTP_COOKIE=name=ayman; token=pQB5xyNZnVCWUE6g",
-		// 	// (char *)"HTTP_USER_AGENT=PostmanRuntime/7.33.0",
-		// 	// (char *)"PATH_INFO=/path/to/cgi_script",
-		// 	(char *)"QUERY_STRING=",
-		// 	// (char *)"REMOTE_ADDR=client_IP_address",
-		// 	// (char *)"REMOTE_HOST=client_hostname",
-		// 	// (char *)"REQUEST_METHOD=POST",
-		// 	// (char *)"SCRIPT_FILENAME=/path/to/cgi_script",
-		// 	// (char *)"SCRIPT_NAME=cgi_script_name",
-		// 	// (char *)"SERVER_NAME=your_server_name_or_IP",
-		// 	// (char *)"SERVER_SOFTWARE=YourServerSoftware/1.0",
-		// 	NULL};
-		// char *const env[] = {
-		// 	strdup(("CONTENT_TYPE=" + headers.find("Content-Type")->second).c_str()),
-		// 	strdup(("CONTENT_LENGTH=" + headers.find("Content-Length")->second).c_str()),
-		// 	strdup(("HTTP_COOKIE=" + headers.find("Cookie")->second).c_str()),
-		// 	NULL};
-		// // Create a pipe for communication
-		// int pipefd[2];
-		// if (pipe(pipefd) == -1)
-		// {
-		// 	std::cerr << "Error creating pipe" << std::endl;
-		// 	return 1;
-		// }
+		std::cout << "body :\n"
+				  << convertText(requestBody) << std::endl;
+		char *const env[] = {
+			(char *)("PATH_INFO="),
+			(char *)("REQUEST_METHOD="),
+			(char *)("SCRIPT_FILENAME=/Users/ael-mouz/Desktop/webserv/config/cgi-bin/python/upload_multi_files.py"),
+			NULL};
 
-		// pid_t pid = fork();
-		// if (pid == -1)
-		// {
-		// 	std::cerr << "Error forking" << std::endl;
-		// 	return 1;
-		// }
-		// else if (pid == 0)
-		// {						 // Child process
-		// 	close(clientSocket); // Close the server socket in the child process
-		// 	close(pipefd[1]);	 // Close the write end of the pipe
+		// Set other environment variables
+		std::string content_type_str = "CONTENT_TYPE=" + headers.find("Content-Type")->second;
+		std::string content_length_str = "CONTENT_LENGTH=" + headers.find("Content-Length")->second;
+		std::string http_user_agent_str = "HTTP_USER_AGENT=" + headers.find("User-Agent")->second;
+		std::string http_host_str = "HTTP_HOST=" + headers.find("Host")->second;
+		std::string http_accept_str = "HTTP_ACCEPT=" + headers.find("Accept")->second;
+		std::string http_postman_token_str = "HTTP_POSTMAN_TOKEN=" + headers.find("Postman-Token")->second;
+		std::string http_accept_encoding_str = "HTTP_ACCEPT_ENCODING=" + headers.find("Accept-Encoding")->second;
+		std::string http_connection_str = "HTTP_CONNECTION=" + headers.find("Connection")->second;
+		std::string http_cookie_str = "HTTP_COOKIE=" + headers.find("Cookie")->second;
+		
+		// Set the environment variables
 
-		// 	// Redirect the read end of the pipe to stdin
-		// 	dup2(pipefd[0], STDIN_FILENO);
-		// 	close(pipefd[0]); // Close the read end of the pipe
+		pid_t pid = fork();
+		if (pid == -1)
+		{
+			logMessage(ERROR, "Error forking");
+			close(clientSocket);
+		}
+		else if (pid == 0)
+		{
+			setenv("CONTENT_TYPE", content_type_str.c_str(), 1);
+			setenv("CONTENT_LENGTH", content_length_str.c_str(), 1);
+			setenv("HTTP_USER_AGENT", http_user_agent_str.c_str(), 1);
+			setenv("HTTP_HOST", http_host_str.c_str(), 1);
+			setenv("HTTP_ACCEPT", http_accept_str.c_str(), 1);
+			setenv("HTTP_POSTMAN_TOKEN", http_postman_token_str.c_str(), 1);
+			setenv("HTTP_ACCEPT_ENCODING", http_accept_encoding_str.c_str(), 1);
+			setenv("HTTP_CONNECTION", http_connection_str.c_str(), 1);
+			setenv("HTTP_COOKIE", http_cookie_str.c_str(), 1);
+			dup2(clientSocket, STDOUT_FILENO);
+			close(clientSocket);
+			const char *python_script = "/Users/ael-mouz/Desktop/webserv/config/cgi-bin/python/upload_multi_files.py";
+			char *const args[] = {(char *)"python3", (char *)python_script, NULL};
+			execve("python3", args, env);
+			logMessage(ERROR, "Error executing Python script");
+			exit(1);
+		}
+		else
+		{
+			close(clientSocket);
+		}
 
-		// 	alarm(5);
-		// 	const char *perl_script = "/Users/ael-mouz/Desktop/webserv/www/cgi_test_file/upload.pl"; // Replace with the actual path to your Perl script
-		// 	char *const args[] = {(char *)"perl", (char *)perl_script, NULL};
-		// 	execve("/usr/bin/perl", args, env);
-		// 	std::cerr << "Error executing Perl script" << std::endl;
-		// 	exit(1);
-		// }
-		// else
-		// { // Parent process
-		// 	close(clientSocket);
-		// 	close(pipefd[0]); // Close the read end of the pipe
-
-		// 	// Write the request body to the write end of the pipe
-		// 	write(pipefd[1], requestBody.c_str(), requestBody.size());
-		// 	close(pipefd[1]); // Close the write end of the pipe
-		// }
-		// pid_t pid = fork();
-		// if (pid == -1)
-		// {
-		// 	logMessage(ERROR, "Error forking");
-		// 	close(clientSocket);
-		// 	continue;
-		// }
-		// else if (pid == 0)
-		// {
-		// 	close(serverSocket); // Close the server socket in the child process
-		// 	dup2(clientSocket, STDOUT_FILENO);
-		// 	dup2(clientSocket, STDOUT_FILENO);
-		// 	close(clientSocket); // Close the client socket in the child process
-		// 	// alarm(5);
-		// 	const char *perl_script = "/Users/ael-mouz/Desktop/webserv/www/cgi_test_file/index_cookie.pl";
-		// 	// const char *perl_script = "/Users/ael-mouz/Desktop/webserv/www/cgi_test_file/env.pl";
-		// 	char *const args[] = {(char *)"perl", (char *)perl_script, NULL};
-		// 	execve("/usr/bin/perl", args, env);
-		// 	// execve("/usr/bin/perl", args, NULL);
-		// 	logMessage(ERROR, "Error executing Perl script");
-		// 	exit(1);
-		// }
-		// else
-		// {
-		// 	close(clientSocket);
-		// }
-
-		// pid_t pid = fork();
-		// if (pid == -1)
-		// {
-		// 	logMessage(ERROR, "Error forking");
-		// 	close(clientSocket);
-		// }
-		// else if (pid == 0)
-		// {
-		// 	dup2(clientSocket, STDOUT_FILENO);
-		// 	close(clientSocket);
-		// 	const char *python_script = "/Users/ael-mouz/Desktop/webserv/www/cgi_test_file/index.py";
-		// 	char *const args[] = {(char *)"python3", (char *)python_script, NULL};
-		// 	execvp("python3", args);
-		// 	logMessage(ERROR, "Error executing Python script");
-		// 	exit(1);
-		// }
-		// else
-		// {
-		// 	// Parent process
-		// 	close(clientSocket);
-		// }
+		// perl
+		//  pid_t pid = fork();
+		//  if (pid == -1)
+		//  {
+		//  	logMessage(ERROR, "Error forking");
+		//  	close(clientSocket);
+		//  	continue;
+		//  }
+		//  else if (pid == 0)
+		//  {
+		//  	close(serverSocket);
+		//  	dup2(clientSocket, STDOUT_FILENO);
+		//  	close(clientSocket);
+		//  	const char *perl_script = "/Users/ael-mouz/Desktop/webserv/www/cgi_test_file/index_cookie.pl";
+		//  	// const char *perl_script = "/Users/ael-mouz/Desktop/webserv/www/cgi_test_file/env.pl";
+		//  	char *const args[] = {(char *)"perl", (char *)perl_script, NULL};
+		//  	execve("/usr/bin/perl", args, env);
+		//  	// execve("/usr/bin/perl", args, NULL);
+		//  	logMessage(ERROR, "Error executing Perl script");
+		//  	exit(1);
+		//  }
+		//  else
+		//  {
+		//  	close(clientSocket);
+		//  }
 	}
 	close(serverSocket);
 	return 0;

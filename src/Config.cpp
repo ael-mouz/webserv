@@ -6,12 +6,14 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/13 19:59:44 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/16 22:12:41 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/17 16:14:46 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Config.hpp"
-
+#define BOLD "\e[1m"
+#define RESET_ALL "\e[0m"
+#define FG_RED "\e[31m"
 Config::Config(std::string filename) // TODO multi server same host and same port same server name
 {
 	std::ifstream infile(filename);
@@ -29,15 +31,15 @@ Config::Config(std::string filename) // TODO multi server same host and same por
 		if ((line[0] == '#' || line.empty()) && ServerScop == false)
 			continue;
 		int count = 0;
-		for (size_t i = 0; i < line.length(); i++)
-			if (line[i] == ';')
+		for (size_t j = 0; j < line.length(); j++)
+			if (line[j] == ';')
 				count++;
 		if (count > 1)
-			std::cout << "error line(" << start << ") :" << line << std::endl, exit(1);
+			std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD "invalide line" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		if (line[line.length() - 1] != ';' && line[0] != '#' && !line.empty())
-			std::cout << "error line(" << i << "): line must end with \";\"" << std::endl, exit(1);
+			std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD "expected ';' at end of declaration" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		else if ((line == "Server;" && ServerScop == true) || (line == "EndServer;" && ServerScop == false))
-			std::cout << "error line(" << i << "): server not closed" << std::endl, exit(1);
+			std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD " server not closed" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		else if (line == "Server;" && ServerScop == false)
 		{
 			NbServer++;
@@ -49,18 +51,18 @@ Config::Config(std::string filename) // TODO multi server same host and same por
 		else if (line == "EndServer;" && ServerScop == true)
 		{
 			ServerScop = false;
-			parseServer(data, serverConfig, start);
+			parseServer(data, serverConfig, start, filename);
 			Serverconfig.push_back(serverConfig);
 		}
 		else if (ServerScop == true)
 			data += line + "\n";
 		else
-			std::cout << "error line(" << start << ") :" << line << std::endl, exit(1);
+			std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid line" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	}
 	infile.close();
 }
 
-void Config::parseServer(const std::string &data, ServerConfig &serverConfig, int start)
+void Config::parseServer(const std::string &data, ServerConfig &serverConfig, int start, std::string filename)
 {
 	Route route;
 	bool RouteScop = false;
@@ -74,7 +76,7 @@ void Config::parseServer(const std::string &data, ServerConfig &serverConfig, in
 		if ((line[0] == '#' || line.empty()) && RouteScop == false)
 			continue;
 		if ((line == "Route;" && RouteScop == true) || (line == "EndRoute;" && RouteScop == false))
-			std::cout << "error line(" << start << "): Route not closed" << std::endl, exit(1);
+			std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " route not closed" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		else if (line == "Route;" && RouteScop == false)
 		{
 			start2 = start;
@@ -85,7 +87,7 @@ void Config::parseServer(const std::string &data, ServerConfig &serverConfig, in
 		else if (line == "EndRoute;" && RouteScop == true)
 		{
 			RouteScop = false;
-			parseRoute(routedata, route, start2);
+			parseRoute(routedata, route, start2, filename);
 			serverConfig.Routes.push_back(route);
 		}
 		else if (RouteScop == false && std::getline(issline, key, ':') && std::getline(issline, value, ';'))
@@ -103,18 +105,18 @@ void Config::parseServer(const std::string &data, ServerConfig &serverConfig, in
 			else if (key == "Limit_Client_Body_Size")
 				!value.empty() ? serverConfig.LimitClientBodySize = value : serverConfig.LimitClientBodySize = "", l++;
 			else
-				std::cout << "error line(" << start << ") :" << line << std::endl, exit(1);
+				std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid line" RESET_ALL "\n\t" << line << std::endl, exit(1);
 			if (p > 1 || h > 1 || s > 1 || e > 1 || l > 1)
-				std::cout << "error line(" << start << ") : Duplicate line" << line << std::endl, exit(1);
+				std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " duplicate line" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		}
 		else if (RouteScop == true)
 			routedata += line + "\n";
 		else
-			std::cout << "error line(" << start << ") :" << line << std::endl, exit(1);
+			std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid line" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	}
 }
 
-void Config::parseRoute(const std::string &data, Route &route, int start)
+void Config::parseRoute(const std::string &data, Route &route, int start, std::string filename)
 {
 	std::istringstream iss(data);
 	std::string line, key, value;
@@ -130,7 +132,7 @@ void Config::parseRoute(const std::string &data, Route &route, int start)
 			key = trim(key, " \t");
 			value = trim(value, " \t");
 			if (key != "RoutePath" && p == 0)
-				std::cout << "error line(" << start << ") : route need a RoutePath" << std::endl, exit(1);
+				std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " route need a RoutePath" RESET_ALL "\n\t" << line << std::endl, exit(1);
 			else if (key == "RoutePath")
 				!value.empty() ? route.RoutePath = value : route.RoutePath = "", p++;
 			else if (key == "Root")
@@ -157,9 +159,9 @@ void Config::parseRoute(const std::string &data, Route &route, int start)
 				m++;
 			}
 			else
-				std::cout << "error line(" << start << ") :" << line << std::endl, exit(1);
+				std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid line" RESET_ALL "\n\t" << line << std::endl, exit(1);
 			if (p > 1 || ro > 1 || i > 1 || c > 1 || a > 1 || u > 1 || r > 1 || m > 1)
-				std::cout << "error line(" << start << ") : Duplicate line" << line << std::endl, exit(1);
+				std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " duplicate line" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		}
 	}
 }

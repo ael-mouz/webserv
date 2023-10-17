@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/13 19:47:52 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/16 22:14:58 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/17 14:35:24 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,6 @@ int main()
 {
 	// atexit(ft);
 	Config conf("config/config.conf");
-	conf.printConfig();
+	// conf.printConfig();
 	return 0;
 }
