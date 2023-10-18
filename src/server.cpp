@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/11 20:31:55 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/17 22:31:09 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/18 17:04:48 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,57 +47,59 @@ int main()
 		std::string clientIP = inet_ntoa(clientAddr.sin_addr);
 		logMessage(INFO, "Received connection from " + clientIP);
 
-		// char buffer[4096]; // Adjust the buffer size as needed
-		// int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
-		// if (bytesRead == -1)
-		// {
-		// 	std::cerr << "Error reading from socket" << std::endl;
-		// 	close(clientSocket);
-		// 	continue;
-		// }
-		// buffer[bytesRead] = '\0';
-		// std::cout << buffer << std::endl;
-
-		char buffer[4096];
-		std::string request;
-		bool hasContentLength = false;
-		int contentLength = 0;
-
-		while (true)
+		char buffer[4096]; // Adjust the buffer size as needed
+		int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+		if (bytesRead == -1)
 		{
-			int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
-			if (bytesRead == -1)
-			{
-				std::cerr << "Error reading from socket" << std::endl;
-				close(clientSocket);
-				break;
-			}
-			if (bytesRead == 0)
-				break;
-			buffer[bytesRead] = '\0';
-			request += buffer;
-			if (!hasContentLength)
-			{
-				size_t pos = request.find("Content-Length: ");
-				if (pos != std::string::npos)
-				{
-					hasContentLength = true;
-					contentLength = std::stoi(request.substr(pos + 15));
-				}
-			}
-			if (hasContentLength && request.length() - request.find("\r\n\r\n") - 4 >= (size_t)contentLength)
-				break;
+			std::cerr << "Error reading from socket" << std::endl;
+			close(clientSocket);
+			continue;
 		}
-		std::string requestBody;
-		if (hasContentLength)
-			requestBody = request.substr(request.find("\r\n\r\n") + 4);
+		else if (bytesRead == 0)
+			continue;
+		buffer[bytesRead] = '\0';
+		std::cout << buffer << std::endl;
+
+		// char buffer[4096];
+		// std::string request;
+		// bool hasContentLength = false;
+		// int contentLength = 0;
+
+		// while (true)
+		// {
+		// 	int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+		// 	if (bytesRead == -1)
+		// 	{
+		// 		std::cerr << "Error reading from socket" << std::endl;
+		// 		close(clientSocket);
+		// 		break;
+		// 	}
+		// 	if (bytesRead == 0)
+		// 		break;
+		// 	buffer[bytesRead] = '\0';
+		// 	request += buffer;
+		// 	if (!hasContentLength)
+		// 	{
+		// 		size_t pos = request.find("Content-Length: ");
+		// 		if (pos != std::string::npos)
+		// 		{
+		// 			hasContentLength = true;
+		// 			contentLength = std::stoi(request.substr(pos + 15));
+		// 		}
+		// 	}
+		// 	if (hasContentLength && request.length() - request.find("\r\n\r\n") - 4 >= (size_t)contentLength)
+		// 		break;
+		// }
+		// std::string requestBody;
+		// if (hasContentLength)
+		// 	requestBody = request.substr(request.find("\r\n\r\n") + 4);
 		// parse request
-		std::cout << request << std::endl;
-		std::cout << convertText(request) << std::endl;
+		// std::cout << request << std::endl;
+		// std::cout << convertText(request) << std::endl;
+		// std::istringstream stream(request);
 		std::multimap<std::string, std::string> headers;
 		std::string line;
-		// std::istringstream stream(buffer);
-		std::istringstream stream(request);
+		std::istringstream stream(buffer);
 		std::string method;
 		std::getline(stream, method);
 		std::cout << "method : " << method << std::endl;
@@ -120,8 +122,8 @@ int main()
 		std::cout << std::setfill('-') << std::setw(30) << "\n"
 				  << std::endl;
 
-		std::cout << "body :\n"
-				  << convertText(requestBody) << std::endl;
+		// std::cout << "body :\n"
+		// 		  << convertText(requestBody) << std::endl;
 		char *const env[] = {
 			(char *)("PATH_INFO="),
 			(char *)("REQUEST_METHOD="),
@@ -138,7 +140,7 @@ int main()
 		std::string http_accept_encoding_str = "HTTP_ACCEPT_ENCODING=" + headers.find("Accept-Encoding")->second;
 		std::string http_connection_str = "HTTP_CONNECTION=" + headers.find("Connection")->second;
 		std::string http_cookie_str = "HTTP_COOKIE=" + headers.find("Cookie")->second;
-		
+
 		// Set the environment variables
 
 		pid_t pid = fork();
@@ -168,6 +170,19 @@ int main()
 		}
 		else
 		{
+
+			char buffer[4096]; // Adjust the buffer size as needed
+			int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+			if (bytesRead == -1)
+			{
+				std::cerr << "Error reading from socket" << std::endl;
+				close(clientSocket);
+				continue;
+			}
+			else if (bytesRead == 0)
+				continue;
+			buffer[bytesRead] = '\0';
+			std::cout << buffer << std::endl;
 			close(clientSocket);
 		}
 

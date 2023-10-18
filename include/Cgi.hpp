@@ -1,25 +1,31 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   main.cpp                                           :+:      :+:    :+:   */
+/*   Cgi.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/10/13 19:47:52 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/18 17:53:16 by ael-mouz         ###   ########.fr       */
+/*   Created: 2023/10/18 17:01:10 by ael-mouz          #+#    #+#             */
+/*   Updated: 2023/10/18 22:32:31 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-// #include "../include/Config.hpp"
-#include "../include/Cgi.hpp"
-// void ft()
-// {
-// 	system("leaks server");
-// }
-
-int main()
+#pragma once
+#include <iostream>
+#include <iomanip>
+#include <map>
+#include <string>
+#include <sstream>
+class Cgi
 {
-	Cgi s;
-	s.executeCgi();
-	return 0;
-}
+private:
+	std::string responseStatus;
+	std::string query;
+	std::string path_info;
+	std::string script_path;
+
+public:
+	void executeCgi();
+	void parseUri(std::string uri);
+	std::multimap<std::string, std::string> parseHeader(std::string buffer);
+};

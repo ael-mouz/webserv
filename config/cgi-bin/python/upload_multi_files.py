@@ -15,9 +15,9 @@ for field_name in form.keys():
             upload_statuses.append(f"File '{fileitem.filename}' uploaded successfully.")
         except Exception as e:
             upload_statuses.append(f"Error uploading file '{fileitem.filename}': {str(e)}")
-
-print("Content-Type: text/plain")
-print()
+print ("HTTP/1.1 200 OK\r");
+print("Content-Type: text/plain\r")
+print("\r")
 if upload_statuses:
     for status in upload_statuses:
         print(status)

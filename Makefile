@@ -1,17 +1,19 @@
 CXX = c++
 
-CXXFLAGS = -std=c++98 -Wall -Wextra -Werror #-fsanitize=address
+CXXFLAGS = -std=c++98 -Wall -Wextra -Werror # -fsanitize=address
 
 TARGET = server
 
 BIN = obj/
 
-SRC = src/server.cpp  utils/logger.cpp utils/convertText.cpp #src/Client.cpp
-HEADERS = include/server.hpp
+# SRC = src/server.cpp  utils/logger.cpp utils/convertText.cpp #src/Client.cpp
+# HEADERS = include/server.hpp
 
 # SRC = src/main.cpp src/Config.cpp src/ServerConfig.cpp utils/Utils.cpp
 # HEADERS = include/Config.hpp include/ServerConfig.hpp
 
+SRC = src/main.cpp src/Cgi.cpp
+HEADERS = include/Cgi.hpp
 
 OBJS =$(addprefix $(BIN),$(SRC:.cpp=.o))
 
