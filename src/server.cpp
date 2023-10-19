@@ -6,14 +6,97 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/11 20:31:55 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/18 17:04:48 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/19 21:17:51 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/server.hpp"
+#include "../include/Response.hpp"
 
 const int PORT = 8080;
 const int BACKLOG = 10;
+
+std::vector<std::string> splitString(const std::string &input, const std::string &delimiter)
+{
+	std::vector<std::string> result;
+	size_t start = 0;
+	size_t end = input.find(delimiter);
+	while (end != std::string::npos)
+	{
+		result.push_back(input.substr(start, end - start));
+		start = end + delimiter.size();
+		end = input.find(delimiter, start);
+	}
+	result.push_back(input.substr(start, end));
+	return result;
+}
+
+void parseRequest(const std::string &request, std::string &method, std::string &uri, std::string &httpVersion, std::string &headers, std::string &body)
+{
+	std::istringstream requestStream(request);
+	std::string requestLine;
+	std::getline(requestStream, requestLine);
+	std::vector<std::string> requestParts = splitString(requestLine, " ");
+	if (requestParts.size() >= 3)
+	{
+		method = requestParts[0];
+		uri = requestParts[1];
+		httpVersion = requestParts[2];
+	}
+	std::string line;
+	while (std::getline(requestStream, line))
+	{
+		if (line.empty() || line == "\r")
+		{
+
+			break;
+		}
+		headers += line + "\n";
+	}
+	size_t pos = request.find("\r\n\r\n");
+	if (pos != std::string::npos)
+		body = request.substr(pos + 4, request.length() - pos + 4);
+}
+
+std::string receiveRequest(int clientSocket)
+{
+	char buffer[1024];
+	std::string request;
+	std::string contentLengthHeader = "Content-Length: ";
+	std::size_t contentLength = 0;
+	bool headersComplete = false;
+	while (true)
+	{
+		ssize_t bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
+		if (bytesRead <= 0)
+		{
+			std::cerr << "Error reading request" << std::endl;
+			break;
+		}
+		else
+		{
+			request.append(buffer, bytesRead);
+			if (!headersComplete)
+			{
+				std::size_t pos = request.find("\r\n\r\n");
+				if (pos != std::string::npos)
+				{
+					headersComplete = true;
+					std::string headers = request.substr(0, pos);
+					std::size_t contentLengthPos = headers.find(contentLengthHeader);
+					if (contentLengthPos != std::string::npos)
+					{
+						std::size_t headerEndPos = headers.find("\r\n", contentLengthPos);
+						contentLength = std::stoul(headers.substr(contentLengthPos + contentLengthHeader.length(), headerEndPos - (contentLengthPos + contentLengthHeader.length())));
+					}
+				}
+			}
+			if (headersComplete && request.size() >= contentLength)
+				break;
+		}
+	}
+	return request;
+}
 
 int main()
 {
@@ -47,170 +130,33 @@ int main()
 		std::string clientIP = inet_ntoa(clientAddr.sin_addr);
 		logMessage(INFO, "Received connection from " + clientIP);
 
-		char buffer[4096]; // Adjust the buffer size as needed
-		int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
-		if (bytesRead == -1)
-		{
-			std::cerr << "Error reading from socket" << std::endl;
-			close(clientSocket);
-			continue;
-		}
-		else if (bytesRead == 0)
-			continue;
-		buffer[bytesRead] = '\0';
-		std::cout << buffer << std::endl;
-
-		// char buffer[4096];
-		// std::string request;
-		// bool hasContentLength = false;
-		// int contentLength = 0;
-
-		// while (true)
-		// {
-		// 	int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
-		// 	if (bytesRead == -1)
-		// 	{
-		// 		std::cerr << "Error reading from socket" << std::endl;
-		// 		close(clientSocket);
-		// 		break;
-		// 	}
-		// 	if (bytesRead == 0)
-		// 		break;
-		// 	buffer[bytesRead] = '\0';
-		// 	request += buffer;
-		// 	if (!hasContentLength)
-		// 	{
-		// 		size_t pos = request.find("Content-Length: ");
-		// 		if (pos != std::string::npos)
-		// 		{
-		// 			hasContentLength = true;
-		// 			contentLength = std::stoi(request.substr(pos + 15));
-		// 		}
-		// 	}
-		// 	if (hasContentLength && request.length() - request.find("\r\n\r\n") - 4 >= (size_t)contentLength)
-		// 		break;
-		// }
-		// std::string requestBody;
-		// if (hasContentLength)
-		// 	requestBody = request.substr(request.find("\r\n\r\n") + 4);
-		// parse request
-		// std::cout << request << std::endl;
+		std::string request = receiveRequest(clientSocket);
+		std::string method, uri, httpVersion, Rheaders, body;
+		parseRequest(request, method, uri, httpVersion, Rheaders, body);
+		std::cout << std::setfill('-') << std::setw(50) << "-" << std::endl;
+		std::cout << "Method: " << method << std::endl;
+		std::cout << std::setfill('-') << std::setw(50) << "-" << std::endl;
+		std::cout << "URI: " << uri << std::endl;
+		std::cout << std::setfill('-') << std::setw(50) << "-" << std::endl;
+		std::cout << "HTTP Version: " << httpVersion << std::endl;
+		std::cout << std::setfill('-') << std::setw(50) << "-" << std::endl;
+		std::cout << "Headers:\n" + convertText(Rheaders) << std::endl;
+		std::cout << std::setfill('-') << std::setw(50) << "-" << std::endl;
+		std::cout << "Body:\nbodysize:"
+				  << body.length() << "\n" + convertText(body) << std::endl;
+		std::cout << std::setfill('-') << std::setw(50) << "-" << std::endl;
 		// std::cout << convertText(request) << std::endl;
-		// std::istringstream stream(request);
-		std::multimap<std::string, std::string> headers;
-		std::string line;
-		std::istringstream stream(buffer);
-		std::string method;
-		std::getline(stream, method);
-		std::cout << "method : " << method << std::endl;
-		while (std::getline(stream, line))
-		{
-			if (line.empty() || line == "\r")
-				break;
-			size_t pos = line.find(':');
-			if (pos == std::string::npos)
-				break;
-			std::string key = line.substr(0, pos);
-			std::string value = line.substr(pos + 2);
-			headers.insert(std::make_pair(key, value));
-		}
-		std::cout << std::setfill('-') << std::setw(30) << "\n"
-				  << std::endl;
-		std::multimap<std::string, std::string>::const_iterator it = headers.begin();
-		for (; it != headers.end(); ++it)
-			std::cout << "Key: " << std::setfill(' ') << std::setw(30) << it->first << ", Value: " << std::setw(100) << it->second << std::endl;
-		std::cout << std::setfill('-') << std::setw(30) << "\n"
-				  << std::endl;
-
-		// std::cout << "body :\n"
-		// 		  << convertText(requestBody) << std::endl;
-		char *const env[] = {
-			(char *)("PATH_INFO="),
-			(char *)("REQUEST_METHOD="),
-			(char *)("SCRIPT_FILENAME=/Users/ael-mouz/Desktop/webserv/config/cgi-bin/python/upload_multi_files.py"),
-			NULL};
-
-		// Set other environment variables
-		std::string content_type_str = "CONTENT_TYPE=" + headers.find("Content-Type")->second;
-		std::string content_length_str = "CONTENT_LENGTH=" + headers.find("Content-Length")->second;
-		std::string http_user_agent_str = "HTTP_USER_AGENT=" + headers.find("User-Agent")->second;
-		std::string http_host_str = "HTTP_HOST=" + headers.find("Host")->second;
-		std::string http_accept_str = "HTTP_ACCEPT=" + headers.find("Accept")->second;
-		std::string http_postman_token_str = "HTTP_POSTMAN_TOKEN=" + headers.find("Postman-Token")->second;
-		std::string http_accept_encoding_str = "HTTP_ACCEPT_ENCODING=" + headers.find("Accept-Encoding")->second;
-		std::string http_connection_str = "HTTP_CONNECTION=" + headers.find("Connection")->second;
-		std::string http_cookie_str = "HTTP_COOKIE=" + headers.find("Cookie")->second;
-
-		// Set the environment variables
-
-		pid_t pid = fork();
-		if (pid == -1)
-		{
-			logMessage(ERROR, "Error forking");
-			close(clientSocket);
-		}
-		else if (pid == 0)
-		{
-			setenv("CONTENT_TYPE", content_type_str.c_str(), 1);
-			setenv("CONTENT_LENGTH", content_length_str.c_str(), 1);
-			setenv("HTTP_USER_AGENT", http_user_agent_str.c_str(), 1);
-			setenv("HTTP_HOST", http_host_str.c_str(), 1);
-			setenv("HTTP_ACCEPT", http_accept_str.c_str(), 1);
-			setenv("HTTP_POSTMAN_TOKEN", http_postman_token_str.c_str(), 1);
-			setenv("HTTP_ACCEPT_ENCODING", http_accept_encoding_str.c_str(), 1);
-			setenv("HTTP_CONNECTION", http_connection_str.c_str(), 1);
-			setenv("HTTP_COOKIE", http_cookie_str.c_str(), 1);
-			dup2(clientSocket, STDOUT_FILENO);
-			close(clientSocket);
-			const char *python_script = "/Users/ael-mouz/Desktop/webserv/config/cgi-bin/python/upload_multi_files.py";
-			char *const args[] = {(char *)"python3", (char *)python_script, NULL};
-			execve("python3", args, env);
-			logMessage(ERROR, "Error executing Python script");
-			exit(1);
-		}
-		else
-		{
-
-			char buffer[4096]; // Adjust the buffer size as needed
-			int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
-			if (bytesRead == -1)
-			{
-				std::cerr << "Error reading from socket" << std::endl;
-				close(clientSocket);
-				continue;
-			}
-			else if (bytesRead == 0)
-				continue;
-			buffer[bytesRead] = '\0';
-			std::cout << buffer << std::endl;
-			close(clientSocket);
-		}
-
-		// perl
-		//  pid_t pid = fork();
-		//  if (pid == -1)
-		//  {
-		//  	logMessage(ERROR, "Error forking");
-		//  	close(clientSocket);
-		//  	continue;
-		//  }
-		//  else if (pid == 0)
-		//  {
-		//  	close(serverSocket);
-		//  	dup2(clientSocket, STDOUT_FILENO);
-		//  	close(clientSocket);
-		//  	const char *perl_script = "/Users/ael-mouz/Desktop/webserv/www/cgi_test_file/index_cookie.pl";
-		//  	// const char *perl_script = "/Users/ael-mouz/Desktop/webserv/www/cgi_test_file/env.pl";
-		//  	char *const args[] = {(char *)"perl", (char *)perl_script, NULL};
-		//  	execve("/usr/bin/perl", args, env);
-		//  	// execve("/usr/bin/perl", args, NULL);
-		//  	logMessage(ERROR, "Error executing Perl script");
-		//  	exit(1);
-		//  }
-		//  else
-		//  {
-		//  	close(clientSocket);
-		//  }
+		
+		// std::string response = "HTTP/1.1 200 OK\r\n"
+		// 					   "Content-Length: 13\r\n"
+		// 					   "Content-Type: text/plain\r\n"
+		// 					   "\r\n"
+		// 					   "Hello, World!";
+		// send(clientSocket, response.c_str(), response.length(), 0);
+		// std::cout << convertText(response) << std::endl;
+		Response s;
+		s.response(clientSocket,method,uri,httpVersion,Rheaders,body);
+		close(clientSocket);
 	}
 	close(serverSocket);
 	return 0;

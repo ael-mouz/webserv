@@ -1,9 +1,17 @@
 import cgi
 import os
+import sys
 
 form = cgi.FieldStorage()
 destination_directory = "/Users/ael-mouz/Desktop/webserv/upload"
 upload_statuses = []
+
+print(form, file=sys.stderr)
+
+print(sys.stdin.read(), file=sys.stderr)
+
+for key, value in os.environ.items():
+    print(f"{key}: {value}", file=sys.stderr)
 
 for field_name in form.keys():
     if isinstance(form[field_name], cgi.FieldStorage) and form[field_name].filename:
