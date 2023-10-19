@@ -32,11 +32,12 @@ private:
 	std::string query;
 	std::string path_info;
 	std::string script_path;
+	std::string extention;
 
 public:
 	void response(int clientSocket, std::string method, std::string uri, std::string httpVersion, std::string Rheaders, std::string body);
 	void parseUri(std::string uri);
-	std::multimap<std::string, std::string> parseHeader(std::string buffer);
+	std::multimap<std::string, std::string> parseHeader(int clientSocket, std::string buffer);
 	std::multimap<std::string, std::string> mergeHeadersValues(const std::multimap<std::string, std::string> &headers);
 	std::multimap<std::string, std::string> generateCGIEnv(std::multimap<std::string, std::string> headers, std::string method);
 	void handleCGIScript(int clientSocket, const std::string &method, std::multimap<std::string, std::string> env, int tempFD);

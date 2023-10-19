@@ -18,7 +18,7 @@ void logMessage(LogLevel level, const std::string &message)
 		levelStr = "DEBUG";
 		break;
 	}
-	time_t currentTime = time(nullptr);
+	time_t currentTime = time(NULL);
 	struct tm *localTime = localtime(&currentTime);
 	char timestamp[20];
 	strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localTime);

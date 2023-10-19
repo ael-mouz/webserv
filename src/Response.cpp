@@ -86,9 +86,9 @@ void Response::response(int clientSocket, std::string method, std::string uri, s
 		send(clientSocket, response.c_str(), response.length(), 0);
 		return;
 	}
-	std::multimap<std::string, std::string> headers = parseHeader(Rheaders);	   // [x] : parse headers
-	headers = mergeHeadersValues(headers);										   // [x] : merge duplicated headers
-	std::multimap<std::string, std::string> env = generateCGIEnv(headers, method); // [x] : generate env variable
+	std::multimap<std::string, std::string> headers = parseHeader(clientSocket, Rheaders); // [x] : parse headers
+	headers = mergeHeadersValues(headers);												   // [x] : merge duplicated headers
+	std::multimap<std::string, std::string> env = generateCGIEnv(headers, method);		   // [x] : generate env variable
 	char tempFileName[] = "/tmp/.CgitempfileXXXXXXXX";
 	int tempFD = -1;
 	if (!body.empty())
@@ -140,12 +140,16 @@ void Response::parseUri(std::string uri)
 		this->script_path = uri;
 	if (this->path_info.empty())
 		this->path_info = "/";
+	pos = this->script_path.find_last_of(".");
+	if (pos != std::string::npos)
+		this->extention = this->script_path.substr(pos + 1, this->script_path.length() - pos + 1);
+	// std::cout << extention << std::endl;
 	// std::cout << "query: " << this->query << std::endl;
 	// std::cout << "path info: " << this->path_info << std::endl;
 	// std::cout << "script: " << this->script_path << std::endl;
 }
 
-std::multimap<std::string, std::string> Response::parseHeader(std::string buffer)
+std::multimap<std::string, std::string> Response::parseHeader(int clientSocket, std::string buffer)
 {
 	std::multimap<std::string, std::string> headers;
 	std::istringstream stream(buffer);
@@ -158,13 +162,12 @@ std::multimap<std::string, std::string> Response::parseHeader(std::string buffer
 		if (pos == std::string::npos)
 		{
 			this->responseStatus = "HTTP/1.1 400 Bad Request";
-			// std::string response = this->responseStatus + "\r\n"
-			// 											  "Content-Length: 11\r\n"
-			// 											  "Content-Type: text/plain\r\n"
-			// 											  "\r\n"
-			// 											  "Bad Request";
-			// send(clientSocket, response.c_str(), response.length(), 0);
-			// return NULL;
+			std::string response = this->responseStatus + "\r\n"
+														  "Content-Length: 11\r\n"
+														  "Content-Type: text/plain\r\n"
+														  "\r\n"
+														  "Bad Request";
+			send(clientSocket, response.c_str(), response.length(), 0);
 			break;
 		}
 		std::string key = line.substr(0, pos);
@@ -204,9 +207,12 @@ std::multimap<std::string, std::string> Response::generateCGIEnv(std::multimap<s
 	std::string SERVER_PORT = "80";			  // NOTE : from config
 	std::string REQUEST_METHOD = method;
 	std::string PATH_INFO = this->path_info;
-	std::string PATH_TRANSLATED = "/Users/ael-mouz/Desktop/webserv/config/cgi-bin" + this->path_info;	// NOTE : root + PATH_INFO
-	std::string SCRIPT_NAME = "/Users/ael-mouz/Desktop/webserv/config/cgi-bin" + this->script_path;		// NOTE : root + script
-	std::string SCRIPT_FILENAME = "/Users/ael-mouz/Desktop/webserv/config/cgi-bin" + this->script_path; // NOTE : root +script
+	std::string PATH_TRANSLATED = "/mnt/c/Users/SPARROW/Desktop/webserv/config/cgi-bin" + this->path_info;	 // NOTE : root + PATH_INFO
+	std::string SCRIPT_NAME = "/mnt/c/Users/SPARROW/Desktop/webserv/config/cgi-bin" + this->script_path;	 // NOTE : root + script
+	std::string SCRIPT_FILENAME = "/mnt/c/Users/SPARROW/Desktop/webserv/config/cgi-bin" + this->script_path; // NOTE : root +script
+	// std::string PATH_TRANSLATED = "/Users/ael-mouz/Desktop/webserv/config/cgi-bin" + this->path_info;	// NOTE : root + PATH_INFO
+	// std::string SCRIPT_NAME = "/Users/ael-mouz/Desktop/webserv/config/cgi-bin" + this->script_path;		// NOTE : root + script
+	// std::string SCRIPT_FILENAME = "/Users/ael-mouz/Desktop/webserv/config/cgi-bin" + this->script_path; // NOTE : root +script
 	std::string QUERY_STRING = this->query;
 	std::string CONTENT_TYPE;
 	it = headers.find("Content-Type");
@@ -239,15 +245,20 @@ std::multimap<std::string, std::string> Response::generateCGIEnv(std::multimap<s
 	env.insert(std::make_pair("REDIRECT_STATUS", REDIRECT_STATUS)); // NOTE:php only
 	it = headers.begin();
 	std::string keyEnv, valueEnv;
-	for (; it != headers.end(); ++it)
+	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
 	{
 		if (it->first == "Content-Type" || it->first == "Content-Length")
 			continue;
-		keyEnv = "HTTP_" + it->first;
-		std::transform(keyEnv.begin(), keyEnv.end(), keyEnv.begin(), ::toupper);
-		std::replace(keyEnv.begin(), keyEnv.end(), '-', '_');
-		valueEnv = it->second;
-		env.insert(std::make_pair(keyEnv, valueEnv));
+		std::string keyEnv = "HTTP_" + it->first;
+		for (std::string::iterator ch = keyEnv.begin(); ch != keyEnv.end(); ++ch)
+			*ch = std::toupper(*ch);
+		for (std::string::iterator ch = keyEnv.begin(); ch != keyEnv.end(); ++ch)
+		{
+			if (*ch == '-')
+				*ch = '_';
+		}
+		std::string valueEnv = it->second;
+		env.insert(std::pair<std::string, std::string>(keyEnv, valueEnv));
 	}
 	printMap(env);
 	return env;
@@ -300,8 +311,22 @@ void Response::handleCGIScript(int clientSocket, const std::string &method, std:
 			dup2(tempFD, STDIN_FILENO);
 			close(tempFD);
 		}
-		char *const args[] = {(char *)"python3", (char *)env.find("SCRIPT_FILENAME")->second.c_str(), NULL}; // NOTE: for pyhton
-		execve("/usr/bin/python3", args, envp);
+		if (this->extention == "py")
+		{
+			char *const args[] = {(char *)"python3", (char *)env.find("SCRIPT_FILENAME")->second.c_str(), NULL}; // NOTE: for pyhton
+			execve("/usr/bin/python3", args, envp);
+		}
+		else if (this->extention == "pl")
+		{
+			char *const args[] = {(char *)"perl", (char *)env.find("SCRIPT_FILENAME")->second.c_str(), NULL}; // NOTE: for pyhton
+			execve("/usr/bin/perl", args, envp);
+		}
+		else if (this->extention == "php")
+		{
+			std::cout  << "helloo" << std::endl;
+			char *const args[] = {(char *)"php-cgi_bin", (char *)env.find("SCRIPT_FILENAME")->second.c_str(), NULL}; // NOTE: for pyhton
+			execve("/mnt/c/Users/SPARROW/Desktop/webserv/tests/php-cgi_bin", args, envp);
+		}
 		perror("execve failed");
 		exit(EXIT_FAILURE);
 	}

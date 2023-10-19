@@ -58,44 +58,49 @@ void parseRequest(const std::string &request, std::string &method, std::string &
 		body = request.substr(pos + 4, request.length() - pos + 4);
 }
 
+#include <string>
+#include <cstdlib> // For strtoul
+
 std::string receiveRequest(int clientSocket)
 {
-	char buffer[1024];
-	std::string request;
-	std::string contentLengthHeader = "Content-Length: ";
-	std::size_t contentLength = 0;
-	bool headersComplete = false;
-	while (true)
-	{
-		ssize_t bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
-		if (bytesRead <= 0)
-		{
-			std::cerr << "Error reading request" << std::endl;
-			break;
-		}
-		else
-		{
-			request.append(buffer, bytesRead);
-			if (!headersComplete)
-			{
-				std::size_t pos = request.find("\r\n\r\n");
-				if (pos != std::string::npos)
-				{
-					headersComplete = true;
-					std::string headers = request.substr(0, pos);
-					std::size_t contentLengthPos = headers.find(contentLengthHeader);
-					if (contentLengthPos != std::string::npos)
-					{
-						std::size_t headerEndPos = headers.find("\r\n", contentLengthPos);
-						contentLength = std::stoul(headers.substr(contentLengthPos + contentLengthHeader.length(), headerEndPos - (contentLengthPos + contentLengthHeader.length())));
-					}
-				}
-			}
-			if (headersComplete && request.size() >= contentLength)
-				break;
-		}
-	}
-	return request;
+    char buffer[1024];
+    std::string request;
+    std::string contentLengthHeader = "Content-Length: ";
+    std::size_t contentLength = 0;
+    bool headersComplete = false;
+    
+    while (true)
+    {
+        ssize_t bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
+        if (bytesRead <= 0)
+        {
+            std::cerr << "Error reading request" << std::endl;
+            break;
+        }
+        else
+        {
+            request.append(buffer, bytesRead);
+            if (!headersComplete)
+            {
+                std::size_t pos = request.find("\r\n\r\n");
+                if (pos != std::string::npos)
+                {
+                    headersComplete = true;
+                    std::string headers = request.substr(0, pos);
+                    std::size_t contentLengthPos = headers.find(contentLengthHeader);
+                    if (contentLengthPos != std::string::npos)
+                    {
+                        std::size_t headerEndPos = headers.find("\r\n", contentLengthPos);
+                        const std::string contentLengthStr = headers.substr(contentLengthPos + contentLengthHeader.length(), headerEndPos - (contentLengthPos + contentLengthHeader.length()));
+                        contentLength = strtoul(contentLengthStr.c_str(), NULL, 10);
+                    }
+                }
+            }
+            if (headersComplete && request.size() >= contentLength)
+                break;
+        }
+    }
+    return request;
 }
 
 int main()
@@ -119,7 +124,7 @@ int main()
 		logMessage(ERROR, "Error binding"), exit(1);
 	if (listen(serverSocket, BACKLOG) == -1)
 		logMessage(ERROR, "Error listening"), exit(1);
-	logMessage(INFO, "Server listening on http://localhost:" + std::to_string(PORT));
+	logMessage(INFO, "Server listening on http://localhost:8080");
 	while (true)
 	{
 		if ((clientSocket = accept(serverSocket, (struct sockaddr *)&clientAddr, &clientAddrLen)) == -1)
