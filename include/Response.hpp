@@ -6,12 +6,13 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/18 17:01:10 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/20 17:45:39 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/20 22:09:51 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 #include "Include.hpp"
+#include "../include/Status.hpp"
 class Response
 {
 private:
@@ -28,4 +29,5 @@ public:
 	std::multimap<std::string, std::string> mergeHeadersValues(const std::multimap<std::string, std::string> &headers);
 	std::multimap<std::string, std::string> generateCGIEnv(std::multimap<std::string, std::string> headers, std::string method);
 	void handleCGIScript(int clientSocket, const std::string &method, std::multimap<std::string, std::string> env, int tempFD);
+	void generateResponse(std::string status);
 };

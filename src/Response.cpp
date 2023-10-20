@@ -6,16 +6,52 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/18 16:57:43 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/20 18:46:08 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/20 22:41:04 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Response.hpp"
 #include "../include/server.hpp"
+#include "../include/Status.hpp"
+void replaceAll(std::string &str, const std::string &from, const std::string &to)
+{
+	size_t startPos = 0;
+	while ((startPos = str.find(from, startPos)) != std::string::npos)
+	{
+		str.replace(startPos, from.length(), to);
+		startPos += to.length();
+	}
+}
+
+std::string intToString(int number)
+{
+	std::ostringstream oss;
+	oss << number;
+	return oss.str();
+}
 
 void Response::response(int clientSocket, std::string method, std::string uri, std::string httpVersion, std::string Rheaders, std::string body)
 {
 	parseUri(uri);
+	// if (this->extention != "pl" && this->extention != "py" && this->extention != "php" && this->extention != "rb")
+	// {
+	// 	this->script_path = "/Users/ael-mouz/Desktop/webserv/config" + this->script_path;
+	// 	std::ifstream infile(this->script_path);
+	// 	if (!infile.is_open())
+	// 	{
+	// 		generateResponse("404");
+	// 		send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
+	// 		return;
+	// 	}
+	// 	std::string body;
+	// 	std::string line;
+	// 	while (std::getline(infile, line))
+	// 		body += line;
+	// 	infile.close();
+	// 	this->responseStatus = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " + intToString(body.length()) + "\r\n\r\n" + body;
+	// 	send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
+	// 	return;
+	// }
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
 		this->responseStatus = "HTTP/1.1 501 Not Implemented";
@@ -66,7 +102,7 @@ void Response::response(int clientSocket, std::string method, std::string uri, s
 		}
 	}
 	handleCGIScript(clientSocket, method, env, tempFD);
-	close(tempFD); // TODO: CGI DONE
+	close(tempFD);		  // TODO: CGI DONE
 	unlink(tempFileName); // TODO: CGI DONE
 }
 
@@ -306,15 +342,43 @@ void Response::handleCGIScript(int clientSocket, const std::string &method, std:
 		}
 		else
 		{
-			this->responseStatus = "HTTP/1.1 502 Bad Gateway";
-			std::string response = this->responseStatus + "\r\n"
-														  "Content-Length: 11\r\n"
-														  "Content-Type: text/plain\r\n"
-														  "\r\n"
-														  "Bad Gateway";
-			send(clientSocket, response.c_str(), response.length(), 0);
+			generateResponse("502");
+			// this->responseStatus = "HTTP/1.1 502 Bad Gateway";
+			// std::string response = this->responseStatus + "\r\n"
+			// 											  "Content-Length: 11\r\n"
+			// 											  "Content-Type: text/plain\r\n"
+			// 											  "\r\n"
+			// 											  "Bad Gateway";
+			// send(clientSocket, response.c_str(), response.length(), 0);
+			send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
 			return;
 		}
 		close(pipefd[0]);
+	}
+}
+
+void Response::generateResponse(std::string status)
+{
+	Status obj;
+	std::string errorpage = "/Users/ael-mouz/Desktop/webserv/config/error/error.html";
+	std::ifstream infile(errorpage.c_str());
+
+	if (!infile.is_open())
+	{
+		std::string body = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n<title>{{Status}} Error - {{Error}}</title>\n<style>\nbody {\nmargin: 0;\npadding: 0;\nfont-family: Arial, sans-serif;\nbackground-image: url('../../images/site42-bg.gif');\nbackground-size: cover;\nbackground-position: center;\nheight: 100vh;\ndisplay: flex;\nflex-direction: column;\njustify-content: center;\nalign-items: center;\ncolor: #000000;\n}\nh1 {\nfont-size: 4rem;\nmargin-bottom: 20px;\n}\np {\nfont-size: 1.5rem;\ntext-align: center;\n}\n</style>\n</head>\n<body>\n<h1>{{Status}} Error</h1>\n<p>{{Error}}</p>\n</body>\n</html>";
+		replaceAll(body, "{{Status}}", status);
+		replaceAll(body, "{{Error}}", obj.getStatus(status));
+		this->responseStatus = "HTTP/1.1 " + status + " " + obj.getStatus(status) + "\r\nContent-Type: text/html\r\nContent-Length: " + intToString(body.length()) + "\r\n\r\n" + body;
+	}
+	else
+	{
+		std::string body;
+		std::string line;
+		while (std::getline(infile, line))
+			body += line;
+		infile.close();
+		replaceAll(body, "{{Status}}", status);
+		replaceAll(body, "{{Error}}", obj.getStatus(status));
+		this->responseStatus = "HTTP/1.1 " + status + " " + obj.getStatus(status) + "\r\nContent-Type: text/html\r\nContent-Length: " + intToString(body.length()) + "\r\n\r\n" + body;
 	}
 }

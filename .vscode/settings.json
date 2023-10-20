@@ -75,6 +75,8 @@
 		"numeric": "cpp",
 		"random": "cpp",
 		"numbers": "cpp",
-		"cinttypes": "cpp"
+		"cinttypes": "cpp",
+		"filesystem": "cpp",
+		"set": "cpp"
 	}
 }

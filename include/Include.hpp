@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 17:42:32 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/20 18:46:41 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/20 21:55:49 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,6 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-
 
 #define BOLD "\e[1m"
 #define RESET_ALL "\e[0m"
