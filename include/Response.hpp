@@ -6,25 +6,12 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/18 17:01:10 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/19 18:41:32 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/20 17:45:39 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
-#include <iostream>
-#include <iomanip>
-#include <map>
-#include <string>
-#include <sstream>
-#include <cstdio>
-#include <cstring>
-#include <cstdlib>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/wait.h>
-#include <fcntl.h>
-#include <vector>
+#include "Include.hpp"
 class Response
 {
 private:

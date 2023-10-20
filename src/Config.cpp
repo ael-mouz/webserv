@@ -6,14 +6,12 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/13 19:59:44 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/17 16:14:46 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/20 18:26:06 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Config.hpp"
-#define BOLD "\e[1m"
-#define RESET_ALL "\e[0m"
-#define FG_RED "\e[31m"
+
 Config::Config(std::string filename) // TODO multi server same host and same port same server name
 {
 	std::ifstream infile(filename);

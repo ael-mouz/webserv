@@ -1,19 +1,17 @@
-#!/usr/bin/php
 <?php
-header('HTTP/1.1 200 OK');
 header('Content-type: text/html');
 
-echo "<html>";
-echo "<head><title>Environment Variables</title></head>";
-echo "<body>";
-echo "<h1>Environment Variables</h1>";
-echo "<ul>";
+echo "<html>\n";
+echo "<head><title>Environment Variables</title></head>\n";
+echo "<body>\n";
+echo "<h1>Environment Variables</h1>\n";
+echo "<ul>\n";
 
 foreach ($_SERVER as $key => $value) {
-    echo "<li><strong>{$key}:</strong> {$value}</li>";
+    echo "<li><strong>{$key}:</strong> {$value}</li>\n";
 }
 
-echo "</ul>";
-echo "</body>";
-echo "</html>";
+echo "</ul>\n";
+echo "</body>\n";
+echo "</html>\n";
 ?>

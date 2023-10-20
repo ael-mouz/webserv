@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/14 22:36:08 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/16 20:15:54 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/20 18:40:18 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,4 @@ ServerConfig::ServerConfig()
 	ErrorPage = dir + "/www/error/error.html";
 }
 
-ServerConfig::~ServerConfig()
-{
-
-}
+ServerConfig::~ServerConfig() {}

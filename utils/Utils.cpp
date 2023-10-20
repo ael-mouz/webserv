@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Utils.cpp                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/10/20 18:45:00 by ael-mouz          #+#    #+#             */
+/*   Updated: 2023/10/20 18:46:32 by ael-mouz         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../include/Config.hpp"
 
 std::string trim(const std::string &str, const std::string &charactersToTrim)
@@ -9,4 +21,77 @@ std::string trim(const std::string &str, const std::string &charactersToTrim)
 		return "";
 	size_t end = str.find_last_not_of(charactersToTrim);
 	return str.substr(start, end - start + 1);
+}
+
+std::vector<std::string> splitString(const std::string &input, const std::string &delimiter)
+{
+	std::vector<std::string> result;
+	size_t start = 0;
+	size_t end = input.find(delimiter);
+	while (end != std::string::npos)
+	{
+		result.push_back(input.substr(start, end - start));
+		start = end + delimiter.size();
+		end = input.find(delimiter, start);
+	}
+	result.push_back(input.substr(start, end));
+	return result;
+}
+
+std::string convertText(std::string a)
+{
+	std::string::size_type i = 0;
+	std::string newbuff;
+	while (i < a.length())
+	{
+		if (a[i] == '\r' && i + 1 < a.length() && a[i + 1] == '\n')
+		{
+			newbuff += "\e[41m\\r\\n\e[49m\n";
+			i++;
+		}
+		else if (a[i] == '\t')
+			newbuff += "\\t\t";
+		else if (a[i] == '\v')
+			newbuff += "\\v\v";
+		else if (a[i] == '\f')
+			newbuff += "\\f\f";
+		else
+			newbuff += a[i];
+		i++;
+	}
+	return newbuff;
+}
+
+void logMessage(LogLevel level, const std::string &message)
+{
+	std::string levelStr;
+	switch (level)
+	{
+	case ERROR:
+		levelStr = "ERROR";
+		break;
+	case WARNING:
+		levelStr = "WARNING";
+		break;
+	case INFO:
+		levelStr = "INFO";
+		break;
+	case DEBUG:
+		levelStr = "DEBUG";
+		break;
+	}
+	time_t currentTime = time(NULL);
+	struct tm *localTime = localtime(&currentTime);
+	char timestamp[20];
+	strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localTime);
+	std::cout << "[" << timestamp << "] [" << levelStr << "] " << message << std::endl;
+}
+
+void printMap(const std::multimap<std::string, std::string> &map)
+{
+	std::cout << std::setfill('-') << std::setw(145) << "-" << std::endl;
+	std::map<std::string, std::string>::const_iterator it1 = map.begin();
+	for (; it1 != map.end(); ++it1)
+		std::cout << "|Key:" << std::setfill(' ') << std::setw(30) << it1->first << "| Value: " << std::setw(100) << it1->second << "|" << std::endl;
+	std::cout << std::setfill('-') << std::setw(145) << "-" << std::endl;
 }

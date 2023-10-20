@@ -1,0 +1,38 @@
+//"400 Bad Request" // [ ] bad request
+//"401 Unauthorized" // NOTE: authontication
+//"403 Forbidden" // [ ] permission
+//"404 Not Found" // [ ] invalid path
+//"405 Method Not Allowed" // [ ] GET with body
+//"406 Not Acceptable" // [ ]
+//"407 Proxy Authentication Required" // [ ]
+//"408 Request Timeout" // [ ]
+//"409 Conflict" // [ ]
+//"410 Gone" // [ ]
+//"411 Length Required" // [ ]
+//"412 Precondition Failed" // [ ]
+//"413 Payload Too Large" // [ ]
+//"414 URI Too Long" // [ ]
+//"415 Unsupported Media Type" // [ ]
+//"416 Range Not Satisfiable" // [ ]
+//"417 Expectation Failed" // [ ]
+//"418 I'm a teapot" // [ ]
+//"421 Misdirected Request" // [ ]
+//"422 Unprocessable Entity" // [ ]
+//"423 Locked" // [ ]
+//"424 Failed Dependency" // [ ]
+//"425 Too Early" // [ ]
+//"426 Upgrade Required" // [ ]
+//"428 Precondition Required" // [ ]
+//"429 Too Many Requests" // [ ]
+//"431 Request Header Fields Too Large" // [ ]
+//"451 Unavailable For Legal Reasons" // [ ]
+//"500 Internal Server Error" // NOTE: server error
+//"501 Not Implemented" // [x] "501
+//"502 Bad Gateway" // TODO: CGI HERE
+//"504 Gateway Timeout" // TODO: CGI HERE
+//"505 HTTP Version Not Supported" // [x] "505"
+//"503 Service Unavailable" // NOTE :update maintennance
+//"506 Variant Also Negotiates" // NOTE: config error
+//"507 Insufficient Storage" // NOTE: storage error
+//"510 Not Extended" // NOTE: no body
+//"Network Authentication Required" // NOTE: network error

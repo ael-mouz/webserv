@@ -1,25 +1,14 @@
-CXX = c++
-
-CXXFLAGS = -std=c++98 -Wall -Wextra -Werror # -fsanitize=address
-
+CXX = g++
+CXXFLAGS = -std=c++98 -Wall -Wextra -Werror
 TARGET = server
-
 BIN = obj/
-
-SRC = src/server.cpp src/Response.cpp  utils/logger.cpp utils/convertText.cpp #src/Client.cpp
-HEADERS = include/server.hpp include/Response.hpp
-
-# SRC = src/main.cpp src/Config.cpp src/ServerConfig.cpp utils/Utils.cpp
-# HEADERS = include/Config.hpp include/ServerConfig.hpp
-
-# SRC = src/main.cpp src/Cgi.cpp
-# HEADERS = include/Cgi.hpp
-
-OBJS =$(addprefix $(BIN),$(SRC:.cpp=.o))
+SRC = utils/Utils.cpp src/main.cpp src/Config.cpp src/ServerConfig.cpp src/server.cpp src/Response.cpp
+HEADERS = include/Config.hpp include/Include.hpp include/Response.hpp include/ServerConfig.hpp include/server.hpp
+OBJS = $(addprefix $(BIN), $(SRC:.cpp=.o))
 
 all: $(TARGET)
 
-$(TARGET): $(OBJS) $(HEADERS)
+$(TARGET): $(OBJS)
 	@$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
 
 $(BIN)%.o: %.cpp
@@ -28,7 +17,6 @@ $(BIN)%.o: %.cpp
 
 clean:
 	@rm -rf $(BIN)
-	@rm -f $(OBJS)
 
 fclean: clean
 	@rm -f $(TARGET)

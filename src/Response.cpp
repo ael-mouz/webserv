@@ -6,59 +6,12 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/18 16:57:43 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/19 21:17:20 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/20 18:46:08 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Response.hpp"
 #include "../include/server.hpp"
-//"400 Bad Request" // [ ] bad request
-//"401 Unauthorized" // NOTE: authontication
-//"403 Forbidden" // [ ] permission
-//"404 Not Found" // [ ] invalid path
-//"405 Method Not Allowed" // [ ] GET with body
-//"406 Not Acceptable" // [ ]
-//"407 Proxy Authentication Required" // [ ]
-//"408 Request Timeout" // [ ]
-//"409 Conflict" // [ ]
-//"410 Gone" // [ ]
-//"411 Length Required" // [ ]
-//"412 Precondition Failed" // [ ]
-//"413 Payload Too Large" // [ ]
-//"414 URI Too Long" // [ ]
-//"415 Unsupported Media Type" // [ ]
-//"416 Range Not Satisfiable" // [ ]
-//"417 Expectation Failed" // [ ]
-//"418 I'm a teapot" // [ ]
-//"421 Misdirected Request" // [ ]
-//"422 Unprocessable Entity" // [ ]
-//"423 Locked" // [ ]
-//"424 Failed Dependency" // [ ]
-//"425 Too Early" // [ ]
-//"426 Upgrade Required" // [ ]
-//"428 Precondition Required" // [ ]
-//"429 Too Many Requests" // [ ]
-//"431 Request Header Fields Too Large" // [ ]
-//"451 Unavailable For Legal Reasons" // [ ]
-//"500 Internal Server Error" // NOTE: server error
-//"501 Not Implemented" // [x] "501
-//"502 Bad Gateway" // TODO: CGI HERE
-//"504 Gateway Timeout" // TODO: CGI HERE
-//"505 HTTP Version Not Supported" // [x] "505"
-//"503 Service Unavailable" // NOTE :update maintennance
-//"506 Variant Also Negotiates" // NOTE: config error
-//"507 Insufficient Storage" // NOTE: storage error
-//"510 Not Extended" // NOTE: no body
-//"Network Authentication Required" // NOTE: network error
-
-void printMap(const std::multimap<std::string, std::string> &map)
-{
-	std::cout << std::setfill('-') << std::setw(145) << "-" << std::endl;
-	std::map<std::string, std::string>::const_iterator it1 = map.begin();
-	for (; it1 != map.end(); ++it1)
-		std::cout << "|Key:" << std::setfill(' ') << std::setw(30) << it1->first << "| Value: " << std::setw(100) << it1->second << "|" << std::endl;
-	std::cout << std::setfill('-') << std::setw(145) << "-" << std::endl;
-}
 
 void Response::response(int clientSocket, std::string method, std::string uri, std::string httpVersion, std::string Rheaders, std::string body)
 {
@@ -97,6 +50,7 @@ void Response::response(int clientSocket, std::string method, std::string uri, s
 		if (tempFD != -1)
 		{
 			write(tempFD, body.c_str(), body.length()), std::cout << "generate file: " << tempFileName << " fd:" << tempFD << std::endl;
+			body.erase();
 			lseek(tempFD, 0, SEEK_SET);
 		}
 		else
@@ -112,8 +66,8 @@ void Response::response(int clientSocket, std::string method, std::string uri, s
 		}
 	}
 	handleCGIScript(clientSocket, method, env, tempFD);
-	// close(tempFD); // TODO: CGI DONE
-	// unlink(tempFileName); // TODO: CGI DONE
+	close(tempFD); // TODO: CGI DONE
+	unlink(tempFileName); // TODO: CGI DONE
 }
 
 void Response::parseUri(std::string uri)
@@ -207,12 +161,12 @@ std::multimap<std::string, std::string> Response::generateCGIEnv(std::multimap<s
 	std::string SERVER_PORT = "80";			  // NOTE : from config
 	std::string REQUEST_METHOD = method;
 	std::string PATH_INFO = this->path_info;
-	std::string PATH_TRANSLATED = "/mnt/c/Users/SPARROW/Desktop/webserv/config/cgi-bin" + this->path_info;	 // NOTE : root + PATH_INFO
-	std::string SCRIPT_NAME = "/mnt/c/Users/SPARROW/Desktop/webserv/config/cgi-bin" + this->script_path;	 // NOTE : root + script
-	std::string SCRIPT_FILENAME = "/mnt/c/Users/SPARROW/Desktop/webserv/config/cgi-bin" + this->script_path; // NOTE : root +script
-	// std::string PATH_TRANSLATED = "/Users/ael-mouz/Desktop/webserv/config/cgi-bin" + this->path_info;	// NOTE : root + PATH_INFO
-	// std::string SCRIPT_NAME = "/Users/ael-mouz/Desktop/webserv/config/cgi-bin" + this->script_path;		// NOTE : root + script
-	// std::string SCRIPT_FILENAME = "/Users/ael-mouz/Desktop/webserv/config/cgi-bin" + this->script_path; // NOTE : root +script
+	// std::string PATH_TRANSLATED = "/mnt/c/Users/SPARROW/Desktop/webserv/config/cgi-bin" + this->path_info;	 // NOTE : root + PATH_INFO
+	// std::string SCRIPT_NAME = "/mnt/c/Users/SPARROW/Desktop/webserv/config/cgi-bin" + this->script_path;	 // NOTE : root + script
+	// std::string SCRIPT_FILENAME = "/mnt/c/Users/SPARROW/Desktop/webserv/config/cgi-bin" + this->script_path; // NOTE : root +script
+	std::string PATH_TRANSLATED = "/Users/ael-mouz/Desktop/webserv/config/cgi-bin" + this->path_info;	// NOTE : root + PATH_INFO
+	std::string SCRIPT_NAME = "/Users/ael-mouz/Desktop/webserv/config/cgi-bin" + this->script_path;		// NOTE : root + script
+	std::string SCRIPT_FILENAME = "/Users/ael-mouz/Desktop/webserv/config/cgi-bin" + this->script_path; // NOTE : root +script
 	std::string QUERY_STRING = this->query;
 	std::string CONTENT_TYPE;
 	it = headers.find("Content-Type");
@@ -313,19 +267,24 @@ void Response::handleCGIScript(int clientSocket, const std::string &method, std:
 		}
 		if (this->extention == "py")
 		{
-			char *const args[] = {(char *)"python3", (char *)env.find("SCRIPT_FILENAME")->second.c_str(), NULL}; // NOTE: for pyhton
+			char *const args[] = {(char *)"python3", (char *)env.find("SCRIPT_FILENAME")->second.c_str(), NULL};
 			execve("/usr/bin/python3", args, envp);
 		}
 		else if (this->extention == "pl")
 		{
-			char *const args[] = {(char *)"perl", (char *)env.find("SCRIPT_FILENAME")->second.c_str(), NULL}; // NOTE: for pyhton
+			char *const args[] = {(char *)"perl", (char *)env.find("SCRIPT_FILENAME")->second.c_str(), NULL};
 			execve("/usr/bin/perl", args, envp);
+		}
+		else if (this->extention == "rb")
+		{
+			char *const args[] = {(char *)"ruby", (char *)env.find("SCRIPT_FILENAME")->second.c_str(), NULL};
+			execve("/usr/bin/ruby", args, envp);
 		}
 		else if (this->extention == "php")
 		{
-			std::cout  << "helloo" << std::endl;
-			char *const args[] = {(char *)"php-cgi_bin", (char *)env.find("SCRIPT_FILENAME")->second.c_str(), NULL}; // NOTE: for pyhton
-			execve("/mnt/c/Users/SPARROW/Desktop/webserv/tests/php-cgi_bin", args, envp);
+			char *const args[] = {(char *)"php-cgi_bin", (char *)env.find("SCRIPT_FILENAME")->second.c_str(), NULL};
+			// execve("/mnt/c/Users/SPARROW/Desktop/webserv/tests/php-cgi_bin", args, envp);
+			execve("/Users/ael-mouz/Desktop/webserv/tests/php-cgi_bin", args, envp);
 		}
 		perror("execve failed");
 		exit(EXIT_FAILURE);

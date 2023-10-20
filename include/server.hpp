@@ -1,26 +1,18 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   server.hpp                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/10/20 17:48:55 by ael-mouz          #+#    #+#             */
+/*   Updated: 2023/10/20 18:13:16 by ael-mouz         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #pragma once
+#include "Include.hpp"
 
-#include <iostream>
-#include <cstring>
-#include <cstdlib>
-#include <cstdio>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <ctime>
-#include <map>
-#include <string>
-#include <iomanip>
-#include <sstream>
-
-enum LogLevel
-{
-	ERROR,
-	WARNING,
-	INFO,
-	DEBUG
-};
-
-void logMessage(LogLevel level, const std::string &message);
-std::string convertText(std::string a);
-// void handleClient(int clientSocket);
+void parseRequest(const std::string &request, std::string &method, std::string &uri, std::string &httpVersion, std::string &headers, std::string &body);
+std::string receiveRequest(int clientSocket);
+void StartSrever();
