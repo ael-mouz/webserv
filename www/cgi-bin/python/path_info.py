@@ -11,6 +11,7 @@ actions = {
     '/contact': lambda: 'Contact us at contact@example.com',
 }
 action_function = actions.get(path_info, None)
+print("HTTP/1.1 200 OK\r");
 print("Content-type: text/html\n")
 print("<html>")
 print("<head><title>Path Info Form</title></head>")
