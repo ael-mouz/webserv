@@ -6,52 +6,75 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/18 16:57:43 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/21 19:54:30 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/23 23:14:17 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Response.hpp"
 #include "../include/server.hpp"
-#include "../include/Status.hpp"
-#include "../include/MimeTypes.hpp"
+#include "../include/ServerConfig.hpp"
 
-void replaceAll(std::string &str, const std::string &from, const std::string &to)
-{
-    size_t startPos = 0;
-    while ((startPos = str.find(from, startPos)) != std::string::npos)
-    {
-        str.replace(startPos, from.length(), to);
-        startPos += to.length();
-    }
-}
-
-std::string intToString(int number)
-{
-    std::ostringstream oss;
-    oss << number;
-    return oss.str();
-}
-
-void Response::response(int clientSocket, std::string method, std::string uri, std::string httpVersion, std::string Rheaders, std::string body)
+void Response::response(int clientSocket, std::string method, std::string uri, std::string httpVersion, std::string Rheaders, std::string body, const ServerConfig &conf)
 {
     parseUri(uri);
     if (this->extention != "pl" && this->extention != "py" && this->extention != "php" && this->extention != "rb")
     {
-        this->script_path = "/Users/ael-mouz/Desktop/webserv/www" + this->script_path;
+        std::string dir;
+        const Route *route = conf.getRoute(this->script_path);
+        if (route == NULL)
+        {
+            if (!this->extention.empty())
+                route = conf.getRoute(this->extention);
+            if (route == NULL)
+            {
+                dir = getParentDirectories(this->script_path);
+                std::cout << "directory : " << dir << std::endl;
+                while (!route && !dir.empty())
+                {
+                    route = conf.getRoute(dir);
+                    dir = getParentDirectories(dir);
+                    std::cout << "directory : " << dir << std::endl;
+                }
+                if (dir.empty() && !route)
+                {
+                    Route routeee;
+                    route = &routeee;
+                    std::cout << "no match :" << route->RoutePath << std::endl;
+                }
+                else
+                    std::cout << "directory match : " << route->RoutePath << std::endl;
+            }
+            else
+                std::cout << "extention match: " << route->RoutePath << std::endl;
+        }
+        else
+            std::cout << "full match : " << route->RoutePath << std::endl;
+        // if (route->RoutePath == "default")
+        // {
+        //     generateResponse("404", conf); // TODO : ANOTHER STATUS ERROR OR HANDEL
+        //     send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
+        //     return;
+        // }
+        if (route->Root != "default" && route->RoutePath != "default")
+            this->script_path = route->Root + this->script_path.substr(route->RoutePath.size());
+        else
+            this->script_path = conf.GlobalRoot + this->script_path;
+        // this->script_path = conf.GlobalRoot + this->script_path;
+        std::cout << this->script_path << std::endl;
         std::ifstream infile(this->script_path);
         if (!infile.is_open() || this->extention.empty())
         {
-            generateResponse("404");
+            generateResponse("404", conf);
             send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
             return;
         }
+        std::cout << "*-------------------------------" << std::endl;
         std::stringstream bodyStream;
         bodyStream << infile.rdbuf();
         std::string body = bodyStream.str();
         infile.close();
-        MimeTypes m;
         this->responseStatus = "HTTP/1.1 200 OK\r\n";
-        this->responseStatus += "Content-Type: " + m.getMimeType(this->extention) + "\r\n";
+        this->responseStatus += "Content-Type: " + conf.mime.getMimeType(this->extention) + "\r\n";
         this->responseStatus += "Content-Length: " + intToString(body.length()) + "\r\n\r\n" + body;
         ssize_t a = send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
         std::cout << a << std::endl;
@@ -59,19 +82,19 @@ void Response::response(int clientSocket, std::string method, std::string uri, s
     }
     if (method != "GET" && method != "POST" && method != "DELETE")
     {
-        generateResponse("501");
+        generateResponse("501", conf);
         send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
         return;
     }
     else if (httpVersion != "HTTP/1.1\r")
     {
-        generateResponse("505");
+        generateResponse("505", conf);
         send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
         return;
     }
-    std::multimap<std::string, std::string> headers = parseHeader(clientSocket, Rheaders); // [x] : parse headers
-    headers = mergeHeadersValues(headers);                                                 // [x] : merge duplicated headers
-    std::multimap<std::string, std::string> env = generateCGIEnv(headers, method);         // [x] : generate env variable
+    std::multimap<std::string, std::string> headers = parseHeader(clientSocket, Rheaders, conf); // [x] : parse headers
+    headers = mergeHeadersValues(headers);                                                       // [x] : merge duplicated headers
+    std::multimap<std::string, std::string> env = generateCGIEnv(headers, method);               // [x] : generate env variable
     char tempFileName[] = "/tmp/.CgitempfileXXXXXXXX";
     int tempFD = -1;
     if (!body.empty())
@@ -85,16 +108,16 @@ void Response::response(int clientSocket, std::string method, std::string uri, s
         }
         else
         {
-            generateResponse("500");
+            generateResponse("500", conf);
             send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
             return;
         }
     }
-    handleCGIScript(clientSocket, method, env, tempFD);
+    handleCGIScript(clientSocket, method, env, tempFD, conf);
     close(tempFD);        // TODO: CGI DONE
     unlink(tempFileName); // TODO: CGI DONE
 }
-// suggest
+
 void Response::parseUri(std::string uri)
 {
     size_t posquery = uri.find("?");
@@ -128,7 +151,7 @@ void Response::parseUri(std::string uri)
     std::cout << "script: " << this->script_path << std::endl;
 }
 
-std::multimap<std::string, std::string> Response::parseHeader(int clientSocket, std::string buffer)
+std::multimap<std::string, std::string> Response::parseHeader(int clientSocket, std::string buffer, const ServerConfig &conf)
 {
     std::multimap<std::string, std::string> headers;
     std::istringstream stream(buffer);
@@ -140,7 +163,7 @@ std::multimap<std::string, std::string> Response::parseHeader(int clientSocket, 
         size_t pos = line.find(':');
         if (pos == std::string::npos)
         {
-            generateResponse("400");
+            generateResponse("400", conf);
             send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
             break;
         }
@@ -238,19 +261,19 @@ std::multimap<std::string, std::string> Response::generateCGIEnv(std::multimap<s
     return env;
 }
 
-void Response::handleCGIScript(int clientSocket, const std::string &method, std::multimap<std::string, std::string> env, int tempFD)
+void Response::handleCGIScript(int clientSocket, const std::string &method, std::multimap<std::string, std::string> env, int tempFD, const ServerConfig &conf)
 {
     int pipefd[2];
     if (pipe(pipefd) == -1)
     {
-        generateResponse("500");
+        generateResponse("500", conf);
         send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
         return;
     }
     pid_t pid = fork();
     if (pid == -1)
     {
-        generateResponse("500");
+        generateResponse("500", conf);
         send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
         return;
     }
@@ -305,7 +328,7 @@ void Response::handleCGIScript(int clientSocket, const std::string &method, std:
         waitpid(pid, &status, 0);
         if (WIFSIGNALED(status) && WTERMSIG(status) == SIGALRM)
         {
-            generateResponse("504");
+            generateResponse("504", conf);
             send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
             return;
         }
@@ -321,7 +344,7 @@ void Response::handleCGIScript(int clientSocket, const std::string &method, std:
         }
         else
         {
-            generateResponse("502");
+            generateResponse("502", conf);
             send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
             return;
         }
@@ -329,12 +352,14 @@ void Response::handleCGIScript(int clientSocket, const std::string &method, std:
     }
 }
 
-void Response::generateResponse(std::string status)
+void Response::generateResponse(std::string status, const ServerConfig &conf)
 {
-    Status obj;
-    std::string errorpage = "/Users/ael-mouz/Desktop/webserv/www/error.html";
-    std::ifstream infile(errorpage.c_str());
-    if (!infile.is_open())
+    std::string extension;
+    size_t pos = conf.ErrorPage.find_last_of(".");
+    if (pos != std::string::npos)
+        extension = conf.ErrorPage.substr(pos + 1, conf.ErrorPage.length() - pos + 1);
+    std::ifstream infile(conf.ErrorPage.c_str());
+    if (!infile.is_open() || extension.empty())
     {
         std::string body = "<!DOCTYPE html>\n";
         body += "<html lang=\"en\">\n";
@@ -372,19 +397,32 @@ void Response::generateResponse(std::string status)
         body += "</body>\n";
         body += "</html>";
         replaceAll(body, "{{Status}}", status);
-        replaceAll(body, "{{Error}}", obj.getStatus(status));
-        this->responseStatus = "HTTP/1.1 " + status + " " + obj.getStatus(status) + "\r\n";
-        this->responseStatus += "Content-Type: text/html\r\nContent-Length: " + intToString(body.length()) + "\r\n\r\n" + body;
+        replaceAll(body, "{{Error}}", conf.status.getStatus(status));
+        this->responseStatus = "HTTP/1.1 " + status + " " + conf.status.getStatus(status) + "\r\n";
+        this->responseStatus += "Content-Type: " + conf.mime.getMimeType("html") + "\r\n";
+        this->responseStatus += "Content-Length: " + intToString(body.length()) + "\r\n\r\n";
+        this->responseStatus += body;
+        std::cout << this->responseStatus << std::endl;
+        return;
     }
+    std::stringstream bodyStream;
+    bodyStream << infile.rdbuf();
+    std::cout << extention << std::endl;
+    this->responseStatus = "HTTP/1.1 " + status + " " + conf.status.getStatus(status) + "\r\n";
+    if (extension == "html" || extension == "htm" || extension == "shtml" ||
+        extension == "css" || extension == "xml" || extension == "gif" ||
+        extension == "jpeg" || extension == "jpg" || extension == "js" ||
+        extension == "atom" || extension == "rss" || extension == "json" ||
+        extension == "ico" || extension == "svgz" || extension == "svg" ||
+        extension == "pdf" || extension == "doc" || extension == "ppt" ||
+        extension == "xls" || extension == "docx" || extension == "xlsx" ||
+        extension == "pptx" || extension == "wmlc" || extension == "wasm" ||
+        extension == "3gp" || extension == "mp4" || extension == "avi")
+        this->responseStatus += "Content-Type: " + conf.mime.getMimeType(extension) + "\r\n";
     else
-    {
-        std::stringstream bodyStream;
-        bodyStream << infile.rdbuf();
-        std::string body = bodyStream.str();
-        infile.close();
-        replaceAll(body, "{{Status}}", status);
-        replaceAll(body, "{{Error}}", obj.getStatus(status));
-        this->responseStatus = "HTTP/1.1 " + status + " " + obj.getStatus(status) + "\r\n";
-        this->responseStatus += "Content-Type: text/html\r\nContent-Length: " + intToString(body.length()) + "\r\n\r\n" + body;
-    }
+        this->responseStatus += "Content-Type: " + conf.mime.getMimeType("txt") + "\r\n";
+    this->responseStatus += "Content-Length: " + intToString(bodyStream.str().length()) + "\r\n\r\n";
+    this->responseStatus += bodyStream.str();
+    infile.close();
+    std::cout << this->responseStatus << std::endl;
 }

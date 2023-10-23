@@ -6,12 +6,13 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/11 20:31:55 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/21 11:36:37 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/23 13:05:08 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/server.hpp"
 #include "../include/Response.hpp"
+#include "../include/ServerConfig.hpp"
 
 const int PORT = 8080;
 const int BACKLOG = 10;
@@ -87,7 +88,7 @@ std::string receiveRequest(int clientSocket)
   return request;
 }
 
-void StartSrever()
+void StartSrever(const ServerConfig &conf)
 {
   int serverSocket, clientSocket;
   struct sockaddr_in serverAddr, clientAddr;
@@ -136,7 +137,7 @@ void StartSrever()
     // std::cout << std::setfill('-') << std::setw(50) << "-" << std::endl;
     // std::cout << convertText(request) << std::endl;
     Response s;
-    s.response(clientSocket, method, uri, httpVersion, Rheaders, body);
+    s.response(clientSocket, method, uri, httpVersion, Rheaders, body, conf);
     close(clientSocket);
   }
   close(serverSocket);
