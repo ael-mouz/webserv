@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/18 16:57:43 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/23 23:14:17 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/24 15:53:47 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,23 +61,59 @@ void Response::response(int clientSocket, std::string method, std::string uri, s
             this->script_path = conf.GlobalRoot + this->script_path;
         // this->script_path = conf.GlobalRoot + this->script_path;
         std::cout << this->script_path << std::endl;
-        std::ifstream infile(this->script_path);
+        // std::ifstream infile(this->script_path);
+        // if (!infile.is_open() || this->extention.empty())
+        // {
+        //     generateResponse("404", conf);
+        //     send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
+        //     return;
+        // }
+        // std::cout << "*-------------------------------" << std::endl;
+        // std::stringstream bodyStream;
+        // bodyStream << infile.rdbuf();
+        // std::string body = bodyStream.str();
+        // infile.close();
+        // this->responseStatus = "HTTP/1.1 200 OK\r\n";
+        // this->responseStatus += "Content-Type: " + conf.mime.getMimeType(this->extention) + "\r\n";
+        // this->responseStatus += "Content-Length: " + intToString(body.length()) + "\r\n\r\n" + body;
+        // ssize_t a = send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
+        // std::cout << a << std::endl;
+        std::ifstream infile(this->script_path.c_str(), std::ios::binary);
         if (!infile.is_open() || this->extention.empty())
         {
             generateResponse("404", conf);
             send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
             return;
         }
-        std::cout << "*-------------------------------" << std::endl;
-        std::stringstream bodyStream;
-        bodyStream << infile.rdbuf();
-        std::string body = bodyStream.str();
+        infile.seekg(0, std::ios::end);
+        int fileSize = infile.tellg();
+        infile.seekg(0, std::ios::beg);
+        std::stringstream header;
+        header << "HTTP/1.1 200 OK\r\n";
+        header << "Content-Type: " << conf.mime.getMimeType(this->extention) << "\r\n";
+        header << "Content-Length: " << fileSize << "\r\n";
+        header << "\r\n";
+        send(clientSocket, header.str().c_str(), header.str().length(), 0);
+        std::cout << "cjdncndjncjnjdncj" << std::endl;
+        const int bufferSize = 1024;
+        char buffer[bufferSize];
+        while (!infile.eof())
+        {
+            infile.read(buffer, bufferSize);
+            ssize_t bytesRead = infile.gcount();
+            if (bytesRead > 0)
+            {
+                ssize_t sentBytes = send(clientSocket, buffer, bytesRead, 0);
+                std::cout << sentBytes << std::endl;
+                if (sentBytes < 0)
+                {
+                    generateResponse("500", conf);
+                    send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
+                    break;
+                }
+            }
+        }
         infile.close();
-        this->responseStatus = "HTTP/1.1 200 OK\r\n";
-        this->responseStatus += "Content-Type: " + conf.mime.getMimeType(this->extention) + "\r\n";
-        this->responseStatus += "Content-Length: " + intToString(body.length()) + "\r\n\r\n" + body;
-        ssize_t a = send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
-        std::cout << a << std::endl;
         return;
     }
     if (method != "GET" && method != "POST" && method != "DELETE")
@@ -319,6 +355,9 @@ void Response::handleCGIScript(int clientSocket, const std::string &method, std:
             execve("/Users/ael-mouz/Desktop/webserv/tests/php-cgi_bin", args, envp);
         }
         perror("execve failed");
+        for (int i = 0; envp[i] != nullptr; i++)
+            delete[] envp[i];
+        delete[] envp;
         exit(EXIT_FAILURE);
     }
     else
@@ -402,7 +441,7 @@ void Response::generateResponse(std::string status, const ServerConfig &conf)
         this->responseStatus += "Content-Type: " + conf.mime.getMimeType("html") + "\r\n";
         this->responseStatus += "Content-Length: " + intToString(body.length()) + "\r\n\r\n";
         this->responseStatus += body;
-        std::cout << this->responseStatus << std::endl;
+        // std::cout << this->responseStatus << std::endl;
         return;
     }
     std::stringstream bodyStream;
@@ -424,5 +463,5 @@ void Response::generateResponse(std::string status, const ServerConfig &conf)
     this->responseStatus += "Content-Length: " + intToString(bodyStream.str().length()) + "\r\n\r\n";
     this->responseStatus += bodyStream.str();
     infile.close();
-    std::cout << this->responseStatus << std::endl;
+    // std::cout << this->responseStatus << std::endl;
 }

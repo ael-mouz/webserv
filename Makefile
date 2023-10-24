@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++98 -Wall -Wextra -Werror #-fsanitize=address -g
+CXXFLAGS = -std=c++98 -Wall -Wextra -Werror -g -fsanitize=address
 TARGET = server
 BIN = obj/
 SRC = utils/Utils.cpp src/main.cpp src/Config.cpp src/ServerConfig.cpp src/server.cpp src/Response.cpp src/MimeTypes.cpp src/Status.cpp

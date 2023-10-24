@@ -6,13 +6,20 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/13 19:59:44 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/23 15:47:58 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/24 22:25:15 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Config.hpp"
 
-Config::Config(std::string filename) // TODO multi server same host and same port same server name
+// TODO multi server same host and same port same server name
+
+Config::Config(void)
+{
+    this->NbServer = 0;
+}
+
+void Config::parser(std::string filename)
 {
     std::ifstream infile(filename);
     if (!infile.is_open())
@@ -34,7 +41,7 @@ Config::Config(std::string filename) // TODO multi server same host and same por
                 count++;
         if (count > 1)
             std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD "invalide line" RESET_ALL "\n\t" << line << std::endl, exit(1);
-        if (line[line.length() - 1] != ';' && line[0] != '#' && !line.empty())
+        if (!line.empty() && line[0] != '#' && line[line.length() - 1] != ';')
             std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD "expected ';' at end of declaration" RESET_ALL "\n\t" << line << std::endl, exit(1);
         else if ((line == "Server;" && ServerScop == true) || (line == "EndServer;" && ServerScop == false))
             std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD " server not closed" RESET_ALL "\n\t" << line << std::endl, exit(1);
@@ -60,7 +67,7 @@ Config::Config(std::string filename) // TODO multi server same host and same por
     infile.close();
 }
 
-void Config::parseServer(const std::string &data, ServerConfig &serverConfig, int start, std::string filename)
+void Config::parseServer(const std::string &data, ServerConfig &serverConfig, int start, const std::string &filename)
 {
     Route route;
     bool RouteScop = false;
@@ -93,7 +100,7 @@ void Config::parseServer(const std::string &data, ServerConfig &serverConfig, in
             key = trim(key, " \t");
             value = trim(value, " \t");
             if (key == "Port")
-                !value.empty() ? serverConfig.Port = std::atoi(value.c_str()) : serverConfig.Port = 0, p++;
+                !value.empty() ? serverConfig.Port = value : serverConfig.Port = "", p++;
             else if (key == "Host")
                 !value.empty() ? serverConfig.Host = value : serverConfig.Host = "", h++;
             else if (key == "Server_Names")
@@ -106,6 +113,8 @@ void Config::parseServer(const std::string &data, ServerConfig &serverConfig, in
                 std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid line" RESET_ALL "\n\t" << line << std::endl, exit(1);
             if (p > 1 || h > 1 || s > 1 || e > 1 || l > 1)
                 std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " duplicate line" RESET_ALL "\n\t" << line << std::endl, exit(1);
+            if (l == 1)
+                parseBodySize(serverConfig.LimitClientBodySize, start, line, filename);
         }
         else if (RouteScop == true)
             routedata += line + "\n";
@@ -114,7 +123,7 @@ void Config::parseServer(const std::string &data, ServerConfig &serverConfig, in
     }
 }
 
-void Config::parseRoute(const std::string &data, Route &route, int start, std::string filename)
+void Config::parseRoute(const std::string &data, Route &route, int start, const std::string &filename)
 {
     std::istringstream iss(data);
     std::string line, key, value;
@@ -151,8 +160,19 @@ void Config::parseRoute(const std::string &data, Route &route, int start, std::s
                 {
                     std::istringstream methods(value);
                     std::string method;
+                    int i = 0;
                     while (std::getline(methods, method, ','))
-                        route.AcceptedMethods.push_back(trim(method, " \t"));
+                    {
+                        route.Accepted_Methods = "on";
+                        std::string methodss= trim(method, " \t");
+                        // if(methodss.empty())
+                        if (i = 0)
+                            route.Accepted_Methods = methodss;
+                        if (i = 1)
+                            route.Accepted_Methods = methodss;
+                        if (i = 2)
+                            route.Accepted_Methods = methodss;
+                    }
                 }
                 m++;
             }
@@ -172,6 +192,10 @@ ServerConfig Config::getServerConfig(size_t index) const
         return ServerConfig();
 }
 
+int Config::getNbServer(void) const
+{
+    return (this->NbServer);
+}
 Config::~Config(void) {}
 
 void Config::printConfig(void)
@@ -179,85 +203,98 @@ void Config::printConfig(void)
     std::vector<ServerConfig>::iterator it;
     for (it = this->Serverconfig.begin(); it != this->Serverconfig.end(); ++it)
     {
-        std::cout << "+--------------------------------------------------------------------+\n";
-        std::cout << "| \e[1mGLOBAL TABLE\e[0m                                                       |" << std::endl;
-        std::cout << "+--------------------------------------------------------------------+\n";
-        std::cout << "| Port:                |" << std::setw(44) << "-" + std::to_string(it->Port) << "-|" << std::endl;
-        std::cout << "| Host:                |" << std::setw(44) << "-" + it->Host << "-|" << std::endl;
-        std::cout << "| ServerNames:         |" << std::setw(44) << "-" + it->ServerNames << "-|" << std::endl;
-        std::cout << "| ErrorPage:           |" << std::setw(44) << "-" + it->ErrorPage << "-|" << std::endl;
-        std::cout << "| LimitClientBodySize: |" << std::setw(44) << "-" + it->LimitClientBodySize << "-|" << std::endl;
-        std::cout << "| GlobalRoot:          |" << std::setw(44) << "-" + it->GlobalRoot << "-|" << std::endl;
-        std::cout << "+--------------------------------------------------------------------+\n";
+        std::cout << "╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
+        std::cout << "║" BOLD " GLOBAL TABLE " RESET_ALL << std::setw(64) << "║" << std::endl;
+        std::cout << "╠═════════════════╦═════════════════════════════════════════════════════════╣" << std::endl;
+        std::cout << "║ Port            ║" << std::setw(58) << "▻" + it->Port << "◅║" << std::endl;
+        std::cout << "║ Host            ║" << std::setw(58) << "▻" + it->Host << "◅║" << std::endl;
+        std::cout << "║ ServerNames     ║" << std::setw(58) << "▻" + it->ServerNames << "◅║" << std::endl;
+        std::cout << "║ ErrorPage       ║" << std::setw(58) << "▻" + it->ErrorPage << "◅║" << std::endl;
+        std::cout << "║ LimitBodySize   ║" << std::setw(58) << "▻" + it->LimitClientBodySize << "◅║" << std::endl;
+        std::cout << "║ GlobalRoot      ║" << std::setw(58) << "▻" + it->GlobalRoot << "◅║" << std::endl;
+        std::cout << "╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
         std::vector<Route>::iterator it1;
         int h = 0;
         for (it1 = it->Routes.begin(); it1 != it->Routes.end(); ++it1)
         {
             h++;
-            std::cout << "+--------------------------------------------------------------------+\n";
-            std::cout << "| \e[34m\e[1mROUTE\e[0m " << h << "                                                            |\n";
-            std::cout << "+--------------------------------------------------------------------+\n";
-            std::cout << "| RoutePath:           |" << std::setw(44) << "-" + it1->RoutePath << "-|" << std::endl;
-            std::cout << "| Redirection:         |" << std::setw(44) << "-" + it1->RedirectionURL << "-|" << std::endl;
-            std::cout << "| Root:                |" << std::setw(44) << "-" + it1->Root << "-|" << std::endl;
-            std::cout << "| Autoindex:           |" << std::setw(44) << "-" + it1->Autoindex << "-|" << std::endl;
-            std::cout << "| Index:               |" << std::setw(44) << "-" + it1->Index << "-|" << std::endl;
-            std::cout << "| Cgi_Exec:            |" << std::setw(44) << "-" + it1->CgiExec << "-|" << std::endl;
-            std::cout << "| Upload_Path:         |" << std::setw(44) << "-" + it1->UploadPath << "-|" << std::endl;
+            std::cout << "╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
+            std::cout << "║" FG_BLUE BOLD " ROUTE " << h << RESET_ALL << std::setw(70) << "║" << std::endl;
+            std::cout << "╠═════════════════╦═════════════════════════════════════════════════════════╣\n";
+            std::cout << "║ RoutePath       ║" << std::setw(58) << "▻" + it1->RoutePath << "◅║" << std::endl;
+            std::cout << "║ Redirection     ║" << std::setw(58) << "▻" + it1->RedirectionURL << "◅║" << std::endl;
+            std::cout << "║ Root            ║" << std::setw(58) << "▻" + it1->Root << "◅║" << std::endl;
+            std::cout << "║ Autoindex       ║" << std::setw(58) << "▻" + it1->Autoindex << "◅║" << std::endl;
+            std::cout << "║ Index           ║" << std::setw(58) << "▻" + it1->Index << "◅║" << std::endl;
+            std::cout << "║ Cgi_Exec        ║" << std::setw(58) << "▻" + it1->CgiExec << "◅║" << std::endl;
+            std::cout << "║ Upload_Path     ║" << std::setw(58) << "▻" + it1->UploadPath << "◅║" << std::endl;
             std::vector<std::string>::iterator it2;
             for (it2 = it1->AcceptedMethods.begin(); it2 != it1->AcceptedMethods.end(); ++it2)
-                std::cout << "| Accepted_Methods     |" << std::setw(44) << "-" + *it2 << "-|" << std::endl;
-            std::cout << "+--------------------------------------------------------------------+\n";
+                std::cout << "║ Methods         ║" << std::setw(58) << "▻" + *it2 << "◅║" << std::endl;
+            std::cout << "╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
         }
     }
 }
 
-// #include <iostream>
-// #include <string>
-// #include <sstream>
-// #include <cctype>
+void Config::parseBodySize(std::string &sizeStr, int start, const std::string &line, const std::string &filename)
+{
+    std::istringstream iss(sizeStr);
+    size_t size = 0;
+    char unit = '\0';
+    if (!(iss >> size))
+        std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid size value" RESET_ALL "\n\t" << line << std::endl, exit(1);
+    if (iss >> unit)
+    {
+        unit = std::tolower(unit);
+        switch (unit)
+        {
+        case 'k':
+            size *= 1024;
+            break;
+        case 'm':
+            size *= 1024 * 1024;
+            break;
+        case 'g':
+            size *= 1024 * 1024 * 1024;
+            break;
+        default:
+            std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Unsupported unit" RESET_ALL "\n\t" << line << std::endl, exit(1);
+        }
+    }
+    std::string remaining;
+    if (iss >> remaining)
+        std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid characters in size string" RESET_ALL "\n\t" << line << std::endl, exit(1);
+    sizeStr = intToString(size);
+}
 
-// size_t parseSize(const std::string &sizeStr)
-// {
-//     std::istringstream iss(sizeStr);
-//     size_t size = 0;
-//     char unit;
+void parsePort(std::string &port, int start, const std::string &line, const std::string &filename)
+{
+    if (!isStringDigits(port))
+        std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid port" RESET_ALL "\n\t" << line << std::endl, exit(1);
+}
 
-//     iss >> size;
-//     if (iss.fail())
-//     {
-//         // Parsing the initial number failed
-//         return 0;
-//     }
+void parseServerNameAndHostName(const std::string &serverName, int start, const std::string &line, const std::string &filename)
+{
+    std::string validServerNameCharacters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.";
+    if (serverName.length() > 253)
+        std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid Server name" RESET_ALL "\n\t" << line << std::endl, exit(1);
+    if (serverName.find_first_not_of(validServerNameCharacters) != std::string::npos)
+        std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid Server name" RESET_ALL "\n\t" << line << std::endl, exit(1);
+}
 
-//     iss >> unit;
-//     unit = std::tolower(unit);
-
-//     switch (unit)
-//     {
-//     case 'k':
-//         size *= 1024; // Kilobytes
-//         break;
-//     case 'm':
-//         size *= 1024 * 1024; // Megabytes
-//         break;
-//     case 'g':
-//         size *= 1024 * 1024 * 1024; // Gigabytes
-//         break;
-//     default:
-//         // No unit specified or unsupported unit
-//         break;
-//     }
-
-//     return size;
-// }
-
-// int main()
-// {
-//     // Example usage:
-//     std::string sizeStr = "10M"; // 10 megabytes
-//     size_t sizeInBytes = parseSize(sizeStr);
-//     std::cout << "Size in bytes: " << sizeInBytes << std::endl;
-
-//     return 0;
-// }
+// U+2554 - ╔ - BOX DRAWINGS DOUBLE DOWN AND RIGHT
+// U+2555 - ╕ - BOX DRAWINGS DOUBLE DOWN AND LEFT
+// U+2556 - ╖ - BOX DRAWINGS DOUBLE UP AND RIGHT
+// U+2557 - ╗ - BOX DRAWINGS DOUBLE UP AND LEFT
+// U+2558 - ╘ - BOX DRAWINGS DOUBLE UP AND HORIZONTAL
+// U+2559 - ╙ - BOX DRAWINGS DOUBLE DOWN AND HORIZONTAL
+// U+255A - ╚ - BOX DRAWINGS DOUBLE VERTICAL AND RIGHT
+// U+255B - ╛ - BOX DRAWINGS DOUBLE VERTICAL AND LEFT
+// U+255C - ╜ - BOX DRAWINGS DOUBLE VERTICAL AND HORIZONTAL
+// U+255D - ╝ - BOX DRAWINGS DOUBLE DOWN AND LEFT
+// U+255E - ╞ - BOX DRAWINGS DOUBLE UP AND HORIZONTAL
+// U+255F - ╟ - BOX DRAWINGS DOUBLE VERTICAL AND RIGHT
+// U+2560 - ╠ - BOX DRAWINGS DOUBLE VERTICAL AND HORIZONTAL
+// U+2561 - ╡ - BOX DRAWINGS DOUBLE VERTICAL AND LEFT
+// U+2562 - ╢ - BOX DRAWINGS DOUBLE DOWN AND HORIZONTAL
+// U+2563 - ╣ - BOX DRAWINGS DOUBLE UP AND RIGHT

@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/12 15:00:24 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/23 18:51:26 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/24 19:52:57 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,13 +19,17 @@ class ServerConfig
 public:
     MimeTypes mime;
     Status status;
-    int Port;
+    std::string Port;
     std::string Host;
 	std::string ErrorPage;
 	std::string GlobalRoot;
     std::string GlobalUpload;
     std::string ServerNames;
     std::string LimitClientBodySize;
+    std::string phpCgi;
+    std::string pythonCgi;
+    std::string perlCgi;
+    std::string rubyCgi;
 	std::vector<Route> Routes;
 	ServerConfig();
 	~ServerConfig();

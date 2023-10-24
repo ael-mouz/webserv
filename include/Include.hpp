@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 17:42:32 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/23 19:46:18 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/24 20:38:30 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@
 #define BOLD "\e[1m"
 #define RESET_ALL "\e[0m"
 #define FG_RED "\e[31m"
+#define FG_BLUE "\e[34m"
 
 enum LogLevel
 {
@@ -55,14 +56,23 @@ struct Route
     std::string Autoindex;
     std::string UploadPath;
     std::string RedirectionURL;
-    std::vector<std::string> AcceptedMethods;
+    std::string RedirectionStatus;
+    std::string Accepted_Methods;
+    std::string Accepted_Methods_;
+    std::string Accepted_Methods__;
+    std::string Accepted_Methods___;
+    // std::vector<std::string> AcceptedMethods;
     Route() : Root("default"),
               Index("default"),
               CgiExec("default"),
               RoutePath("default"),
               Autoindex("default"),
               UploadPath("default"),
-              RedirectionURL("default"){};
+              RedirectionURL("default"),
+              RedirectionStatus("default"),
+              Accepted_Methods_("default"),
+              Accepted_Methods__("default"),
+              Accepted_Methods___("default"){};
 };
 
 std::string trim(const std::string &str, const std::string &charactersToTrim);
@@ -74,3 +84,4 @@ size_t getFreeSpace(const char *path);
 void replaceAll(std::string &str, const std::string &from, const std::string &to);
 std::string intToString(int number);
 std::string getParentDirectories(const std::string &uri);
+bool isStringDigits(const std::string &str);

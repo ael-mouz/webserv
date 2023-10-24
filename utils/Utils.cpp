@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 18:45:00 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/23 19:44:47 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/24 19:55:36 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -144,4 +144,14 @@ std::string getParentDirectories(const std::string &uri)
     if (pos != std::string::npos)
         parent = uri.substr(0, pos);
     return parent;
+}
+
+bool isStringDigits(const std::string &str)
+{
+    for (size_t i = 0; i < str.length(); ++i)
+    {
+        if (!isdigit(str[i]))
+            return false;
+    }
+    return true;
 }
