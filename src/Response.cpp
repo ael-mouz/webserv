@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/18 16:57:43 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/24 15:53:47 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/25 22:26:27 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@ void Response::response(int clientSocket, std::string method, std::string uri, s
     if (this->extention != "pl" && this->extention != "py" && this->extention != "php" && this->extention != "rb")
     {
         std::string dir;
+        Route routeee;
         const Route *route = conf.getRoute(this->script_path);
         if (route == NULL)
         {
@@ -37,7 +38,6 @@ void Response::response(int clientSocket, std::string method, std::string uri, s
                 }
                 if (dir.empty() && !route)
                 {
-                    Route routeee;
                     route = &routeee;
                     std::cout << "no match :" << route->RoutePath << std::endl;
                 }
@@ -56,10 +56,11 @@ void Response::response(int clientSocket, std::string method, std::string uri, s
         //     return;
         // }
         if (route->Root != "default" && route->RoutePath != "default")
-            this->script_path = route->Root + this->script_path.substr(route->RoutePath.size());
+            this->script_path = route->Root + this->script_path.substr(route->RoutePath.size()); //TODO: handel also the extention find
         else
             this->script_path = conf.GlobalRoot + this->script_path;
         // this->script_path = conf.GlobalRoot + this->script_path;
+        std::cout << "*-------------------------------" << std::endl;
         std::cout << this->script_path << std::endl;
         // std::ifstream infile(this->script_path);
         // if (!infile.is_open() || this->extention.empty())
@@ -104,7 +105,7 @@ void Response::response(int clientSocket, std::string method, std::string uri, s
             if (bytesRead > 0)
             {
                 ssize_t sentBytes = send(clientSocket, buffer, bytesRead, 0);
-                std::cout << sentBytes << std::endl;
+                // std::cout << sentBytes << std::endl;
                 if (sentBytes < 0)
                 {
                     generateResponse("500", conf);
@@ -207,7 +208,7 @@ std::multimap<std::string, std::string> Response::parseHeader(int clientSocket, 
         std::string value = line.substr(pos + 2);
         headers.insert(std::make_pair(key, value));
     }
-    // printMap(headers);
+    printMap(headers);
     return headers;
 }
 

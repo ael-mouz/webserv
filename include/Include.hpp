@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 17:42:32 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/24 20:38:30 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/25 19:38:20 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,6 +55,7 @@ struct Route
     std::string RoutePath;
     std::string Autoindex;
     std::string UploadPath;
+    std::string Redirection;
     std::string RedirectionURL;
     std::string RedirectionStatus;
     std::string Accepted_Methods;
@@ -68,8 +69,10 @@ struct Route
               RoutePath("default"),
               Autoindex("default"),
               UploadPath("default"),
+              Redirection("default"),
               RedirectionURL("default"),
               RedirectionStatus("default"),
+              Accepted_Methods("default"),
               Accepted_Methods_("default"),
               Accepted_Methods__("default"),
               Accepted_Methods___("default"){};
@@ -84,4 +87,5 @@ size_t getFreeSpace(const char *path);
 void replaceAll(std::string &str, const std::string &from, const std::string &to);
 std::string intToString(int number);
 std::string getParentDirectories(const std::string &uri);
+int isDirectory(const char *path);
 bool isStringDigits(const std::string &str);

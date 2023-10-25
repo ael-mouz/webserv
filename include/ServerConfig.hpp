@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/12 15:00:24 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/24 19:52:57 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/25 21:19:29 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,10 +21,10 @@ public:
     Status status;
     std::string Port;
     std::string Host;
+    std::string ServerNames;
 	std::string ErrorPage;
 	std::string GlobalRoot;
     std::string GlobalUpload;
-    std::string ServerNames;
     std::string LimitClientBodySize;
     std::string phpCgi;
     std::string pythonCgi;

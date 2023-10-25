@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/13 19:47:52 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/24 17:58:21 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/25 22:29:21 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,8 +20,10 @@ int main(int ac, char **av)
     {
         Config config;
         config.parser(av[1]);
+#ifdef DEBUG_C
         config.printConfig();
-        // StartSrever(config.getServerConfig(0));
+#endif
+        StartSrever(config.getServerConfig(0));
         return 0;
     }
     return 0;

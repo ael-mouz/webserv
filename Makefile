@@ -7,6 +7,9 @@ SRC = utils/Utils.cpp src/main.cpp src/Config.cpp src/ServerConfig.cpp src/serve
 HEADERS = include/Config.hpp include/Include.hpp include/Response.hpp include/ServerConfig.hpp include/server.hpp include/MimeTypes.hpp include/Status.hpp
 OBJS = $(addprefix $(BIN), $(SRC:.cpp=.o))
 
+debug: CXXFLAGS += -DDEBUG_C
+debug: re
+
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
