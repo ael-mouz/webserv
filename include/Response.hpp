@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/18 17:01:10 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/23 13:18:25 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/26 16:23:39 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,4 +30,5 @@ public:
     std::multimap<std::string, std::string> generateCGIEnv(std::multimap<std::string, std::string> headers, std::string method);
     void handleCGIScript(int clientSocket, const std::string &method, std::multimap<std::string, std::string> env, int tempFD, const ServerConfig &conf);
     void generateResponse(std::string status, const ServerConfig &conf);
+    void generateAutoIndex(const ServerConfig &conf, std::string &entryPath);
 };

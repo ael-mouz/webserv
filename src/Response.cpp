@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/18 16:57:43 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/25 22:26:27 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/26 22:35:10 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@ void Response::response(int clientSocket, std::string method, std::string uri, s
     {
         std::string dir;
         Route routeee;
+        int match = 0;
         const Route *route = conf.getRoute(this->script_path);
         if (route == NULL)
         {
@@ -39,46 +40,48 @@ void Response::response(int clientSocket, std::string method, std::string uri, s
                 if (dir.empty() && !route)
                 {
                     route = &routeee;
-                    std::cout << "no match :" << route->RoutePath << std::endl;
+                    std::cout << "default match :" << route->RoutePath << std::endl;
                 }
                 else
-                    std::cout << "directory match : " << route->RoutePath << std::endl;
+                    std::cout << "directory match : " << route->RoutePath << std::endl, match = 1;
             }
             else
-                std::cout << "extention match: " << route->RoutePath << std::endl;
+                std::cout << "extention match: " << route->RoutePath << std::endl, match = 2;
         }
         else
-            std::cout << "full match : " << route->RoutePath << std::endl;
-        // if (route->RoutePath == "default")
-        // {
-        //     generateResponse("404", conf); // TODO : ANOTHER STATUS ERROR OR HANDEL
-        //     send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
-        //     return;
-        // }
-        if (route->Root != "default" && route->RoutePath != "default")
-            this->script_path = route->Root + this->script_path.substr(route->RoutePath.size()); //TODO: handel also the extention find
+            std::cout << "full match : " << route->RoutePath << std::endl, match = 3;
+        std::string entryPath;
+        if (route->Root != "default" && route->RoutePath != "default" && match == 1)
+            entryPath = this->script_path.substr(route->RoutePath.size()), this->script_path = route->Root + this->script_path.substr(route->RoutePath.size()); // TODO: handel also the extention find
+        else if (route->Root != "default" && route->RoutePath != "default")
+            entryPath = this->script_path, this->script_path = route->Root + this->script_path; // TODO: handel also the extention find
         else
-            this->script_path = conf.GlobalRoot + this->script_path;
+            entryPath = this->script_path, this->script_path = conf.GlobalRoot + this->script_path;
         // this->script_path = conf.GlobalRoot + this->script_path;
         std::cout << "*-------------------------------" << std::endl;
         std::cout << this->script_path << std::endl;
-        // std::ifstream infile(this->script_path);
-        // if (!infile.is_open() || this->extention.empty())
-        // {
-        //     generateResponse("404", conf);
-        //     send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
-        //     return;
-        // }
-        // std::cout << "*-------------------------------" << std::endl;
-        // std::stringstream bodyStream;
-        // bodyStream << infile.rdbuf();
-        // std::string body = bodyStream.str();
-        // infile.close();
-        // this->responseStatus = "HTTP/1.1 200 OK\r\n";
-        // this->responseStatus += "Content-Type: " + conf.mime.getMimeType(this->extention) + "\r\n";
-        // this->responseStatus += "Content-Length: " + intToString(body.length()) + "\r\n\r\n" + body;
-        // ssize_t a = send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
-        // std::cout << a << std::endl;
+        int dirr = isDirectory(this->script_path.c_str());
+        if (dirr == 1)
+        {
+            std::cout << "directory" << std::endl;
+            std::cout << route->Autoindex << std::endl;
+            if (route->Autoindex == "default")
+            {
+                generateAutoIndex(conf, entryPath);
+                // std::cout << this->responseStatus << std::endl;
+                send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
+                return;
+            }
+            if (route->Index == "default")
+                this->script_path += "/index.html";
+            else
+                this->script_path += route->Index;
+            std::cout << this->script_path << std::endl;
+        }
+        else if (dirr == 2)
+            std::cout << "file" << std::endl;
+        else
+            std::cout << "invalide not found" << std::endl;
         std::ifstream infile(this->script_path.c_str(), std::ios::binary);
         if (!infile.is_open() || this->extention.empty())
         {
@@ -465,4 +468,96 @@ void Response::generateResponse(std::string status, const ServerConfig &conf)
     this->responseStatus += bodyStream.str();
     infile.close();
     // std::cout << this->responseStatus << std::endl;
+}
+
+void Response::generateAutoIndex(const ServerConfig &conf, std::string &entryPath)
+{
+    DIR *dir;
+    struct dirent *entry;
+    dir = opendir(this->script_path.c_str());
+    if (!dir)
+    {
+        generateResponse("500", conf);
+        return;
+    }
+    std::ostringstream autoIndex;
+    autoIndex << "<!DOCTYPE html>\n";
+    autoIndex << "<html>\n";
+    autoIndex << "<head>\n";
+    autoIndex << "<meta charset=\"UTF-8\">\n";
+    autoIndex << "<title>Index of " << this->script_path << "</title>\n";
+    autoIndex << "<style>\n";
+    autoIndex << "body { font-family: Arial, sans-serif; }\n";
+    autoIndex << "table { width: 100%; border-collapse: collapse; }\n";
+    autoIndex << "th, td { padding: 10px; text-align: left;}\n";
+    autoIndex << "th {border-bottom: 1px solid black }\n";
+    autoIndex << "tr:hover { background-color: #f5f5f5; }\n";
+    autoIndex << ".icon { width: 20px; height: 20px; margin-right: 10px; }\n";
+    autoIndex << ".directory { color: #0070c0;background:#f2f2f2; }\n";
+    autoIndex << ".file { color: #000; }\n";
+    autoIndex << ".col { text-align: center; }\n";
+    // autoIndex << ".col1 { text-align: right; }\n";
+    autoIndex << "a {text-decoration : none;}\n ";
+    autoIndex << "</style>\n";
+    autoIndex << "</head>\n";
+    autoIndex << "<body>\n";
+    // autoIndex << "<h1>Index of " << this->script_path << "</h1>\n";
+    autoIndex << "<table>\n";
+    autoIndex << "<tr>\n";
+    autoIndex << "<th>Item</th>\n";
+    autoIndex << "<th class='col'>Type</th>\n";
+    autoIndex << "<th class='col'>Size</th>\n";
+    autoIndex << "<th class='col'>Permissions</th>\n";
+    // autoIndex << "<th class='col'>User ID of owner</th>\n";
+    // autoIndex << "<th class='col'>Group ID of owner</th>\n";
+    // autoIndex << "<th class='col'>Device ID</th>\n";
+    // autoIndex << "<th class='col'>Inode number</th>\n";
+    autoIndex << "<th class='col'>Last access time</th>\n";
+    autoIndex << "<th class='col'>Last modification time</th>\n";
+    autoIndex << "<th class='col'>Last status change time</th>\n";
+    autoIndex << "</tr>\n";
+    while ((entry = readdir(dir)) != NULL)
+    {
+        if (entry->d_type == DT_DIR && std::strcmp(entry->d_name, ".") == 0)
+            continue;
+        std::string icon = (entry->d_type == DT_DIR) ? "/folder.svg" : "/file.png";
+        autoIndex << "<tr>";
+        autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << "'>";
+        if (!entryPath.empty() && entryPath != "/" && entryPath[entryPath.length() - 1] != '/')
+            autoIndex << "<img src='" << icon << "' class='icon'><a href='" << entryPath + "/" + entry->d_name << "' class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << "'>" << entry->d_name << "</a></td>\n";
+        else if (!entryPath.empty() && entryPath != "/")
+            autoIndex << "<img src='" << icon << "' class='icon'><a href='" << entryPath  + entry->d_name << "' class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << "'>" << entry->d_name << "</a></td>\n";
+        else
+            autoIndex << "<img src='" << icon << "' class='icon'><a href='" << entry->d_name << "' class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << "'>" << entry->d_name << "</a></td>\n";
+        autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << ((entry->d_type == DT_DIR) ? "Directory" : "File") << "</td>\n";
+
+        struct stat fileStat;
+        std::string path;
+        if (this->script_path[this->script_path.length() - 1] != '/')
+            path = this->script_path + "/" + entry->d_name;
+        else
+            path = this->script_path + entry->d_name;
+        std::cout << path << std::endl;
+        if (stat(path.c_str(), &fileStat) == 0)
+        {
+            autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << fileStat.st_size << " bytes</td>\n";
+            autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << std::oct << (fileStat.st_mode & 0777) << "</td>\n";
+            // autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << fileStat.st_uid << "</td>\n";
+            // autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << fileStat.st_gid << "</td>\n";
+            // autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << fileStat.st_dev << "</td>\n";
+            // autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << fileStat.st_ino << "</td>\n";
+            autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << std::ctime(&fileStat.st_atime) << "</td>\n";
+            autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << std::ctime(&fileStat.st_mtime) << "</td>\n";
+            autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << std::ctime(&fileStat.st_ctime) << "</td>\n";
+        }
+        autoIndex << "</tr>\n";
+    }
+    autoIndex << "</table>\n";
+    autoIndex << "</body>\n";
+    autoIndex << "</html>\n";
+    closedir(dir);
+    this->responseStatus = "HTTP/1.1 200 OK\r\n";
+    this->responseStatus += "Content-Type: text/html; charset=UTF-8\r\n";
+    this->responseStatus += "Content-Length: " + std::to_string(autoIndex.str().length()) + "\r\n\r\n";
+    this->responseStatus += autoIndex.str();
 }

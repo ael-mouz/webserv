@@ -1,14 +1,10 @@
 #!/usr/bin/python
 import cgi
 
-# Create instance of FieldStorage
 form = cgi.FieldStorage()
-
-# Get data from fields
 name = form.getvalue('name')
 email = form.getvalue('email')
-
-# Print the HTML content with the received data
+print ("HTTP/1.1 200 OK\r");
 print("Content-type: text/html\n")
 print("<html>")
 print("<head><title>Query String Form</title></head>")
