@@ -1,41 +1,30 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Route.hpp                                          :+:      :+:    :+:   */
+/*   Servers.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/13 19:36:36 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/13 19:37:41 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/28 22:20:44 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
-#include <iostream>
+#include "Include.hpp"
+#include "ServerConfig.hpp"
 
-class Route
+class Servers
 {
 private:
-	bool error;
-	std::string Root;
-	std::string Index;
-	std::string Location;
-	std::string Cgi_Exec;
-	std::string Autoindex;
-	std::string Upload_Path;
-	std::string Redirection[2];
-	std::string Accepted_Method[3];
-
 public:
-	Route(std::string data);
-	~Route(void);
-	bool getEroor(void);
-	std::string getRoot();
-	std::string getIndex();
-	std::string getLocation();
-	std::string getCgi_Exec();
-	std::string getAutoindex();
-	std::string getUpload_Path();
-	std::string getRedirection();
-	std::string getAccepted_Method(std::string method);
+    ServerConfig DefaultServerConfig;
+    std::map<std::string, ServerConfig> OtherServerConfig;
+    /**********************/
+    // serversocket
+    // vector client
+    /**********************/
+    // start server();
+    Servers(){};
+    ~Servers(){};
 };

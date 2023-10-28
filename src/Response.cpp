@@ -6,12 +6,12 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/18 16:57:43 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/26 22:35:10 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/28 14:34:15 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Response.hpp"
-#include "../include/server.hpp"
+#include "../include/Server.hpp"
 #include "../include/ServerConfig.hpp"
 
 void Response::response(int clientSocket, std::string method, std::string uri, std::string httpVersion, std::string Rheaders, std::string body, const ServerConfig &conf)

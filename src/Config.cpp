@@ -6,15 +6,31 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/13 19:59:44 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/25 22:22:46 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/28 21:11:40 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Config.hpp"
 
-// TODO multi server same host and same port same server name
+// === Constructors ===
 
 Config::Config(void) : NbServer(0) {}
+
+Config::~Config(void) {}
+
+// === Getter Methods ===
+
+int Config::getNbServer(void) const { return (this->NbServer); }
+
+ServerConfig Config::getServerConfig(size_t index) const
+{
+    if (index < this->Serverconfig.size())
+        return this->Serverconfig[index];
+    else
+        return ServerConfig();
+}
+
+// === Member Functions ===
 
 void Config::parser(std::string filename)
 {
@@ -44,7 +60,7 @@ void Config::parser(std::string filename)
             std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD " server not closed" RESET_ALL "\n\t" << line << std::endl, exit(1);
         else if (line == "Server;" && ServerScop == false)
         {
-            NbServer++;
+            // NbServer++;
             start = i;
             data.clear();
             ServerScop = true;
@@ -61,6 +77,8 @@ void Config::parser(std::string filename)
         else
             std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid line" RESET_ALL "\n\t" << line << std::endl, exit(1);
     }
+    if (infile.eof() && ServerScop == true)
+        std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD " server not closed" RESET_ALL "\n\t" << line << std::endl, exit(1);
     infile.close();
 }
 
@@ -99,12 +117,12 @@ void Config::parseServer(const std::string &data, ServerConfig &serverConfig, in
             if (key == "Host")
             {
                 !value.empty() ? serverConfig.Host = value : serverConfig.Host = "", h++;
-                parseServerNameAndHostName(serverConfig.Host, start, line, filename);
+                parseServerNameAndHostName(serverConfig.Host, start, line, filename, 1);
             }
             else if (key == "Server_Names")
             {
                 !value.empty() ? serverConfig.ServerNames = value : serverConfig.ServerNames = "", s++;
-                parseServerNameAndHostName(serverConfig.ServerNames, start, line, filename);
+                parseServerNameAndHostName(serverConfig.ServerNames, start, line, filename, 0);
             }
             else if (key == "Error_Page")
             {
@@ -131,6 +149,8 @@ void Config::parseServer(const std::string &data, ServerConfig &serverConfig, in
         else
             std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid line" RESET_ALL "\n\t" << line << std::endl, exit(1);
     }
+    if (iss.eof() && RouteScop == true)
+        std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " route not closed" RESET_ALL "\n\t" << line << std::endl, exit(1);
 }
 
 void Config::parseRoute(const std::string &data, Route &route, int start, const std::string &filename)
@@ -200,59 +220,6 @@ void Config::parseRoute(const std::string &data, Route &route, int start, const 
         std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalide route must have at least one option" RESET_ALL "\n\t" << line << std::endl, exit(1);
 }
 
-ServerConfig Config::getServerConfig(size_t index) const
-{
-    if (index < this->Serverconfig.size())
-        return this->Serverconfig[index];
-    else
-        return ServerConfig();
-}
-
-int Config::getNbServer(void) const { return (this->NbServer); }
-
-Config::~Config(void) {}
-
-void Config::printConfig(void)
-{
-    std::vector<ServerConfig>::iterator it;
-    for (it = this->Serverconfig.begin(); it != this->Serverconfig.end(); ++it)
-    {
-        std::cout << "╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
-        std::cout << "║" BOLD " GLOBAL TABLE " RESET_ALL << std::setw(64) << "║" << std::endl;
-        std::cout << "╠═════════════════╦═════════════════════════════════════════════════════════╣" << std::endl;
-        std::cout << "║ Port            ║" << std::setw(58) << "▻" + it->Port << "◅║" << std::endl;
-        std::cout << "║ Host            ║" << std::setw(58) << "▻" + it->Host << "◅║" << std::endl;
-        std::cout << "║ ServerNames     ║" << std::setw(58) << "▻" + it->ServerNames << "◅║" << std::endl;
-        std::cout << "║ ErrorPage       ║" << std::setw(58) << "▻" + it->ErrorPage << "◅║" << std::endl;
-        std::cout << "║ LimitBodySize   ║" << std::setw(58) << "▻" + it->LimitClientBodySize << "◅║" << std::endl;
-        std::cout << "║ GlobalRoot      ║" << std::setw(58) << "▻" + it->GlobalRoot << "◅║" << std::endl;
-        std::cout << "╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
-        std::vector<Route>::iterator it1;
-        int h = 0;
-        for (it1 = it->Routes.begin(); it1 != it->Routes.end(); ++it1)
-        {
-            h++;
-            std::cout << "↦  ╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
-            std::cout << "↦  ║" FG_BLUE BOLD " ROUTE " << h << RESET_ALL << std::setw(70) << "║" << std::endl;
-            std::cout << "↦  ╠═════════════════╦═════════════════════════════════════════════════════════╣\n";
-            std::cout << "↦  ║ RoutePath       ║" << std::setw(58) << "▻" + it1->RoutePath << "◅║" << std::endl;
-            std::cout << "↦  ║ UploadPath      ║" << std::setw(58) << "▻" + it1->UploadPath << "◅║" << std::endl;
-            std::cout << "↦  ║ Redirection     ║" << std::setw(58) << "▻" + it1->Redirection << "◅║" << std::endl;
-            std::cout << "↦  ║ RedirectStatus  ║" << std::setw(58) << "▻" + it1->RedirectionStatus << "◅║" << std::endl;
-            std::cout << "↦  ║ RedirectionURL  ║" << std::setw(58) << "▻" + it1->RedirectionURL << "◅║" << std::endl;
-            std::cout << "↦  ║ Root            ║" << std::setw(58) << "▻" + it1->Root << "◅║" << std::endl;
-            std::cout << "↦  ║ Autoindex       ║" << std::setw(58) << "▻" + it1->Autoindex << "◅║" << std::endl;
-            std::cout << "↦  ║ Index           ║" << std::setw(58) << "▻" + it1->Index << "◅║" << std::endl;
-            std::cout << "↦  ║ Cgi_Exec        ║" << std::setw(58) << "▻" + it1->CgiExec << "◅║" << std::endl;
-            std::cout << "↦  ║ Methods         ║" << std::setw(58) << "▻" + it1->Accepted_Methods << "◅║" << std::endl;
-            std::cout << "↦  ║ Methods1        ║" << std::setw(58) << "▻" + it1->Accepted_Methods_ << "◅║" << std::endl;
-            std::cout << "↦  ║ Methods2        ║" << std::setw(58) << "▻" + it1->Accepted_Methods__ << "◅║" << std::endl;
-            std::cout << "↦  ║ Methods3        ║" << std::setw(58) << "▻" + it1->Accepted_Methods___ << "◅║" << std::endl;
-            std::cout << "↦  ╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
-        }
-    }
-}
-
 void Config::parsePort(std::string &port, int start, const std::string &line, const std::string &filename)
 {
     if (port.empty())
@@ -264,7 +231,7 @@ void Config::parsePort(std::string &port, int start, const std::string &line, co
         std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid port" RESET_ALL "\n\t" << line << std::endl, exit(1);
 }
 
-void Config::parseServerNameAndHostName(const std::string &serverName, int start, const std::string &line, const std::string &filename)
+void Config::parseServerNameAndHostName(std::string &serverName, int start, const std::string &line, const std::string &filename, int h)
 {
     std::string validServerNameCharacters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.";
     if (serverName.empty())
@@ -273,6 +240,8 @@ void Config::parseServerNameAndHostName(const std::string &serverName, int start
         std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid Server or host name" RESET_ALL "\n\t" << line << std::endl, exit(1);
     if (serverName.find_first_not_of(validServerNameCharacters) != std::string::npos)
         std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid Server or host name" RESET_ALL "\n\t" << line << std::endl, exit(1);
+    if (h)
+        getIpv4Address(serverName, start, line, filename);
 }
 
 void Config::parsePath(const std::string &path, int start, const std::string &line, const std::string &filename)
@@ -393,4 +362,152 @@ void Config::parseBodySize(std::string &sizeStr, int start, const std::string &l
     if (iss >> remaining)
         std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid characters in size string" RESET_ALL "\n\t" << line << std::endl, exit(1);
     sizeStr = intToString(size);
+}
+
+void Config::getIpv4Address(std::string &hostname, int start, const std::string &line, const std::string &filename)
+{
+    struct addrinfo hints;
+    struct addrinfo *result, *rp;
+    std::string ipAddress;
+
+    std::memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    int status = getaddrinfo(hostname.c_str(), NULL, &hints, &result);
+    if (status != 0)
+        std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL " " BOLD << std::string(gai_strerror(status)) << RESET_ALL "\n\t" << line << std::endl, exit(1);
+    for (rp = result; rp != NULL; rp = rp->ai_next)
+    {
+        if (rp->ai_family == AF_INET)
+        {
+            void *addr;
+            char ipstr[INET_ADDRSTRLEN];
+            struct sockaddr_in *ipv4 = (struct sockaddr_in *)rp->ai_addr;
+            addr = &(ipv4->sin_addr);
+            if (inet_ntop(rp->ai_family, addr, ipstr, sizeof(ipstr)) != NULL)
+            {
+                ipAddress = ipstr;
+                break;
+            }
+        }
+    }
+    freeaddrinfo(result);
+    hostname = ipAddress;
+}
+
+void Config::checkServerConfig(const std::string &filename)
+{
+    std::map<std::string, int> tempmap;
+    std::pair<std::map<std::string, int>::iterator, bool> res;
+    std::vector<ServerConfig>::iterator it;
+    std::string key;
+    for (it = this->Serverconfig.begin(); it != this->Serverconfig.end(); ++it)
+    {
+        key = it->Host + ":" + it->Port + "|" + it->ServerNames;
+        res = tempmap.insert(std::make_pair(key, 1));
+        if (!res.second)
+            std::cout << BOLD + filename + ":0:0: " FG_RED "error:" RESET_ALL " " BOLD "Duplicated server " RESET_ALL "\n\t " << it->Host + ":" + it->Port + "    ↦   " + it->ServerNames << std::endl, exit(1);
+    }
+}
+
+void Config::filterServerConfig()
+{
+    while (!this->Serverconfig.empty())
+    {
+        Servers server_;
+        std::vector<ServerConfig>::iterator it = this->Serverconfig.begin();
+        std::string key = it->Host + ":" + it->Port;
+        server_.DefaultServerConfig = *it;
+        this->Serverconfig.erase(it);
+        for (it = this->Serverconfig.begin(); it != this->Serverconfig.end();)
+        {
+            std::string key1 = it->Host + ":" + it->Port;
+            if (key1 == key)
+            {
+                server_.OtherServerConfig.insert(std::make_pair(it->ServerNames, *it));
+                it = this->Serverconfig.erase(it);
+            }
+            else
+                ++it;
+        }
+        this->Servers_.push_back(server_);
+    }
+    this->NbServer = Servers_.size();
+}
+void Config::printConfig(void)
+{
+    std::vector<ServerConfig>::iterator it;
+    for (it = this->Serverconfig.begin(); it != this->Serverconfig.end(); ++it)
+    {
+        std::cout << "╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
+        std::cout << "║" BOLD " GLOBAL TABLE " RESET_ALL << std::setw(64) << "║" << std::endl;
+        std::cout << "╠═════════════════╦═════════════════════════════════════════════════════════╣" << std::endl;
+        std::cout << "║ Port            ║" << std::setw(58) << "▻" + it->Port << "◅║" << std::endl;
+        std::cout << "║ Host            ║" << std::setw(58) << "▻" + it->Host << "◅║" << std::endl;
+        std::cout << "║ ServerNames     ║" << std::setw(58) << "▻" + it->ServerNames << "◅║" << std::endl;
+        std::cout << "║ ErrorPage       ║" << std::setw(58) << "▻" + it->ErrorPage << "◅║" << std::endl;
+        std::cout << "║ LimitBodySize   ║" << std::setw(58) << "▻" + it->LimitClientBodySize << "◅║" << std::endl;
+        std::cout << "║ GlobalRoot      ║" << std::setw(58) << "▻" + it->GlobalRoot << "◅║" << std::endl;
+        std::cout << "╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
+        std::vector<Route>::iterator it1;
+        int h = 0;
+        for (it1 = it->Routes.begin(); it1 != it->Routes.end(); ++it1)
+        {
+            h++;
+            std::cout << "↦  ╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
+            std::cout << "↦  ║" FG_BLUE BOLD " ROUTE " << h << RESET_ALL << std::setw(70) << "║" << std::endl;
+            std::cout << "↦  ╠═════════════════╦═════════════════════════════════════════════════════════╣\n";
+            std::cout << "↦  ║ RoutePath       ║" << std::setw(58) << "▻" + it1->RoutePath << "◅║" << std::endl;
+            std::cout << "↦  ║ UploadPath      ║" << std::setw(58) << "▻" + it1->UploadPath << "◅║" << std::endl;
+            std::cout << "↦  ║ Redirection     ║" << std::setw(58) << "▻" + it1->Redirection << "◅║" << std::endl;
+            std::cout << "↦  ║ RedirectStatus  ║" << std::setw(58) << "▻" + it1->RedirectionStatus << "◅║" << std::endl;
+            std::cout << "↦  ║ RedirectionURL  ║" << std::setw(58) << "▻" + it1->RedirectionURL << "◅║" << std::endl;
+            std::cout << "↦  ║ Root            ║" << std::setw(58) << "▻" + it1->Root << "◅║" << std::endl;
+            std::cout << "↦  ║ Autoindex       ║" << std::setw(58) << "▻" + it1->Autoindex << "◅║" << std::endl;
+            std::cout << "↦  ║ Index           ║" << std::setw(58) << "▻" + it1->Index << "◅║" << std::endl;
+            std::cout << "↦  ║ Cgi_Exec        ║" << std::setw(58) << "▻" + it1->CgiExec << "◅║" << std::endl;
+            std::cout << "↦  ║ Methods         ║" << std::setw(58) << "▻" + it1->Accepted_Methods << "◅║" << std::endl;
+            std::cout << "↦  ║ Methods1        ║" << std::setw(58) << "▻" + it1->Accepted_Methods_ << "◅║" << std::endl;
+            std::cout << "↦  ║ Methods2        ║" << std::setw(58) << "▻" + it1->Accepted_Methods__ << "◅║" << std::endl;
+            std::cout << "↦  ║ Methods3        ║" << std::setw(58) << "▻" + it1->Accepted_Methods___ << "◅║" << std::endl;
+            std::cout << "↦  ╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
+        }
+    }
+}
+
+void Config::printServers(void)
+{
+    std::vector<Servers>::iterator it;
+    std::cout << BOLD "NUMBER OF SERVERS : " << this->NbServer << std::endl;
+    int h = 0;
+    for (it = this->Servers_.begin(); it != this->Servers_.end(); ++it)
+    {
+        h++;
+        std::cout << "╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
+        std::cout << "║" FG_BLUE BOLD " DEFAULT CONFIG " RESET_ALL << h << std::setw(61) << "║" << std::endl;
+        std::cout << "╠═════════════════╦═════════════════════════════════════════════════════════╣" << std::endl;
+        std::cout << "║ Port            ║" << std::setw(58) << "▻" + it->DefaultServerConfig.Port << "◅║" << std::endl;
+        std::cout << "║ Host            ║" << std::setw(58) << "▻" + it->DefaultServerConfig.Host << "◅║" << std::endl;
+        std::cout << "║ ServerNames     ║" << std::setw(58) << "▻" + it->DefaultServerConfig.ServerNames << "◅║" << std::endl;
+        std::cout << "║ ErrorPage       ║" << std::setw(58) << "▻" + it->DefaultServerConfig.ErrorPage << "◅║" << std::endl;
+        std::cout << "║ LimitBodySize   ║" << std::setw(58) << "▻" + it->DefaultServerConfig.LimitClientBodySize << "◅║" << std::endl;
+        std::cout << "║ GlobalRoot      ║" << std::setw(58) << "▻" + it->DefaultServerConfig.GlobalRoot << "◅║" << std::endl;
+        std::cout << "╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
+        std::map<std::string, ServerConfig>::iterator it1;
+
+        for (it1 = it->OtherServerConfig.begin(); it1 != it->OtherServerConfig.end(); ++it1)
+        {
+            std::cout << "↦     ▻" BOLD " " << it1->first << " " RESET_ALL "◅" << std::endl;
+            std::cout << "↦     ╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
+            std::cout << "↦     ║" BOLD " OTHER CONFIG " RESET_ALL << std::setw(64) << "║" << std::endl;
+            std::cout << "↦     ╠═════════════════╦═════════════════════════════════════════════════════════╣" << std::endl;
+            std::cout << "↦     ║ Port            ║" << std::setw(58) << "▻" + it1->second.Port << "◅║" << std::endl;
+            std::cout << "↦     ║ Host            ║" << std::setw(58) << "▻" + it1->second.Host << "◅║" << std::endl;
+            std::cout << "↦     ║ ServerNames     ║" << std::setw(58) << "▻" + it1->second.ServerNames << "◅║" << std::endl;
+            std::cout << "↦     ║ ErrorPage       ║" << std::setw(58) << "▻" + it1->second.ErrorPage << "◅║" << std::endl;
+            std::cout << "↦     ║ LimitBodySize   ║" << std::setw(58) << "▻" + it1->second.LimitClientBodySize << "◅║" << std::endl;
+            std::cout << "↦     ║ GlobalRoot      ║" << std::setw(58) << "▻" + it1->second.GlobalRoot << "◅║" << std::endl;
+            std::cout << "↦     ╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
+        }
+    }
 }

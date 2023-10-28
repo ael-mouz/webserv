@@ -6,10 +6,11 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/14 22:34:04 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/20 18:54:41 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/28 14:38:18 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#pragma once
 #include <iostream>
 #include "Include.hpp"
 

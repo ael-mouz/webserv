@@ -6,11 +6,11 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 18:45:00 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/24 19:55:36 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/28 14:36:39 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/Config.hpp"
+#include "../include/Include.hpp"
 
 std::string trim(const std::string &str, const std::string &charactersToTrim)
 {

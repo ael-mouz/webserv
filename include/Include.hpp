@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 17:42:32 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/26 15:42:36 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/28 22:18:01 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,8 @@
 #include <sys/statvfs.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <netdb.h>
+#include <utility>
 
 #define BOLD "\e[1m"
 #define RESET_ALL "\e[0m"

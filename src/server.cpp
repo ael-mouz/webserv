@@ -6,11 +6,11 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/11 20:31:55 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/24 19:04:22 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/28 14:34:03 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/server.hpp"
+#include "../include/Server.hpp"
 #include "../include/Response.hpp"
 #include "../include/ServerConfig.hpp"
 
