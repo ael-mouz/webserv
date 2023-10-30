@@ -1,4 +1,4 @@
-#include "../Include/Server.hpp"
+#include "../include/Server.hpp"
 
 void Server::init()
 {
@@ -32,7 +32,7 @@ void Server::init()
 		throw std::runtime_error("Error: Failed to disable SIGPIPE");
 	// Print the socket descriptor for debugging purposes
 	logMessage(SINFO, "Server listening on http://" + this->serverConf.DefaultServerConfig.Host + ":" + this->serverConf.DefaultServerConfig.Port);
-	std::cout << BOLD FG_BLUE "Server socket created with descriptor: " << this->socketServer << RESET_ALL<< std::endl;
+	std::cout << BOLD FG_BLUE "Server socket created with descriptor: " << this->socketServer << RESET_ALL << std::endl;
 }
 
 // Print the values of addr for debugging

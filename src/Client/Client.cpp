@@ -1,4 +1,4 @@
-#include "../../Include/Client/Client.hpp"
+#include "../../include/Client/Client.hpp"
 
 Client::Client(int fd) : fd(fd), read(true), write(false) {}
 

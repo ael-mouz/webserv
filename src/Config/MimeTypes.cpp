@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   MimeTypes.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yettabaa <yettabaa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/12 14:59:54 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/30 16:23:18 by yettabaa         ###   ########.fr       */
+/*   Updated: 2023/10/30 20:43:22 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../Include/Config/MimeTypes.hpp"
+#include "../../include/Config/MimeTypes.hpp"
 
 MimeTypes::MimeTypes()
 {

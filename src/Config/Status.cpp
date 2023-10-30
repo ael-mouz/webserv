@@ -6,11 +6,11 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 20:25:54 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/30 19:37:42 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/30 20:43:22 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../Include/Config/Status.hpp"
+#include "../../include/Config/Status.hpp"
 
 Status::Status()
 {
@@ -45,16 +45,16 @@ Status::Status()
 	this->status["409"] = "Conflict";
 	this->status["410"] = "Gone";
 	this->status["411"] = "Length Required";
-    this->status["412"] = "Precondition Failed";
-    this->status["413"] = "Request Entity Too Large";
-    this->status["414"] = "Request-URI Too Long";
+	this->status["412"] = "Precondition Failed";
+	this->status["413"] = "Request Entity Too Large";
+	this->status["414"] = "Request-URI Too Long";
 	this->status["415"] = "Unsupported Media Type";
 	this->status["416"] = "Requested Range Not Satisfiable";
 	this->status["417"] = "Expectation Failed";
-    this->status["426"] = "Upgrade Required";
+	this->status["426"] = "Upgrade Required";
 
-    this->status["500"] = "Internal Server Error";
-    this->status["501"] = "Not Implemented";
+	this->status["500"] = "Internal Server Error";
+	this->status["501"] = "Not Implemented";
 	this->status["502"] = "Bad Gateway";
 	this->status["503"] = "Service Unavailable";
 	this->status["504"] = "Gateway Timeout";
