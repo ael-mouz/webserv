@@ -1,6 +1,6 @@
 CXX = c++
 CXXFLAGS = -std=c++98 -Wall -Wextra -Werror -g -fsanitize=address
-TARGET = server
+TARGET = webserv
 BIN = obj/
 
 SRC =	src/Client/Client.cpp \
@@ -14,7 +14,7 @@ SRC =	src/Client/Client.cpp \
 		src/Request/RequestLine.cpp \
 		src/Request/Request_FSM.cpp \
 		src/Response/Response.cpp \
-		src/Server.cpp \
+		src/server.cpp \
 		src/Utils.cpp \
 		src/main.cpp
 
@@ -32,7 +32,7 @@ HEADERS = 	include/Client/Client.hpp \
 			include/Request/RequestLine.hpp \
 			include/Request/Request_FSM.hpp \
 			include/Response/Response.hpp\
-			include/Server.hpp \
+			include/server.hpp \
 			include/Utils.hpp
 
 OBJS = $(addprefix $(BIN), $(SRC:.cpp=.o))
@@ -56,3 +56,6 @@ fclean: clean
 	@rm -f $(TARGET)
 
 re: fclean all
+
+exec: all
+	@./webserv ./config/config.conf

@@ -1,7 +1,7 @@
 #include "../include/Config/Config.hpp"
 #include "../include/Config/ServerConf.hpp"
 #include "../include/Utils.hpp"
-#include "../include/Server.hpp"
+#include "../include/server.hpp"
 
 int main(int ac, char **av)
 {

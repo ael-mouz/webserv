@@ -1,17 +1,5 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Response.cpp                                       :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/10/18 16:57:43 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/30 20:43:22 by ael-mouz         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "../../include/Response/Response.hpp"
-#include "../../include/Server.hpp"
+#include "../../include/server.hpp"
 #include "../../include/Config/ServerConfig.hpp"
 
 void Response::response(int clientSocket, std::string method, std::string uri, std::string httpVersion, std::string Rheaders, std::string body, const ServerConfig &conf)

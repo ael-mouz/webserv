@@ -1,4 +1,4 @@
-#include "../include/Server.hpp"
+#include "../include/server.hpp"
 
 void Server::init()
 {
