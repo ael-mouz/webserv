@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload Form</title>
+</head>
+<body>
+    <h1>Upload a File</h1>
+    <form action="upload.php" method="post" enctype="multipart/form-data">
+        <label for="file">Choose a file:</label>
+        <input type="file" name="file" id="file" multiple>
+        <!-- <label for="file2">Choose a file:</label>
+        <input type="file" name="file" id="file2">
+        <label for="file3">Choose a file:</label>
+        <input type="file" name="file" id="file3"> -->
+        <input type="submit" value="Upload">
+    </form>
+</body>
+</html>

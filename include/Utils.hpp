@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Include.hpp                                        :+:      :+:    :+:   */
+/*   Utils.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
+/*   By: yettabaa <yettabaa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 17:42:32 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/28 22:18:01 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/30 16:03:15 by yettabaa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,34 @@
 #include <dirent.h>
 #include <netdb.h>
 #include <utility>
+
+
+
+#include <iostream>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <vector>
+#include <fcntl.h>
+#include <numeric>
+#include <fstream>
+#include <sstream>
+#include <map>
+#include <cstring>
+#include <csignal>
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/stat.h>
+// #include <_stdio.h>
+// #include <cstddef>
+// #include <cstdio>
+#include <string>
+// #include <sys/_types/_size_t.h>
+// #include <sys/fcntl.h>
+// #include <sys/_types/_ssize_t.h>
+
+
+using namespace std;
 
 #define BOLD "\e[1m"
 #define RESET_ALL "\e[0m"
@@ -91,4 +119,7 @@ void replaceAll(std::string &str, const std::string &from, const std::string &to
 std::string intToString(int number);
 std::string getParentDirectories(const std::string &uri);
 int isDirectory(const char *path);
-bool isStringDigits(const std::string &str);
+bool isDigit(const std::string &str);
+bool ValidURI(const int &c);
+bool ValidKey(const int &c);
+size_t HexaToDicimal(const std::string& hexStr);

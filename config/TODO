@@ -1,0 +1,33 @@
+-errors parsing request
+    with docker inginix
+    * do more tests for parse body syntax error
+    * delete files
+    * handel max size sive heders key/value
+    * return macros defin with respons for this request
+
+
+-mulpart form data
+
+
+-transfer chunked
+
+-manage Server
+    * handel multiple server
+    * handel multiple Client
+    * keep alive /cloes socket
+    * remove client with a safe way
+
+-class server
+    * add wich server coming the client in classe client ??
+
+
+-hundel delete rederect files
+    *
+
+-organise project
+    *try with one classe request
+
+
+-merge
+    *rename file upload slect
+

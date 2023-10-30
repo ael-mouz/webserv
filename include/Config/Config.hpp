@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
+/*   By: yettabaa <yettabaa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/12 14:59:47 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/30 11:56:07 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/30 16:18:39 by yettabaa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include "Include.hpp"
 #include "ServerConfig.hpp"
 #include "Servers.hpp"
+
 class Config
 {
 private:
@@ -44,4 +45,6 @@ public:
     /*getter and setter*/
     int getNbServer(void) const;
     Servers getServerConfig(size_t index) const;
+
+
 };

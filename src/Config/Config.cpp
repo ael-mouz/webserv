@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
+/*   By: yettabaa <yettabaa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/13 19:59:44 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/30 11:57:17 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/30 16:22:37 by yettabaa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/Config.hpp"
+#include "../../Include/Config/Config.hpp"
 
 // === Constructors ===
 
@@ -224,7 +224,7 @@ void Config::parsePort(std::string &port, int start, const std::string &line, co
 {
     if (port.empty())
         std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty port" RESET_ALL "\n\t" << line << std::endl, exit(1);
-    if (!isStringDigits(port))
+    if (!isDigits(port))
         std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid port" RESET_ALL "\n\t" << line << std::endl, exit(1);
     int portt = std::atoi(port.c_str());
     if (portt < 0 || portt > 65535)

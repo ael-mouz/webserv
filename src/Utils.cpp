@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   Utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
+/*   By: yettabaa <yettabaa@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 18:45:00 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/28 14:36:39 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/30 16:06:57 by yettabaa         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/Include.hpp"
+#include "../Include/Utils.hpp"
 
 std::string trim(const std::string &str, const std::string &charactersToTrim)
 {
@@ -146,12 +146,44 @@ std::string getParentDirectories(const std::string &uri)
     return parent;
 }
 
-bool isStringDigits(const std::string &str)
+bool isDigit(const std::string &str)
 {
-    for (size_t i = 0; i < str.length(); ++i)
-    {
-        if (!isdigit(str[i]))
+    for (std::string::const_iterator it = str.begin(); it != str.end(); ++it)
+	{
+        if (!isdigit(*it))
             return false;
     }
     return true;
+}
+
+bool ValidURI(const int &c)
+{
+
+    if (!isalnum(c) && c != '-' && c != '.' && c != '_' && c != '~' && c != ':' &&
+                            c != '/' && c != '?' && c != '#' && c != '[' && c != ']' &&
+                            c != '@' && c != '!' && c != '$' && c != '&' && c != '\'' &&
+                            c != '(' && c != ')' && c != '*' && c != '+' && c != ',' &&
+                            c != ';' && c != '=') {
+        return false;
+    }
+    return true;
+}
+
+bool    ValidKey(const int &c) //!#$%&'*+-.^_`|~
+{
+    if (isalnum(c) || c == '!' || c == '#' || c == '$' || c == '%' ||
+                    c == '&' || c == '\'' || c == '*' || c == '+' ||
+                    c == '-' || c == '.' || c == '^' || c == '_' ||
+                    c == '`' || c == '|' || c == '~') {
+        return (true);
+    }
+    return (false);
+}
+
+size_t HexaToDicimal(const std::string& hexStr)
+{
+    std::stringstream converter(hexStr);
+    size_t result;
+    converter >> std::hex >> result;
+    return result;
 }
