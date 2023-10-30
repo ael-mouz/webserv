@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/18 17:01:10 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/26 16:23:39 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/30 15:15:27 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,9 @@ private:
     std::string path_info;
     std::string script_path;
     std::string extention;
+    std::string entryPath;
+    bool responseDone;
+    const Route *route;
 
 public:
     void response(int clientSocket, std::string method, std::string uri, std::string httpVersion, std::string Rheaders, std::string body, const ServerConfig &conf);
@@ -31,4 +34,5 @@ public:
     void handleCGIScript(int clientSocket, const std::string &method, std::multimap<std::string, std::string> env, int tempFD, const ServerConfig &conf);
     void generateResponse(std::string status, const ServerConfig &conf);
     void generateAutoIndex(const ServerConfig &conf, std::string &entryPath);
+    void getFULLpath(const ServerConfig &conf, int clientSocket);
 };

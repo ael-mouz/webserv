@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/18 16:57:43 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/28 14:34:15 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/30 15:15:13 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,146 +16,200 @@
 
 void Response::response(int clientSocket, std::string method, std::string uri, std::string httpVersion, std::string Rheaders, std::string body, const ServerConfig &conf)
 {
+    responseDone = false;
     parseUri(uri);
-    if (this->extention != "pl" && this->extention != "py" && this->extention != "php" && this->extention != "rb")
+    getFULLpath(conf, clientSocket);
+    if (responseDone)
+        return;
+    // std::cout << "FULL PATH" << this->script_path << std::endl;
+    // int dirr = isDirectory(this->script_path.c_str());
+    // if (dirr == 1)
+    // {
+    //     std::cout << "directory" << std::endl;
+    //     if (route && route->Autoindex == "on")
+    //     {
+    //         generateAutoIndex(conf, entryPath);
+    //         send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
+    //         return;
+    //     }
+    //     std::cout << " ROUTE INDEX " << (route != NULL ? route->Index : "no route") << std::endl;
+    //     if (!route || route->Index == "default")
+    //         this->script_path += "/index.html";
+    //     else if(route)
+    //         this->script_path = this->script_path + "/" + route->Index;
+    //     std::cout << " THE NEW FULL PATH" << this->script_path << std::endl;
+    // }
+    // else if (dirr == 2)
+    //     std::cout << "file" << std::endl;
+    // else
+    //     std::cout << "invalide not found" << std::endl;
+    size_t pos5 = this->script_path.find_last_of(".");
+    if (pos5 != std::string::npos)
+        this->extention = this->script_path.substr(pos5 + 1, this->script_path.length() - pos5 + 1);
+    std::ifstream infile(this->script_path.c_str(), std::ios::binary);
+    if (!infile.is_open() || this->extention.empty())
     {
-        std::string dir;
-        Route routeee;
-        int match = 0;
-        const Route *route = conf.getRoute(this->script_path);
-        if (route == NULL)
+        generateResponse("404", conf);
+        send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
+        return;
+    }
+    infile.seekg(0, std::ios::end);
+    int fileSize = infile.tellg();
+    infile.seekg(0, std::ios::beg);
+    std::stringstream header;
+    header << "HTTP/1.1 200 OK\r\n";
+    header << "Content-Type: " << conf.mime.getMimeType(this->extention) << "\r\n";
+    header << "Content-Length: " << fileSize << "\r\n";
+    header << "\r\n";
+    send(clientSocket, header.str().c_str(), header.str().length(), 0);
+    const int bufferSize = 1024;
+    char buffer[bufferSize];
+    while (!infile.eof())
+    {
+        infile.read(buffer, bufferSize);
+        ssize_t bytesRead = infile.gcount();
+        if (bytesRead > 0)
         {
-            if (!this->extention.empty())
-                route = conf.getRoute(this->extention);
-            if (route == NULL)
+            ssize_t sentBytes = send(clientSocket, buffer, bytesRead, 0);
+            // std::cout << sentBytes << std::endl;
+            if (sentBytes < 0)
             {
-                dir = getParentDirectories(this->script_path);
-                std::cout << "directory : " << dir << std::endl;
-                while (!route && !dir.empty())
-                {
-                    route = conf.getRoute(dir);
-                    dir = getParentDirectories(dir);
-                    std::cout << "directory : " << dir << std::endl;
-                }
-                if (dir.empty() && !route)
-                {
-                    route = &routeee;
-                    std::cout << "default match :" << route->RoutePath << std::endl;
-                }
-                else
-                    std::cout << "directory match : " << route->RoutePath << std::endl, match = 1;
+                generateResponse("500", conf);
+                send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
+                break;
+            }
+        }
+    }
+    infile.close();
+    if (this->extention == "pl" || this->extention == "py" || this->extention == "php" || this->extention == "rb")
+    {
+        if (method != "GET" && method != "POST" && method != "DELETE")
+        {
+            generateResponse("501", conf);
+            send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
+            return;
+        }
+        else if (httpVersion != "HTTP/1.1\r")
+        {
+            generateResponse("505", conf);
+            send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
+            return;
+        }
+        std::multimap<std::string, std::string> headers = parseHeader(clientSocket, Rheaders, conf); // [x] : parse headers
+        headers = mergeHeadersValues(headers);                                                       // [x] : merge duplicated headers
+        std::multimap<std::string, std::string> env = generateCGIEnv(headers, method);               // [x] : generate env variable
+        char tempFileName[] = "/tmp/.CgitempfileXXXXXXXX";
+        int tempFD = -1;
+        if (!body.empty())
+        {
+            tempFD = mkstemp(tempFileName);
+            if (tempFD != -1)
+            {
+                write(tempFD, body.c_str(), body.length()), std::cout << "generate file: " << tempFileName << " fd:" << tempFD << std::endl;
+                body.erase();
+                lseek(tempFD, 0, SEEK_SET);
             }
             else
-                std::cout << "extention match: " << route->RoutePath << std::endl, match = 2;
-        }
-        else
-            std::cout << "full match : " << route->RoutePath << std::endl, match = 3;
-        std::string entryPath;
-        if (route->Root != "default" && route->RoutePath != "default" && match == 1)
-            entryPath = this->script_path.substr(route->RoutePath.size()), this->script_path = route->Root + this->script_path.substr(route->RoutePath.size()); // TODO: handel also the extention find
-        else if (route->Root != "default" && route->RoutePath != "default")
-            entryPath = this->script_path, this->script_path = route->Root + this->script_path; // TODO: handel also the extention find
-        else
-            entryPath = this->script_path, this->script_path = conf.GlobalRoot + this->script_path;
-        // this->script_path = conf.GlobalRoot + this->script_path;
-        std::cout << "*-------------------------------" << std::endl;
-        std::cout << this->script_path << std::endl;
-        int dirr = isDirectory(this->script_path.c_str());
-        if (dirr == 1)
-        {
-            std::cout << "directory" << std::endl;
-            std::cout << route->Autoindex << std::endl;
-            if (route->Autoindex == "default")
             {
-                generateAutoIndex(conf, entryPath);
-                // std::cout << this->responseStatus << std::endl;
+                generateResponse("500", conf);
                 send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
                 return;
             }
-            if (route->Index == "default")
-                this->script_path += "/index.html";
-            else
-                this->script_path += route->Index;
-            std::cout << this->script_path << std::endl;
         }
-        else if (dirr == 2)
-            std::cout << "file" << std::endl;
-        else
-            std::cout << "invalide not found" << std::endl;
-        std::ifstream infile(this->script_path.c_str(), std::ios::binary);
-        if (!infile.is_open() || this->extention.empty())
+        handleCGIScript(clientSocket, method, env, tempFD, conf);
+        close(tempFD);        // TODO: CGI DONE
+        unlink(tempFileName); // TODO: CGI DONE
+    }
+}
+
+void Response::getFULLpath(const ServerConfig &conf, int clientSocket)
+{
+    std::string dir;
+    Route DFLroute = Route();
+    int match = 0;
+    route = conf.getRoute(this->script_path);
+    if (route == NULL)
+    {
+        if (!this->extention.empty())
+            route = conf.getRoute(this->extention);
+        if (route == NULL)
         {
-            generateResponse("404", conf);
-            send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
-            return;
-        }
-        infile.seekg(0, std::ios::end);
-        int fileSize = infile.tellg();
-        infile.seekg(0, std::ios::beg);
-        std::stringstream header;
-        header << "HTTP/1.1 200 OK\r\n";
-        header << "Content-Type: " << conf.mime.getMimeType(this->extention) << "\r\n";
-        header << "Content-Length: " << fileSize << "\r\n";
-        header << "\r\n";
-        send(clientSocket, header.str().c_str(), header.str().length(), 0);
-        std::cout << "cjdncndjncjnjdncj" << std::endl;
-        const int bufferSize = 1024;
-        char buffer[bufferSize];
-        while (!infile.eof())
-        {
-            infile.read(buffer, bufferSize);
-            ssize_t bytesRead = infile.gcount();
-            if (bytesRead > 0)
+            dir = getParentDirectories(this->script_path);
+            std::cout << "directory : " << dir << std::endl;
+            while (!route && !dir.empty())
             {
-                ssize_t sentBytes = send(clientSocket, buffer, bytesRead, 0);
-                // std::cout << sentBytes << std::endl;
-                if (sentBytes < 0)
-                {
-                    generateResponse("500", conf);
-                    send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
-                    break;
-                }
+                route = conf.getRoute(dir);
+                dir = getParentDirectories(dir);
+                std::cout << "directory : " << dir << std::endl;
             }
-        }
-        infile.close();
-        return;
-    }
-    if (method != "GET" && method != "POST" && method != "DELETE")
-    {
-        generateResponse("501", conf);
-        send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
-        return;
-    }
-    else if (httpVersion != "HTTP/1.1\r")
-    {
-        generateResponse("505", conf);
-        send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
-        return;
-    }
-    std::multimap<std::string, std::string> headers = parseHeader(clientSocket, Rheaders, conf); // [x] : parse headers
-    headers = mergeHeadersValues(headers);                                                       // [x] : merge duplicated headers
-    std::multimap<std::string, std::string> env = generateCGIEnv(headers, method);               // [x] : generate env variable
-    char tempFileName[] = "/tmp/.CgitempfileXXXXXXXX";
-    int tempFD = -1;
-    if (!body.empty())
-    {
-        tempFD = mkstemp(tempFileName);
-        if (tempFD != -1)
-        {
-            write(tempFD, body.c_str(), body.length()), std::cout << "generate file: " << tempFileName << " fd:" << tempFD << std::endl;
-            body.erase();
-            lseek(tempFD, 0, SEEK_SET);
+            if (dir.empty() && !route)
+            {
+                route = &DFLroute;
+                std::cout << "default match :" << route->RoutePath << std::endl;
+            }
+            else
+                std::cout << "directory match : " << route->RoutePath << std::endl, match = 1;
         }
         else
+            std::cout << "extention match: " << route->RoutePath << std::endl, match = 2;
+    }
+    else
+        std::cout << "full match : " << route->RoutePath << std::endl, match = 3;
+    if (this->script_path.back() == '/')
+        this->script_path.pop_back();
+    else if(this->extention.empty())
+    {
+        this->responseStatus = "HTTP/1.1 302 Found\r\n";
+        this->responseStatus += "Location : http://localhost:8080" + this->script_path + "/\r\n";
+        send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
+        responseDone = true;
+        return;
+    }
+    if (route->Root != "default" && route->RoutePath != "default" && match == 1)
+        this->entryPath = this->script_path.substr(route->RoutePath.size()), this->script_path = route->Root + this->script_path.substr(route->RoutePath.size()); // TODO: handel also the extention find
+    else if (route->Root != "default" && route->RoutePath != "default")
+        this->entryPath = this->script_path, this->script_path = route->Root + this->script_path; // TODO: handel also the extention find
+    else
+        this->entryPath = this->script_path, this->script_path = conf.GlobalRoot + this->script_path;
+    std::cout << "FULL PATH : " << this->script_path << std::endl;
+    int dirr = isDirectory(this->script_path.c_str());
+    if (dirr == 1)
+    {
+        std::cout << "directory" << std::endl;
+        if (route->Autoindex == "on")
         {
-            generateResponse("500", conf);
+            generateAutoIndex(conf, entryPath);
             send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
             return;
         }
+        // std::cout << " ROUTE INDEX " << (route != NULL ? route->Index : "no route") << std::endl;
+        if (route->Index == "default")
+            this->script_path += "/index.html";
+        else
+            this->script_path = this->script_path + "/" + route->Index;
+        std::cout << " THE NEW FULL PATH" << this->script_path << std::endl;
     }
-    handleCGIScript(clientSocket, method, env, tempFD, conf);
-    close(tempFD);        // TODO: CGI DONE
-    unlink(tempFileName); // TODO: CGI DONE
+    else if (dirr == 2)
+        std::cout << "file" << std::endl;
+    else
+        std::cout << "invalide not found" << std::endl;
+    std::cout << "↦  ╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
+    std::cout << "↦  ║" FG_BLUE BOLD " ROUTE " << RESET_ALL << std::setw(71) << "║" << std::endl;
+    std::cout << "↦  ╠═════════════════╦═════════════════════════════════════════════════════════╣\n";
+    std::cout << "↦  ║ RoutePath       ║" << std::setw(58) << "▻" + route->RoutePath << "◅║" << std::endl;
+    std::cout << "↦  ║ UploadPath      ║" << std::setw(58) << "▻" + route->UploadPath << "◅║" << std::endl;
+    std::cout << "↦  ║ Redirection     ║" << std::setw(58) << "▻" + route->Redirection << "◅║" << std::endl;
+    std::cout << "↦  ║ RedirectStatus  ║" << std::setw(58) << "▻" + route->RedirectionStatus << "◅║" << std::endl;
+    std::cout << "↦  ║ RedirectionURL  ║" << std::setw(58) << "▻" + route->RedirectionURL << "◅║" << std::endl;
+    std::cout << "↦  ║ Root            ║" << std::setw(58) << "▻" + route->Root << "◅║" << std::endl;
+    std::cout << "↦  ║ Autoindex       ║" << std::setw(58) << "▻" + route->Autoindex << "◅║" << std::endl;
+    std::cout << "↦  ║ Index           ║" << std::setw(58) << "▻" + route->Index << "◅║" << std::endl;
+    std::cout << "↦  ║ Cgi_Exec        ║" << std::setw(58) << "▻" + route->CgiExec << "◅║" << std::endl;
+    std::cout << "↦  ║ Methods         ║" << std::setw(58) << "▻" + route->Accepted_Methods << "◅║" << std::endl;
+    std::cout << "↦  ║ Methods1        ║" << std::setw(58) << "▻" + route->Accepted_Methods_ << "◅║" << std::endl;
+    std::cout << "↦  ║ Methods2        ║" << std::setw(58) << "▻" + route->Accepted_Methods__ << "◅║" << std::endl;
+    std::cout << "↦  ║ Methods3        ║" << std::setw(58) << "▻" + route->Accepted_Methods___ << "◅║" << std::endl;
+    std::cout << "↦  ╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
 }
 
 void Response::parseUri(std::string uri)
@@ -526,7 +580,7 @@ void Response::generateAutoIndex(const ServerConfig &conf, std::string &entryPat
         if (!entryPath.empty() && entryPath != "/" && entryPath[entryPath.length() - 1] != '/')
             autoIndex << "<img src='" << icon << "' class='icon'><a href='" << entryPath + "/" + entry->d_name << "' class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << "'>" << entry->d_name << "</a></td>\n";
         else if (!entryPath.empty() && entryPath != "/")
-            autoIndex << "<img src='" << icon << "' class='icon'><a href='" << entryPath  + entry->d_name << "' class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << "'>" << entry->d_name << "</a></td>\n";
+            autoIndex << "<img src='" << icon << "' class='icon'><a href='" << entryPath + entry->d_name << "' class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << "'>" << entry->d_name << "</a></td>\n";
         else
             autoIndex << "<img src='" << icon << "' class='icon'><a href='" << entry->d_name << "' class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << "'>" << entry->d_name << "</a></td>\n";
         autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << ((entry->d_type == DT_DIR) ? "Directory" : "File") << "</td>\n";

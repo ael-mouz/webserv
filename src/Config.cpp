@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/13 19:59:44 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/28 21:11:40 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/30 11:57:17 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,12 +22,12 @@ Config::~Config(void) {}
 
 int Config::getNbServer(void) const { return (this->NbServer); }
 
-ServerConfig Config::getServerConfig(size_t index) const
+Servers Config::getServerConfig(size_t index) const
 {
-    if (index < this->Serverconfig.size())
-        return this->Serverconfig[index];
+    if (index < this->Servers_.size())
+        return this->Servers_[index];
     else
-        return ServerConfig();
+        return Servers();
 }
 
 // === Member Functions ===

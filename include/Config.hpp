@@ -6,7 +6,7 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/12 14:59:47 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/28 17:14:27 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/30 11:56:07 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,5 +43,5 @@ public:
     void filterServerConfig();
     /*getter and setter*/
     int getNbServer(void) const;
-    ServerConfig getServerConfig(size_t index) const;
+    Servers getServerConfig(size_t index) const;
 };
