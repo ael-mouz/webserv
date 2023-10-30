@@ -1,8 +1,8 @@
-#include "Client.hpp"
+#include "../../Include/Client/Client.hpp"
 
 Client::Client(int fd) : fd(fd), read(true), write(false) {}
 
-Client& Client::operator=(const Client& overl) 
+Client& Client::operator=(const Client& overl)
 {
     fd = overl.fd;
     request = overl.request;

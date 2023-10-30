@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yettabaa <yettabaa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/13 19:59:44 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/30 16:22:37 by yettabaa         ###   ########.fr       */
+/*   Updated: 2023/10/30 19:36:45 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,12 +22,9 @@ Config::~Config(void) {}
 
 int Config::getNbServer(void) const { return (this->NbServer); }
 
-Servers Config::getServerConfig(size_t index) const
+std::vector<ServerConf> &Config::getServerConfig()
 {
-    if (index < this->Servers_.size())
-        return this->Servers_[index];
-    else
-        return Servers();
+	return this->Servers_;
 }
 
 // === Member Functions ===
@@ -224,8 +221,8 @@ void Config::parsePort(std::string &port, int start, const std::string &line, co
 {
     if (port.empty())
         std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty port" RESET_ALL "\n\t" << line << std::endl, exit(1);
-    if (!isDigits(port))
-        std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid port" RESET_ALL "\n\t" << line << std::endl, exit(1);
+	if (!isDigit(port))
+		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid port" RESET_ALL "\n\t" << line << std::endl, exit(1);
     int portt = std::atoi(port.c_str());
     if (portt < 0 || portt > 65535)
         std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid port" RESET_ALL "\n\t" << line << std::endl, exit(1);
@@ -315,8 +312,8 @@ void Config::parseRedirection(Route &route, int start, const std::string &line, 
             std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid redirection" RESET_ALL "\n\t" << line << std::endl, exit(1);
         if (i == 0)
         {
-            if (!isStringDigits(redirectss))
-                std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid redirection status" RESET_ALL "\n\t" << line << std::endl, exit(1);
+			if (!isDigit(redirectss))
+				std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid redirection status" RESET_ALL "\n\t" << line << std::endl, exit(1);
             int status = std::atoi(redirectss.c_str());
             if (status < 300 || status > 307 || status == 306)
                 std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid redirection status" RESET_ALL "\n\t" << line << std::endl, exit(1);
@@ -414,7 +411,7 @@ void Config::filterServerConfig()
 {
     while (!this->Serverconfig.empty())
     {
-        Servers server_;
+        ServerConf server_;
         std::vector<ServerConfig>::iterator it = this->Serverconfig.begin();
         std::string key = it->Host + ":" + it->Port;
         server_.DefaultServerConfig = *it;
@@ -477,7 +474,7 @@ void Config::printConfig(void)
 
 void Config::printServers(void)
 {
-    std::vector<Servers>::iterator it;
+    std::vector<ServerConf>::iterator it;
     std::cout << BOLD "NUMBER OF SERVERS : " << this->NbServer << std::endl;
     int h = 0;
     for (it = this->Servers_.begin(); it != this->Servers_.end(); ++it)

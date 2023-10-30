@@ -1,19 +1,8 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   ServerConfig.hpp                                   :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/10/12 15:00:24 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/28 22:18:56 by ael-mouz         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #pragma once
-#include "Include.hpp"
-#include "MimeTypes.hpp"
-#include "Status.hpp"
+#include "../Utils.hpp"
+#include "../Config/MimeTypes.hpp"
+#include "../Config/Status.hpp"
+
 class ServerConfig
 {
 public:

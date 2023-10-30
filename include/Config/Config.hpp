@@ -1,26 +1,14 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Config.hpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: yettabaa <yettabaa@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/10/12 14:59:47 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/30 16:18:39 by yettabaa         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #pragma once
-#include "Include.hpp"
-#include "ServerConfig.hpp"
-#include "Servers.hpp"
+#include "../Utils.hpp"
+#include "../Config/ServerConfig.hpp"
+#include "../Config/ServerConf.hpp"
 
 class Config
 {
 private:
     int NbServer;
     std::vector<ServerConfig> Serverconfig;
-    std::vector<Servers> Servers_;
+	std::vector<ServerConf> Servers_;
 
 public:
     Config(void);
@@ -44,7 +32,6 @@ public:
     void filterServerConfig();
     /*getter and setter*/
     int getNbServer(void) const;
-    Servers getServerConfig(size_t index) const;
-
-
+    // Server getServerConfig(size_t index) const;
+	std::vector<ServerConf> &getServerConfig();
 };

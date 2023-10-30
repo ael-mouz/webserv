@@ -1,18 +1,7 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   main.cpp                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: yettabaa <yettabaa@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/10/13 19:47:52 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/30 16:15:07 by yettabaa         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "../Include/Config/Config.hpp"
+#include "../Include/Config/ServerConf.hpp"
 #include "../Include/Utils.hpp"
-#include <stdexcept>
+#include "../Include/Server.hpp"
 
 int main(int ac, char **av)
 {
@@ -25,15 +14,20 @@ int main(int ac, char **av)
         config.checkServerConfig(av[1]);
         config.filterServerConfig();
 #ifdef DEBUG_C
-    // config.printConfig();
     config.printServers();
-    // std::cout << config.getNbServer() << std::endl;
 #endif
-        for (int i = 0; i < config.getNbServer(); i++)
-            StartSrever(config.getServerConfig(i).DefaultServerConfig);
-    // start_serving();
-    } catch (const std::exception &e) {
-        std::cerr << e.what() << '\n';
-    }
-    return 0;
+		vector<Server> servers;
+		vector<ServerConf> ServerConf_ = config.getServerConfig();
+		for (vector<ServerConf>::iterator it = ServerConf_.begin() ; it != ServerConf_.end(); it++) {
+			Server serv;
+			serv.serverConf = *it;
+			serv.init();
+			servers.push_back(serv);
+		}
+	}
+	catch (const std::exception &e)
+	{
+		std::cerr << e.what() << '\n';
+	}
+	return 0;
 }

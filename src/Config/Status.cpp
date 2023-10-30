@@ -6,11 +6,11 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 20:25:54 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/25 15:51:05 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/30 19:37:42 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/Status.hpp"
+#include "../../Include/Config/Status.hpp"
 
 Status::Status()
 {

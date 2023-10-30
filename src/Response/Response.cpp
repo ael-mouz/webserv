@@ -6,13 +6,13 @@
 /*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/18 16:57:43 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/30 15:15:13 by ael-mouz         ###   ########.fr       */
+/*   Updated: 2023/10/30 19:42:54 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/Response.hpp"
-#include "../include/Server.hpp"
-#include "../include/ServerConfig.hpp"
+#include "../../Include/Response/Response.hpp"
+#include "../../Include/Server.hpp"
+#include "../../Include/Config/ServerConfig.hpp"
 
 void Response::response(int clientSocket, std::string method, std::string uri, std::string httpVersion, std::string Rheaders, std::string body, const ServerConfig &conf)
 {
@@ -21,28 +21,6 @@ void Response::response(int clientSocket, std::string method, std::string uri, s
     getFULLpath(conf, clientSocket);
     if (responseDone)
         return;
-    // std::cout << "FULL PATH" << this->script_path << std::endl;
-    // int dirr = isDirectory(this->script_path.c_str());
-    // if (dirr == 1)
-    // {
-    //     std::cout << "directory" << std::endl;
-    //     if (route && route->Autoindex == "on")
-    //     {
-    //         generateAutoIndex(conf, entryPath);
-    //         send(clientSocket, this->responseStatus.c_str(), this->responseStatus.length(), 0);
-    //         return;
-    //     }
-    //     std::cout << " ROUTE INDEX " << (route != NULL ? route->Index : "no route") << std::endl;
-    //     if (!route || route->Index == "default")
-    //         this->script_path += "/index.html";
-    //     else if(route)
-    //         this->script_path = this->script_path + "/" + route->Index;
-    //     std::cout << " THE NEW FULL PATH" << this->script_path << std::endl;
-    // }
-    // else if (dirr == 2)
-    //     std::cout << "file" << std::endl;
-    // else
-    //     std::cout << "invalide not found" << std::endl;
     size_t pos5 = this->script_path.find_last_of(".");
     if (pos5 != std::string::npos)
         this->extention = this->script_path.substr(pos5 + 1, this->script_path.length() - pos5 + 1);

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yettabaa <yettabaa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 18:45:00 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/30 16:06:57 by yettabaa         ###   ########.fr       */
+/*   Updated: 2023/10/30 19:44:28 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,16 +67,16 @@ void logMessage(LogLevel level, const std::string &message)
     std::string levelStr;
     switch (level)
     {
-    case ERROR:
+    case SERROR:
         levelStr = "ERROR";
         break;
-    case WARNING:
+    case SWARNING:
         levelStr = "WARNING";
         break;
-    case INFO:
+    case SINFO:
         levelStr = "INFO";
         break;
-    case DEBUG:
+    case SDEBUG:
         levelStr = "DEBUG";
         break;
     }

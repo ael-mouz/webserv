@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Utils.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yettabaa <yettabaa@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/20 17:42:32 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/30 16:03:15 by yettabaa         ###   ########.fr       */
+/*   Updated: 2023/10/30 20:33:44 by ael-mouz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@
 #include <iomanip>
 #include <string>
 #include <sstream>
+#include <numeric>
 // c headers
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -36,34 +37,13 @@
 #include <dirent.h>
 #include <netdb.h>
 #include <utility>
-
-
-
-#include <iostream>
-#include <sys/socket.h>
 #include <netinet/in.h>
-#include <unistd.h>
-#include <vector>
-#include <fcntl.h>
-#include <numeric>
-#include <fstream>
-#include <sstream>
-#include <map>
-#include <cstring>
-#include <csignal>
-#include <unistd.h>
-#include <stdio.h>
-#include <sys/stat.h>
-// #include <_stdio.h>
-// #include <cstddef>
-// #include <cstdio>
-#include <string>
-// #include <sys/_types/_size_t.h>
-// #include <sys/fcntl.h>
-// #include <sys/_types/_ssize_t.h>
-
 
 using namespace std;
+
+#define MAX_URI 4096
+#define MAX_KEY 200
+#define MAX_VALUE 400
 
 #define BOLD "\e[1m"
 #define RESET_ALL "\e[0m"
@@ -72,10 +52,10 @@ using namespace std;
 
 enum LogLevel
 {
-    ERROR,
-    WARNING,
-    INFO,
-    DEBUG
+    SERROR,
+    SWARNING,
+    SINFO,
+    SDEBUG
 };
 
 struct Route

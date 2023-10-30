@@ -1,13 +1,11 @@
 #pragma once
-
-#include "utils.hpp"
-#include "Request_FSM.hpp"
-// class Request;
+#include "../Utils.hpp"
+#include "../Request/Request_FSM.hpp"
 
 class Client //can be inherit from Request
 {
 private:
-    
+
 public:
     int fd;
     Request_Fsm request;
@@ -19,6 +17,4 @@ public:
     ~Client();
 };
 
-
 std::string Response(const Client& clients); // !!
-

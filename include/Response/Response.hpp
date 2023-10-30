@@ -1,18 +1,7 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Response.hpp                                       :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/10/18 17:01:10 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/30 15:15:27 by ael-mouz         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #pragma once
-#include "Include.hpp"
-#include "ServerConfig.hpp"
+#include "../Utils.hpp"
+#include "../Config/ServerConfig.hpp"
+
 class Response
 {
 private:
