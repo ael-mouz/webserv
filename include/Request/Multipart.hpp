@@ -1,5 +1,5 @@
 #pragma once
-#include "../Utils.hpp"
+#include "../Server/Utils.hpp"
 
 class Request_Fsm;
 
@@ -32,6 +32,7 @@ public:
 	void CGI(Request_Fsm &Request, string &buffer, ssize_t &size);
 	void createFile(const string &value, std::string &fileName);
 	bool createFileCGI(Request_Fsm &Request);
+    void reset();
 	Multipart();
 	~Multipart();
 };

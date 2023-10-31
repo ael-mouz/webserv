@@ -1,12 +1,10 @@
-#include "../include/server.hpp"
+#include "../../include/Server/Server.hpp"
 
-void Server::init()
+int Server::init()
 {
 	// Create a socket
 	if ((this->socketServer = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		throw std::runtime_error("Error: Failed to create socket");
-	// Set the maximum file descriptor for select()
-	maxfd = this->socketServer;
 	// Enable socket address reuse
 	int enableReuse = 1;
 	if (setsockopt(this->socketServer, SOL_SOCKET, SO_REUSEADDR, &enableReuse, sizeof(enableReuse)) < 0)
@@ -33,6 +31,7 @@ void Server::init()
 	// Print the socket descriptor for debugging purposes
 	logMessage(SINFO, "Server listening on http://" + this->serverConf.DefaultServerConfig.Host + ":" + this->serverConf.DefaultServerConfig.Port);
 	std::cout << BOLD FG_BLUE "Server socket created with descriptor: " << this->socketServer << RESET_ALL << std::endl;
+    return this->socketServer;
 }
 
 // Print the values of addr for debugging

@@ -1,5 +1,5 @@
 #include "../../include/Response/Response.hpp"
-#include "../../include/server.hpp"
+#include "../../include/Server/Server.hpp"
 #include "../../include/Config/ServerConfig.hpp"
 
 void Response::response(int clientSocket, std::string method, std::string uri, std::string httpVersion, std::string Rheaders, std::string body, const ServerConfig &conf)

@@ -1,6 +1,6 @@
 #pragma once
-#include "../Utils.hpp"
-#include "../Config/MimeTypes.hpp"
+#include "../Server/Utils.hpp"
+#include "MimeTypes.hpp"
 #include "../Config/Status.hpp"
 
 class ServerConfig

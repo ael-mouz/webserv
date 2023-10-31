@@ -26,28 +26,65 @@ void Request_Fsm::read(string &buffer, ssize_t &size) // no need to bool
 
 void Request_Fsm::clear(void) // im smart
 {
-	Request_Fsm clear;
-
 	hold.clear();
 	key.clear();
-	Method.clear();
-	mapHeaders.clear();
 	boundary.clear();
+	Method.clear();
+    URI.clear();
+	mapHeaders.clear();
 	for (vector<File>::iterator it = files.begin(); it != files.end(); it++)
 	{
 		it->fileName.clear();
 		it->Content.clear();
 	}
 	files.clear();
-	*this = clear;
+    mainState = REQUEST_LINE;
+	ReqstDone = 0;
+	subState = 0;
+    sizeBoundary = 0;
+    ContentLength = 0;
+	decodeFlag = false;
+    requestLine.reset();
+    headers.reset();
+    multi.reset();
+    decode.reset();
 }
 
-Request_Fsm::Request_Fsm()
+Request_Fsm& Request_Fsm::operator=(const Request_Fsm& overl)
+{
+    requestLine = overl.requestLine;
+    headers = overl.headers;
+    multi = overl.multi;
+    decode = overl.decode;
+    mainState = overl.mainState;
+    subState = overl.subState;
+    hold = overl.hold;
+    key = overl.key;
+    boundary = overl.boundary;
+    decodeFlag = overl.decodeFlag;
+    sizeBoundary = overl.sizeBoundary;
+    ContentLength = overl.ContentLength;
+    ReqstDone = overl.ReqstDone;
+    Method = overl.Method;
+    URI = overl.URI;
+    mapHeaders = overl.mapHeaders;
+    files = overl.files;
+    return *this;
+}
+
+Request_Fsm::Request_Fsm(const Request_Fsm& copy) : serverConf(copy.serverConf)
+{
+    *this = copy;
+}
+
+Request_Fsm::Request_Fsm(const ServerConf& serverConf) : serverConf(serverConf)
 {
 	mainState = REQUEST_LINE;
 	ReqstDone = 0;
 	subState = 0;
 	decodeFlag = false;
+    sizeBoundary = 0;
+    ContentLength = 0;
 }
 
 Request_Fsm::~Request_Fsm() {}

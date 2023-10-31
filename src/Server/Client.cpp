@@ -1,21 +1,28 @@
-#include "../../include/Client/Client.hpp"
+#include "../../include/Server/Client.hpp"
 
-Client::Client(int fd) : fd(fd), read(true), write(false) {}
+Client::Client(ServerConf& serverConf, int socketClient) : socketClient(socketClient), serverConf(serverConf), request(serverConf)
+{
+    read = true;
+    write = false;
+}
 
 Client& Client::operator=(const Client& overl)
 {
-    fd = overl.fd;
+    socketClient = overl.socketClient;
     request = overl.request;
     read = overl.read;
     write = overl.write;
     return(*this);
 }
 
-Client::Client(const Client& copy)  {*this = copy;}
+Client::Client(const Client& copy) : serverConf(copy.serverConf), request(copy.serverConf)
+{
+    *this = copy;
+}
 
 Client::~Client() {}
 
-std::string Response(const Client& clients) ///
+std::string _Response( Client clients) ///
 {
     std::string path, holdFile, body;
     std::stringstream stream, stream1;
@@ -34,7 +41,7 @@ std::string Response(const Client& clients) ///
 
     std::ifstream index_html(path.c_str());
     if (!index_html.is_open())
-        std::cout << "error \n"; // handle response
+        printf("_Response is_open error path = %s\n", &path[0]); // handle response
     stream << index_html.rdbuf();
     holdFile = stream.str();
 

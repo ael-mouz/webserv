@@ -40,11 +40,11 @@ void ChunkedEncoding::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			continue;
 		case SKIP_BODY:
 		{
-			size_t RemainingLen = buffer.end() - it;
-			if (RemainingLen <= (countLength - count))
+			size_t remainingLen = buffer.end() - it;
+			if (remainingLen <= (countLength - count))
 			{
 				it = buffer.end() - 1;
-				count += RemainingLen;
+				count += remainingLen;
 			}
 			else
 			{
@@ -53,7 +53,6 @@ void ChunkedEncoding::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 				decodeState = CR_BEFOR_HEXA;
 			}
 			break;
-			;
 		}
 		case CR_BEFOR_HEXA:
 			if (character != '\r')
@@ -79,6 +78,14 @@ void ChunkedEncoding::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 		it++;
 	}
 	size = buffer.size();
+}
+
+void ChunkedEncoding::reset()
+{
+    decodeState = HEXA;
+	countLength = 0;
+	count = 0;
+    hold.clear();
 }
 
 ChunkedEncoding::ChunkedEncoding()

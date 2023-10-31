@@ -326,6 +326,14 @@ bool Multipart::createFileCGI(Request_Fsm &Request)
 	return true;
 }
 
+void Multipart::reset()
+{
+    count = 2;
+	countLength = 0;
+	writeToFile = 0;
+	fileF = NULL;
+}
+
 Multipart::Multipart()
 {
 	count = 2;

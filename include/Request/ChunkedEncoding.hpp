@@ -1,5 +1,5 @@
 #pragma once
-#include "../Utils.hpp"
+#include "../Server/Utils.hpp"
 
 class Request_Fsm;
 
@@ -22,6 +22,7 @@ private:
 
 public:
 	void read(Request_Fsm &Request, string &buffer, ssize_t &size);
+    void reset();
 	ChunkedEncoding();
 	~ChunkedEncoding();
 };

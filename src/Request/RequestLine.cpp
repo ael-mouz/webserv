@@ -125,13 +125,17 @@ void RequestLine::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 	}
 }
 
+void RequestLine::reset()
+{
+    method = 0;
+    count = 0;
+}
+
 RequestLine::RequestLine()
 {
 	PossiblMethod[GET] = "GET";
 	PossiblMethod[POST] = "POST";
 	PossiblMethod[DELETE] = "DELETE";
-	// max_lenURI = 4096;
-	// stateRL = REQUEST;
 	count = 0;
 }
 

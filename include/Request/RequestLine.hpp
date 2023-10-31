@@ -1,5 +1,5 @@
 #pragma once
-#include "../Utils.hpp"
+#include "../Server/Utils.hpp"
 
 class Request_Fsm;
 
@@ -29,6 +29,7 @@ class RequestLine
     map <int, string> PossiblMethod; //global ??
 public:
     void read(Request_Fsm &Request, string& buffer, ssize_t& size);
+    void reset();
     RequestLine();
     ~RequestLine();
 };

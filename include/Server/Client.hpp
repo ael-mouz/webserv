@@ -1,5 +1,5 @@
 #pragma once
-#include "../Utils.hpp"
+#include "Utils.hpp"
 #include "../Request/Request_FSM.hpp"
 
 class Client //can be inherit from Request
@@ -7,14 +7,15 @@ class Client //can be inherit from Request
 private:
 
 public:
-    int fd;
+    int socketClient;
+    const ServerConf& serverConf;
     Request_Fsm request;
     bool read;
     bool write;
-    Client(int fd);
+    Client(ServerConf& serverConf, int socketClient);
     Client& operator=(const Client& overl);
     Client(const Client& copy);
     ~Client();
 };
 
-std::string Response(const Client& clients); // !!
+std::string _Response( Client clients); // !!

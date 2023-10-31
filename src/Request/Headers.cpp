@@ -170,6 +170,11 @@ void Headers::checkrequest(Request_Fsm &Request)
 	// Request.state = START_BOUND; multipart/form-data
 }
 
+void Headers::reset()
+{
+    count = 0;
+}
+
 Headers::Headers()
 {
 	// state = CHECK;

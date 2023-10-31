@@ -1,4 +1,4 @@
-#include "../include/Utils.hpp"
+#include "../../include/Server/Utils.hpp"
 
 std::string trim(const std::string &str, const std::string &charactersToTrim)
 {
