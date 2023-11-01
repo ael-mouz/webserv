@@ -9,7 +9,6 @@ SRC =	src/Request/ChunkedEncoding.cpp \
 		src/Request/RequestLine.cpp \
 		src/Request/Request_FSM.cpp \
 		src/Server/Client.cpp \
-		src/Server/Server.cpp \
 		src/Server/Utils.cpp \
 		src/Response/Response.cpp \
 		src/Config/Config.cpp \
@@ -27,14 +26,13 @@ HEADERS =	include/Request/ChunkedEncoding.hpp \
 			include/Request/RequestLine.hpp \
 			include/Request/Request_FSM.hpp \
 			include/Server/Client.hpp \
-			include/Server/Server.hpp \
 			include/Server/Utils.hpp \
 			include/Response/Response.hpp\
 			include/Config/Config.hpp \
 			include/Config/MimeTypes.hpp \
 			include/Config/ServerConf.hpp \
 			include/Config/ServerConfig.hpp \
-			src/Server/RunServers.hpp \
+			include/Server/RunServers.hpp \
 			include/Config/Status.hpp
 
 OBJS = $(addprefix $(BIN), $(SRC:.cpp=.o))

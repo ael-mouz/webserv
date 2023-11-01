@@ -20,8 +20,8 @@ void Request_Fsm::read(string &buffer, ssize_t &size) // no need to bool
 
 		if (!buffer.empty())
 		{
-			multi.read(*this, buffer, size);
-			// multi.CGI(*this, buffer, size);
+			// multi.read(*this, buffer, size);
+			multi.CGI(*this, buffer, size);
 		}
 	}
 }
@@ -76,13 +76,13 @@ Request_Fsm& Request_Fsm::operator=(const Request_Fsm& overl)
     return *this;
 }
 
-Request_Fsm::Request_Fsm(const Request_Fsm& copy) : serverConf(copy.serverConf)
+Request_Fsm::Request_Fsm(const Request_Fsm& copy)// : serverConf(copy.serverConf)
 {
     *this = copy;
 }
 
-// Request_Fsm::Request_Fsm () //: serverConf(serverConf)
-Request_Fsm::Request_Fsm(const ServerConf& serverConf) : serverConf(serverConf)
+// Request_Fsm::Request_Fsm(const ServerConf& serverConf) : serverConf(serverConf)
+Request_Fsm::Request_Fsm () //: serverConf(serverConf)
 {
     // (void)serverConf;
 	mainState = REQUEST_LINE;
