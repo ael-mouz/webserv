@@ -18,8 +18,8 @@ void Request_Fsm::read(string &buffer, ssize_t &size) // no need to bool
 
 		if (!buffer.empty())
 		{
-			multi.read(*this, buffer, size);
-			// multi.CGI(*this, buffer, size);
+			// multi.read(*this, buffer, size);
+			multi.CGI(*this, buffer, size);
 		}
 	}
 }

@@ -302,17 +302,14 @@ void Multipart::createFile(const string &value, string &fileName)
 
 bool Multipart::createFileCGI(Request_Fsm &Request)
 {
-	char *randomName = strdup("file-XXXXXXXXXXXXXXXXX");
-
-	if (mktemp(randomName) == NULL)
+	std::string randomName = "file-XXXXXXXXXXXXXXXXX";
+	if (mktemp(&randomName[0]) == NULL)
 	{
 		printf("error mktemp\n");
-		delete randomName;
 		return false;
 	}
 	string fileName = randomName;
-	delete randomName;
-	fileName = "/goinfre/yettabaa/untitled folder/" + fileName;
+	fileName = "/tmp/" + fileName;
 	fileF = fopen(&fileName[0], "w");
 	if (!fileF)
 	{

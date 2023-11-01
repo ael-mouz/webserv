@@ -3,7 +3,7 @@ import os
 import sys
 
 form = cgi.FieldStorage()
-destination_directory = "/Users/ael-mouz/goinfre/upload"
+destination_directory = "/tmp/"
 upload_statuses = []
 
 # print(form, file=sys.stderr)

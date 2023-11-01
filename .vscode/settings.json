@@ -1,0 +1,14 @@
+{
+  "files.associations": {
+    "*.embeddedhtml": "html",
+    "*.html": "html",
+    "*.md": "markdown",
+    "*.custom": "customLanguage",
+    "vector": "cpp",
+    "iosfwd": "cpp",
+    "utility": "cpp",
+    "map": "cpp",
+    "iostream": "cpp",
+    "fstream": "cpp"
+  }
+}

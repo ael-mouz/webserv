@@ -46,9 +46,9 @@ debug: re
 $(TARGET): $(OBJS)
 	@$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
 
-$(BIN)%.o: %.cpp
+$(BIN)%.o: %.cpp $(HEADERS)
 	@mkdir -p $(@D)
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
 	@rm -rf $(BIN)

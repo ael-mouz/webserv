@@ -20,12 +20,12 @@ ServerConfig::ServerConfig()
 
 ServerConfig::~ServerConfig() {}
 
-const Route *ServerConfig::getRoute(const std::string &targetRoutePath) const
+Route &ServerConfig::getRoute(const std::string &targetRoutePath)
 {
-	for (std::vector<Route>::const_iterator it = this->Routes.begin(); it != this->Routes.end(); ++it)
+	for (std::vector<Route>::iterator it = this->Routes.begin(); it != this->Routes.end(); ++it)
 	{
 		if (it->RoutePath == targetRoutePath)
-			return &(*it);
+			return *it;
 	}
-	return NULL;
+	return this->DefaultRoute;
 }

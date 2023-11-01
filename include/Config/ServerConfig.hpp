@@ -19,8 +19,9 @@ public:
     std::string pythonCgi;
     std::string perlCgi;
     std::string rubyCgi;
+	Route DefaultRoute;
 	std::vector<Route> Routes;
 	ServerConfig();
 	~ServerConfig();
-   const Route *getRoute(const std::string &targetRoutePath) const;
+   Route &getRoute(const std::string &targetRoutePath);
 };
