@@ -18,7 +18,7 @@ void Headers::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: Headers::read state CHECK i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			break;
@@ -34,13 +34,13 @@ void Headers::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else if (!ValidKey(character))
 			{
 				printf("Error: Headers::read state KEY i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			else if (count >= MAX_KEY)
 			{
 				printf("Error: Headers::read state KEY MAX_KEY i = %d c = %c\n", count, character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			count++;
@@ -58,7 +58,7 @@ void Headers::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			if (count >= MAX_VALUE)
 			{
 				printf("Error: Headers::read state VALUE MAX_VALUE i = %d c = %c\n", count, character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			count++;
@@ -72,7 +72,7 @@ void Headers::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: Headers::read state END_VALUE i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			break;
@@ -91,7 +91,7 @@ void Headers::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: Headers::read state END_HEADER i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			break;
@@ -106,7 +106,8 @@ void Headers::checkrequest(Request_Fsm &Request)
 {
 	if (Request.Method == "GET")
 	{
-		Request.ReqstDone = true;
+        // puts("ss");
+		Request.ReqstDone = 200;
 		return;
 	}
 	if (Request.Method != "POST")

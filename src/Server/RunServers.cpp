@@ -1,53 +1,72 @@
-#include "../../include/Server/Utils.hpp"
-#include "../../include/Server/Server.hpp"
-#include "../../include/Server/Client.hpp"
+#include "RunServers.hpp"
+// #include "../../include/Server/Utils.hpp"
+// #include "../../include/Server/Server.hpp"
+// #include "../../include/Server/Client.hpp"
+// #include "../../include/Config/ServerConf.hpp"
+#define forever for (;;)
 
-void RunServers(vector<Server>& servers, int maxfd)
+void RunServers::init(vector<ServerConf>& ServerConf)
 {
-    vector<Client> Clients;
-    fd_set  ReadFds, WriteFds;
+    for (size_t i  = 0; i < ServerConf.size(); i++) {
+			Server serv;
+			serv.serverConf = ServerConf[i];
+			int fd = serv.init();
+            if (fd > maxFds)
+                maxFds = fd;
+			servers.push_back(serv);
+	}
+}
+
+// void RunServers::runingServers(vector<Server>& servers, int maxfd)
+void RunServers::runingServers()
+{
+    // vector<Client> clients;
+    // fd_set  tmp, readFds, writeFds;
     // struct timeval timeout;
     char *bufRecv = new char[4096 * 4];
-    int NumberOfEvents, newSocket;
-
-    while (true) {
-        FD_ZERO(&ReadFds);
-        FD_ZERO(&WriteFds);
-        for (vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
-            FD_SET(it->socketServer, &ReadFds);
-        for (vector<Client>::iterator it = Clients.begin(); it != Clients.end(); it++) {
+    int numberOfEvents, newSocket;
+    FD_ZERO(&tmp);
+    for (vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
+        FD_SET(it->socketServer, &tmp);
+    forever {
+        FD_ZERO(&readFds);
+        FD_ZERO(&writeFds);
+        readFds = tmp;
+        for (vector<Client>::iterator it = clients.begin(); it != clients.end(); it++) {
             if (it->read)
-                FD_SET(it->socketClient, &ReadFds);
+                FD_SET(it->socketClient, &readFds);
             else if (it->write)
-                FD_SET(it->socketClient, &WriteFds);
+                FD_SET(it->socketClient, &writeFds);
         }
-        NumberOfEvents = select(maxfd +1, &ReadFds, &WriteFds, NULL, NULL);
-        if (NumberOfEvents <= -1) {
+        numberOfEvents = select(maxFds +1, &readFds, &writeFds, NULL, NULL);
+        if (numberOfEvents <= -1) {
             std::cout << "Error in select function\n"; ///!!
-        } else if (NumberOfEvents == 0) {
+        } else if (numberOfEvents == 0) {
             std::cout << "Timeout\n"; //!!
         } else {
-            for (vector<Client>::iterator it = Clients.begin(); it != Clients.end(); ) {
-                if (FD_ISSET(it->socketClient, &ReadFds)) {
+            for (vector<Client>::iterator it = clients.begin(); it != clients.end(); ) {
+                if (FD_ISSET(it->socketClient, &readFds)) {
                     ssize_t size = recv(it->socketClient, bufRecv, 4096 * 4, 0);
                     if (size <= -1) {
 
                     } else if (size == 0) {
                         close(it->socketClient);
-                        Clients.erase(it);
+                        clients.erase(it);
                         continue;
                     } else {
                         string buffer(bufRecv, size);
                         it->request.read(buffer, size);
                         //    std::cout << bufRecv << std::endl;
+                        // printf("%d\n", it->request.ReqstDone);
                         if (it->request.ReqstDone) {
                             printf("data complet from  = %d\n", it->socketClient);///!!!
                             it->read = false;
                             it->write = true;
                         }
+                        buffer.clear();
                     }
-                } else if (FD_ISSET(it->socketClient, &WriteFds)) {
-                    // printf("data send to  = %d\n", it->socketClient);
+                } else if (FD_ISSET(it->socketClient, &writeFds)) {
+                    printf("data send to  = %d\n", it->socketClient);
                     string body = _Response(*it);
                     // cout << body << std::endl;
                     if (send(it->socketClient, &body[0], body.length(), 0) <= 0)
@@ -60,16 +79,16 @@ void RunServers(vector<Server>& servers, int maxfd)
             }
         }
         for (vector<Server>::iterator it = servers.begin(); it != servers.end(); it++) {
-            if (FD_ISSET(it->socketServer, &ReadFds)) {
+            if (FD_ISSET(it->socketServer, &readFds)) {
                 newSocket = accept(it->socketServer, NULL, NULL); //way we pute NULL ??
                 if (newSocket <= -1) {
 
                 } else {
                     printf("new client fd = %d\n", newSocket); ///!!
                     Client client(it->serverConf, newSocket);
-                    Clients.push_back(client);
-                    if (newSocket > maxfd)
-                        maxfd = newSocket;
+                    clients.push_back(client);
+                    if (newSocket > maxFds)
+                        maxFds = newSocket;
                 }
             }
         }

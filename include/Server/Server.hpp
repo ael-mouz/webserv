@@ -10,4 +10,4 @@ public:
 	int init();
 };
 
-void RunServers(vector<Server>& servers, int maxfd);
+// void RunServers(vector<Server>& servers, int maxfd);

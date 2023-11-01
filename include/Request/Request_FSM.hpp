@@ -1,4 +1,5 @@
 #pragma once
+
 #include "../Server/Utils.hpp"
 #include "ChunkedEncoding.hpp"
 #include "RequestLine.hpp"
@@ -47,7 +48,9 @@ public:
 	void read(string &buffer, ssize_t &size);
 	void clear(void);
 	Request_Fsm(const ServerConf& serverConf);
+	// Request_Fsm();
     Request_Fsm &operator=(const Request_Fsm& overl);
     Request_Fsm(const Request_Fsm& copy);
+
 	~Request_Fsm();
 };

@@ -2,18 +2,11 @@
     with docker inginix
     * do more tests for parse body syntax error
     * delete files
-    * handel max size sive heders key/value
-    * return macros defin with respons for this request
-
-
--mulpart form data
-
-
--transfer chunked
+    *handel checker in headers class
+        /mulpart form data
+        /transfer chunked
 
 -manage Server
-    * handel multiple server
-    * handel multiple Client
     * keep alive /cloes socket
     * remove client with a safe way
 
@@ -25,7 +18,7 @@
     *
 
 -organise project
-    *try with one classe request
+    *try with one classe runserver
 
 
 -merge

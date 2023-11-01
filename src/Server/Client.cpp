@@ -1,7 +1,9 @@
 #include "../../include/Server/Client.hpp"
 
+// Client::Client(int socketClient) : socketClient(socketClient)//, serverConf(serverConf), request(serverConf)
 Client::Client(ServerConf& serverConf, int socketClient) : socketClient(socketClient), serverConf(serverConf), request(serverConf)
 {
+    // (void)serverConf;
     read = true;
     write = false;
 }
@@ -22,15 +24,15 @@ Client::Client(const Client& copy) : serverConf(copy.serverConf), request(copy.s
 
 Client::~Client() {}
 
-std::string _Response( Client clients) ///
+std::string _Response(const Client &clients) ///
 {
     std::string path, holdFile, body;
     std::stringstream stream, stream1;
     std::cout << clients.request.URI << std::endl;
     body =  "HTTP/1.1 200 OK\r\nContent-Length: ";//318\r\nContent-Type: text/html\r\n\r\n";
-    if (clients.request.ReqstDone == true && clients.request.URI == "/")
+    if (clients.request.ReqstDone == 200 && clients.request.URI == "/")
         path = "www/selec.html";
-    else if (clients.request.ReqstDone == ERROR)
+    else if (clients.request.ReqstDone == 400)
     {
         path = "www/error.html";
         body =  "HTTP/1.1 400 Bad Request\r\nContent-Length: ";//318\r\nContent-Type: text/html\r\n\r\n";

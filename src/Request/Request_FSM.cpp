@@ -5,8 +5,10 @@ void Request_Fsm::read(string &buffer, ssize_t &size) // no need to bool
 {
 	if (mainState == REQUEST_LINE)
 	{
+    // std::cout <<buffer << std::endl;
 		requestLine.read(*this, buffer, size); // can be a normal function or functtion inside classe
 	}
+    // printf("%s\n", &Method[0]);
 	if (!buffer.empty() && mainState == HEADERS)
 	{
 		headers.read(*this, buffer, size); // can be a normal function or functtion inside classe
@@ -26,6 +28,7 @@ void Request_Fsm::read(string &buffer, ssize_t &size) // no need to bool
 
 void Request_Fsm::clear(void) // im smart
 {
+    // Request_Fsm clear();
 	hold.clear();
 	key.clear();
 	boundary.clear();
@@ -48,6 +51,7 @@ void Request_Fsm::clear(void) // im smart
     headers.reset();
     multi.reset();
     decode.reset();
+    // *this = clear;
 }
 
 Request_Fsm& Request_Fsm::operator=(const Request_Fsm& overl)
@@ -77,8 +81,10 @@ Request_Fsm::Request_Fsm(const Request_Fsm& copy) : serverConf(copy.serverConf)
     *this = copy;
 }
 
+// Request_Fsm::Request_Fsm () //: serverConf(serverConf)
 Request_Fsm::Request_Fsm(const ServerConf& serverConf) : serverConf(serverConf)
 {
+    // (void)serverConf;
 	mainState = REQUEST_LINE;
 	ReqstDone = 0;
 	subState = 0;
