@@ -25,9 +25,11 @@ enum requestState
 
 class RequestLine
 {
+private:
     int count;
     int method;
     map <int, string> PossiblMethod; //global ??
+    
 public:
     void read(Request_Fsm &Request, string& buffer, ssize_t& size);
     void reset();

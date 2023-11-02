@@ -1,23 +1,20 @@
 #pragma once
 
-#include "Utils.hpp"
+#include "../../include/Config/ServerConf.hpp"
 #include "../Request/Request_FSM.hpp"
+#include "Utils.hpp"
 
-class Client //can be inherit from Request
-{
-private:
+class Client {
 
-public:
+  public:
     int socketClient;
-    // const ServerConf& serverConf;
+    const ServerConf &serverConf;
     Request_Fsm request;
     bool read;
-
     bool write;
-    // Client(ServerConf& serverConf, int socketClient);
-    Client(int socketClient);
-    Client& operator=(const Client& overl);
-    Client(const Client& copy);
+    Client(ServerConf &serverConf, int socketClient);
+    Client &operator=(const Client &overl);
+    Client(const Client &copy);
     ~Client();
 };
 

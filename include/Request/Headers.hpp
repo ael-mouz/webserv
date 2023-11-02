@@ -2,26 +2,24 @@
 
 #include "../Server/Utils.hpp"
 
-class Request_Fsm;
+class Client;
 
-enum HeaderState
-{
-	CHECK,
-	KEY,
-	VALUE,
-	END_VALUE,
-	END_HEADERS,
+enum HeaderState {
+    CHECK,
+    KEY,
+    VALUE,
+    END_VALUE,
+    END_HEADERS,
 };
 
-class Headers
-{
-private:
-	int count;
+class Headers {
+  private:
+    int count;
 
-public:
-	void read(Request_Fsm &Request, string &buffer, ssize_t &size);
-	void checkrequest(Request_Fsm &Request);
+  public:
+    void read(Client &client, string &buffer, ssize_t &size);
+    void checkrequest(Client &client);
     void reset();
-	Headers();
-	~Headers();
+    Headers();
+    ~Headers();
 };
