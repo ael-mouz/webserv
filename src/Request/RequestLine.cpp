@@ -8,7 +8,7 @@
 void RequestLine::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 {
 	unsigned char character;
-
+	// std::cout <<buffer << std::endl;
 	for (string::iterator it = buffer.begin(); it != buffer.end(); it++)
 	{
 		character = *it;
@@ -24,7 +24,7 @@ void RequestLine::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: RequestLine::read subState REQUEST i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			Request.subState = METHOD;
@@ -36,7 +36,7 @@ void RequestLine::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: RequestLine::read subState METHOD i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			if (count == PossiblMethod.find(method)->first)
@@ -49,7 +49,7 @@ void RequestLine::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			if (character != ' ')
 			{
 				printf("Error: RequestLine::read subState METHOD_SPACE i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			Request.subState = _URI;
@@ -68,13 +68,13 @@ void RequestLine::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else if (!ValidURI(character))
 			{
 				printf("Error: RequestLine::read subState URI ValidURI i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			else if (count > MAX_URI)
 			{
 				printf("Error: RequestLine::read subState URI count > max_lenURI i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			count++;
@@ -85,7 +85,7 @@ void RequestLine::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: RequestLine::read subState VERSION i = %ld count = %d c = %c\n", it - buffer.begin(), count, character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			if (count == 8)
@@ -100,7 +100,7 @@ void RequestLine::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			if (character != '\r')
 			{
 				printf("Error: RequestLine::read CR i = %ld c = %d\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			Request.subState = LF;
@@ -109,7 +109,7 @@ void RequestLine::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			if (character != '\n')
 			{
 				printf("Error: RequestLine::read NL i = %ld c = %d\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			Request.mainState = HEADERS;
@@ -127,8 +127,8 @@ void RequestLine::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 
 void RequestLine::reset()
 {
-    method = 0;
-    count = 0;
+	method = 0;
+	count = 0;
 }
 
 RequestLine::RequestLine()

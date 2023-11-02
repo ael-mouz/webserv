@@ -13,7 +13,8 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 		switch (Request.subState)
 		{
 		case START_BOUND:
-			if (count < Request.sizeBoundary && character == Request.boundary[count])
+			if (count < Request.sizeBoundary &&
+				character == Request.boundary[count])
 			{
 				count++;
 				break;
@@ -27,10 +28,10 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else if (count > Request.sizeBoundary)
 			{
 				printf("Error: Multipart::read state START_BOUND i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
-		case AFTER_BOUND:
+		case AFTER_BOUND: // case if there is only one final boundary
 			if (character == '-')
 			{
 				Request.subState = CHECK_END;
@@ -46,7 +47,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: Multipart::read state AFTER_BOUND i = %ld c = %d\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 		case LF_BOUNDRY:
@@ -63,7 +64,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: Headers::read state BEFOR_KRY i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 		case HANDLER_KEY: // set max
@@ -78,13 +79,13 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else if (!ValidKey(character))
 			{
 				printf("Error: Multipart::read state HANDLER_KEY i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			else if (count >= MAX_KEY)
 			{
 				printf("Error: Headers::read state KEY MAX_KEY i = %d c = %c\n", count, character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			count++;
@@ -95,11 +96,14 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 				File file;
 				if (Request.key == "Content-Disposition")
 				{
-					createFile(Request.hold, file.fileName); // check the error in other stat // organize file
+					createFile(Request.hold, file.fileName); // check the error in other sta // // organize file
 					if (writeToFile == -1)
 					{
-						printf("Error: Multipart::read state HANDLER_VALUE fdFile i = %ld c = %c\n", it - buffer.begin(), character);
-						Request.mainState = 0;
+						printf("Error: Multipart::read state HANDLER_VALUE "
+							   "fdFile i = %ld "
+							   "c = %c\n",
+							   it - buffer.begin(), character);
+						Request.ReqstDone = 400;
 						return;
 					}
 				}
@@ -113,8 +117,10 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			}
 			if (count >= MAX_VALUE)
 			{
-				printf("Error: Headers::read state VALUE MAX_VALUE i = %d c = %c\n", count, character);
-				Request.mainState = 0;
+				printf("Error: Headers::read state VALUE MAX_VALUE i = %d c = "
+					   "%c\n",
+					   count, character);
+				Request.ReqstDone = 400;
 				return;
 			}
 			count++;
@@ -129,7 +135,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: Headers::read state AFTER_VALUE i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 		case CHECK_AFTER_VALUE:
@@ -145,7 +151,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: Headers::read state CHECK i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			break;
@@ -158,8 +164,10 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			}
 			else
 			{
-				printf("Error: Headers::read state AFTER_WRITE_DATA i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				printf("Error: Headers::read state AFTER_WRITE_DATA i = %ld c "
+					   "= %c\n",
+					   it - buffer.begin(), character);
+				Request.ReqstDone = 400;
 				return;
 			}
 			break;
@@ -215,7 +223,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: Headers::read state CHECK_END i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			break;
@@ -228,28 +236,29 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: Headers::read state CR_END i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			break;
 		case LF_END: // check size of content length
 			if (character == '\n')
 			{
-				Request.ReqstDone = 1;
+				Request.ReqstDone = 200;
 				Request.hold.clear();
 				return;
 			}
 			else
 			{
 				printf("Error: Headers::read state CR_END i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.ReqstDone = 400;
 				return;
 			}
 			break;
 		}
 		Request.hold += character;
 		// countLength += 1;
-		// printf("i = %ld stat = %d c= %d : %c\n",it-buffer.begin(),Request.state, c, c);
+		// printf("i = %ld stat = %d c= %d :
+		// %c\n",it-buffer.begin(),Request.state, c, c);
 	}
 }
 
@@ -263,7 +272,8 @@ void Multipart::CGI(Request_Fsm &Request, string &buffer, ssize_t &size)
 			return;
 		}
 	}
-	// printf("%s\nsize = %ld suzwMeth = %ld\n", &buffer[0], size, buffer.size());
+	// printf("%s\nsize = %ld suzwMeth = %ld\n", &buffer[0], size,
+	// buffer.size());
 	fwrite(&buffer[0], 1, size, fileF);
 	countLength += size;
 	// printf("counlen = %ld len = %ld\n", Request.ContentLength, countLength);
@@ -275,7 +285,8 @@ void Multipart::CGI(Request_Fsm &Request, string &buffer, ssize_t &size)
 	}
 	if (countLength > Request.ContentLength)
 	{
-		// printf("countLength > Request.ContentLength\n"); Request.mainState = 0;
+		// printf("countLength > Request.ContentLength\n"); Request.mainState =
+		// 0;
 		return;
 	}
 }
@@ -302,22 +313,22 @@ void Multipart::createFile(const string &value, string &fileName)
 
 bool Multipart::createFileCGI(Request_Fsm &Request)
 {
-	std::string randomName = "file-XXXXXXXXXXXXXXXXX";
-	if (mktemp(&randomName[0]) == NULL)
+	string randomName = "file-XXXXXXXXXXXXXXXXX";
+
+	if (mktemp(&randomName[0]) == NULL) // mkstemp
 	{
 		printf("error mktemp\n");
 		return false;
 	}
-	string fileName = randomName;
-	fileName = "/tmp/" + fileName;
-	fileF = fopen(&fileName[0], "w");
+	randomName = "/goinfre/yettabaa/untitled folder/" + randomName;
+	fileF = fopen(&randomName[0], "w");
 	if (!fileF)
 	{
 		printf("error Multipart::CGI fopen\n");
 		return false;
 	}
 	File file;
-	file.fileName = fileName;
+	file.fileName = randomName;
 	Request.files.push_back(file);
 	writeToFile = 1;
 	return true;
@@ -325,7 +336,7 @@ bool Multipart::createFileCGI(Request_Fsm &Request)
 
 void Multipart::reset()
 {
-    count = 2;
+	count = 2;
 	countLength = 0;
 	writeToFile = 0;
 	fileF = NULL;

@@ -1,7 +1,8 @@
 #pragma once
-#include "../Server/Utils.hpp"
-#include "../Config/ServerConfig.hpp"
+
 #include "../Config/ServerConf.hpp"
+#include "../Config/ServerConfig.hpp"
+#include "../Server/Utils.hpp"
 // #include "../Server/Client.hpp"
 
 class Client;
@@ -36,10 +37,11 @@ public:
 	~Response(void);
 	/*add this in request ???? */
 	void response(Client &client);
+	void clear();
 	void mergeHeadersValues(Client &client);
 	void getConfig(Client &client);
 	void parseUri(std::string uri);
-	void getFULLpath(Client &client);
+	void getFULLpath(void);
 	void regenerateExtonsion();
 	void handleCGIScript(Client &client);
 	void handleNormalFiles(void);
@@ -47,5 +49,6 @@ public:
 	void generateResponse(std::string status);
 	void generateAutoIndex(void);
 	void sendResponse(Client &client);
-	// std::multimap<std::string, std::string> parseHeader(int clientSocket, std::string buffer);
+	// std::multimap<std::string, std::string> parseHeader(int clientSocket,
+	// std::string buffer);
 };

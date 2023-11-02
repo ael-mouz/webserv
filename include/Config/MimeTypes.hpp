@@ -1,4 +1,5 @@
 #pragma once
+
 #include "../Server/Utils.hpp"
 
 class MimeTypes

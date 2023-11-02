@@ -1,16 +1,5 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Utils.hpp                                          :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: ael-mouz <ael-mouz@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/10/20 17:42:32 by ael-mouz          #+#    #+#             */
-/*   Updated: 2023/10/30 21:02:23 by ael-mouz         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #pragma once
+
 // cpp headers
 #include <set>
 #include <map>
@@ -52,41 +41,41 @@ using namespace std;
 
 enum LogLevel
 {
-    SERROR,
-    SWARNING,
-    SINFO,
-    SDEBUG
+	SERROR,
+	SWARNING,
+	SINFO,
+	SDEBUG
 };
 
 struct Route
 {
-    std::string Root;
-    std::string Index;
-    std::string CgiExec;
-    std::string RoutePath;
-    std::string Autoindex;
-    std::string UploadPath;
-    std::string Redirection;
-    std::string RedirectionURL;
-    std::string RedirectionStatus;
-    std::string Accepted_Methods;
-    std::string Accepted_Methods_;
-    std::string Accepted_Methods__;
-    std::string Accepted_Methods___;
-    // std::vector<std::string> AcceptedMethods;
-    Route() : Root("default"),
-              Index("default"),
-              CgiExec("default"),
-              RoutePath("default"),
-              Autoindex("default"),
-              UploadPath("default"),
-              Redirection("default"),
-              RedirectionURL("default"),
-              RedirectionStatus("default"),
-              Accepted_Methods("default"),
-              Accepted_Methods_("default"),
-              Accepted_Methods__("default"),
-              Accepted_Methods___("default"){};
+	std::string Root;
+	std::string Index;
+	std::string CgiExec;
+	std::string RoutePath;
+	std::string Autoindex;
+	std::string UploadPath;
+	std::string Redirection;
+	std::string RedirectionURL;
+	std::string RedirectionStatus;
+	std::string Accepted_Methods;
+	std::string Accepted_Methods_;
+	std::string Accepted_Methods__;
+	std::string Accepted_Methods___;
+	// std::vector<std::string> AcceptedMethods;
+	Route() : Root("default"),
+			  Index("default"),
+			  CgiExec("default"),
+			  RoutePath("default"),
+			  Autoindex("default"),
+			  UploadPath("default"),
+			  Redirection("default"),
+			  RedirectionURL("default"),
+			  RedirectionStatus("default"),
+			  Accepted_Methods("default"),
+			  Accepted_Methods_("default"),
+			  Accepted_Methods__("default"),
+			  Accepted_Methods___("default"){};
 };
 
 std::string trim(const std::string &str, const std::string &charactersToTrim);
@@ -102,4 +91,4 @@ int isDirectory(const char *path);
 bool isDigit(const std::string &str);
 bool ValidURI(const int &c);
 bool ValidKey(const int &c);
-size_t HexaToDicimal(const std::string& hexStr);
+size_t HexaToDicimal(const std::string &hexStr);

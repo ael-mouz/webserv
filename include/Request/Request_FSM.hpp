@@ -1,10 +1,12 @@
 #pragma once
+
 #include "../Server/Utils.hpp"
 #include "ChunkedEncoding.hpp"
-#include "RequestLine.hpp"
 #include "Headers.hpp"
 #include "Multipart.hpp"
-#include "../Server/Server.hpp"
+#include "RequestLine.hpp"
+
+class Client;
 
 enum _mainState
 {
@@ -21,33 +23,30 @@ struct File
 	multimap<string, string> Content;
 };
 
-class Request_Fsm // : public Base //can be inherited from server
+class Request_Fsm
 {
 private:
 	RequestLine requestLine;
 	Headers headers;
-	Multipart multi; // creat body and handel all cases in body
+	Multipart multi;
 	ChunkedEncoding decode;
 
 public:
-    const ServerConf& serverConf;
 	int mainState;
 	int subState;
 	string hold;
-    string key;
-	string boundary; // change to char*
+	string key;
+	string boundary;
 	bool decodeFlag;
 	int sizeBoundary;
 	size_t ContentLength;
 	int ReqstDone;
-	string Method; // lot of memory
+	string Method;
 	string URI;
 	multimap<string, string> mapHeaders;
 	vector<File> files;
-	void read(string &buffer, ssize_t &size);
+	void read(Client &client, string &buffer, ssize_t &size);
 	void clear(void);
-	Request_Fsm(const ServerConf& serverConf);
-    Request_Fsm &operator=(const Request_Fsm& overl);
-    Request_Fsm(const Request_Fsm& copy);
+	Request_Fsm();
 	~Request_Fsm();
 };

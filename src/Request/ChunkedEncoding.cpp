@@ -20,7 +20,7 @@ void ChunkedEncoding::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else if (!isxdigit(character))
 			{
 				printf("Error: ChunkedEncoding::read state HEXA i = %ld c = %d\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.mainState = 400;
 				return;
 			}
 			hold += character;
@@ -30,7 +30,7 @@ void ChunkedEncoding::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			if (character != '\n')
 			{
 				printf("Error: ChunkedEncoding::read state LF_FIRST_HEXA i = %ld c = %d\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.mainState = 400;
 				return;
 			}
 			countLength = HexaToDicimal(hold);
@@ -58,7 +58,7 @@ void ChunkedEncoding::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			if (character != '\r')
 			{
 				printf("Error: ChunkedEncoding::read state CR_BEFOR_HEXA i = %ld c = %d\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.mainState = 400;
 				return;
 			}
 			decodeState = LF_BEFOR_HEXA;
@@ -68,7 +68,7 @@ void ChunkedEncoding::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			if (character != '\n')
 			{
 				printf("Error: ChunkedEncoding::read state LF_BEFOR_HEXA i = %ld c = %d\n", it - buffer.begin(), character);
-				Request.mainState = 0;
+				Request.mainState = 400;
 				return;
 			}
 			decodeState = HEXA;
@@ -82,10 +82,10 @@ void ChunkedEncoding::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 
 void ChunkedEncoding::reset()
 {
-    decodeState = HEXA;
+	decodeState = HEXA;
 	countLength = 0;
 	count = 0;
-    hold.clear();
+	hold.clear();
 }
 
 ChunkedEncoding::ChunkedEncoding()
