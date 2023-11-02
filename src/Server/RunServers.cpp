@@ -20,16 +20,12 @@ void RunServers::runing()
 		else
 		{
 			for (vector<Client>::iterator it = clients.begin();
-				 it != clients.end();)
+				it != clients.end();)
 			{
 				if (FD_ISSET(it->socketClient, &readFds))
 				{
-					ssize_t size =
-						recv(it->socketClient, recvbuffer, 4096 * 4, 0);
-					if (size <= -1)
-					{
-					}
-					else if (size == 0)
+					ssize_t size = recv(it->socketClient, recvbuffer, 4096 * 4, 0);
+					 if (size <= 0)
 					{
 						close(it->socketClient);
 						clients.erase(it);

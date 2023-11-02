@@ -21,8 +21,8 @@ void Request_Fsm::read(Client &client, string &buffer, ssize_t &size)
 
 		if (!buffer.empty())
 		{
-			// multi.read(*this, buffer, size);
-			multi.CGI(*this, buffer, size);
+			multi.read(*this, buffer, size);
+			// multi.CGI(*this, buffer, size);
 		}
 	}
 }

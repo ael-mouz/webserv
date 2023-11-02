@@ -43,7 +43,7 @@ debug: CXXFLAGS += -DDEBUG_C
 debug: re
 
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
+	@$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
 
 $(BIN)%.o: %.cpp $(HEADERS)
 	@mkdir -p $(@D)

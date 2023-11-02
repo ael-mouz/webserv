@@ -90,8 +90,8 @@ void Response::sendResponse(Client &client)
 		{
 			if (!this->infile.eof())
 			{
-				char buffer[1024];
-				this->infile.read(buffer, 1024);
+				char buffer[512];
+				this->infile.read(buffer, 512);
 				ssize_t bytesRead = this->infile.gcount();
 				if (bytesRead > 0)
 				{
@@ -103,12 +103,14 @@ void Response::sendResponse(Client &client)
 			}
 			else
 			{
+				std::cout << "RESPONSE DONE BODY SENT" << std::endl;
 				this->responseSent = true;
 				this->isBodySent = true;
 			}
 		}
 		else
 		{
+			std::cout << "RESPONSE DONE NO BODY" << std::endl;
 			this->responseSent = true;
 			this->isBodySent = true;
 		}
@@ -282,6 +284,7 @@ void Response::getFULLpath()
 		std::stringstream Headers__;
 		Headers__ << "HTTP/1.1 " + this->route->RedirectionStatus + " " + this->Config->status.getStatus(this->route->RedirectionStatus) + " \r\n";
 		Headers__ << "Location : " + this->route->RedirectionURL + "\r\n";
+		Headers__ << "Content-Length: " << 0 << "\r\n\r\n";
 		this->HeaderResponse = Headers__.str();
 		responseDone = true;
 		return;
@@ -293,6 +296,7 @@ void Response::getFULLpath()
 		std::stringstream Headers__;
 		Headers__ << "HTTP/1.1 302 Found\r\n";
 		Headers__ << "Location : http://" + this->Config->Host + ":" + this->Config->Port + this->fullpath + "/\r\n";
+		Headers__ << "Content-Length: " << 0 << "\r\n\r\n";
 		this->HeaderResponse = Headers__.str();
 		responseDone = true;
 		return;
@@ -499,8 +503,7 @@ void Response::generateCGIEnv(Client &client)
 	env.insert(std::make_pair("CONTENT_TYPE", CONTENT_TYPE));
 	env.insert(std::make_pair("CONTENT_LENGTH", CONTENT_LENGTH));
 	// env.insert(std::make_pair("REMOTE_ADDR", REMOTE_ADDR)); // TODO:: generate it from socket
-	env.insert(
-		std::make_pair("REDIRECT_STATUS", REDIRECT_STATUS)); // NOTE:php only
+	env.insert(std::make_pair("REDIRECT_STATUS", REDIRECT_STATUS)); // NOTE:php only
 	it = client.request.mapHeaders.begin();
 	std::string keyEnv, valueEnv;
 	for (std::map<std::string, std::string>::iterator it =

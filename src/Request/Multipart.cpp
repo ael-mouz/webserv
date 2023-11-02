@@ -300,7 +300,7 @@ void Multipart::createFile(const string &value, string &fileName)
 		return;
 	}
 	fileName = trim(value.substr(fileNamePos + sizeof("filename")), " \"");
-	fileName = "/goinfre/yettabaa/untitled folder/" + fileName;
+	fileName = "/tmp/" + fileName;
 	fileF = fopen(&fileName[0], "w");
 	if (!fileF)
 	{
@@ -320,7 +320,7 @@ bool Multipart::createFileCGI(Request_Fsm &Request)
 		printf("error mktemp\n");
 		return false;
 	}
-	randomName = "/goinfre/yettabaa/untitled folder/" + randomName;
+	randomName = "/tmp/" + randomName;
 	fileF = fopen(&randomName[0], "w");
 	if (!fileF)
 	{
