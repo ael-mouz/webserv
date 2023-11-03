@@ -1,7 +1,7 @@
 #include "../../include/Request/Headers.hpp"
 #include "../../include/Server/Client.hpp"
 
-void Headers::read(Client &client, string &buffer, ssize_t &size)
+int Headers::read(Client &client, string &buffer, ssize_t &size)
 {
 	unsigned char character;
 
@@ -18,8 +18,7 @@ void Headers::read(Client &client, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: Headers::read state CHECK i = %ld c = %c\n", it - buffer.begin(), character);
-				client.request.ReqstDone = 400;
-				return;
+				return 400;
 			}
 			break;
 		case KEY: // set max
@@ -34,14 +33,12 @@ void Headers::read(Client &client, string &buffer, ssize_t &size)
 			else if (!ValidKey(character))
 			{
 				printf("Error: Headers::read state KEY i = %ld c = %c\n", it - buffer.begin(), character);
-				client.request.ReqstDone = 400;
-				return;
+				return 400;
 			}
 			else if (count >= MAX_KEY)
 			{
 				printf("Error: Headers::read state KEY MAX_KEY i = %d c = %c\n", count, character);
-				client.request.ReqstDone = 400;
-				return;
+				return 400;
 			}
 			count++;
 			break;
@@ -58,8 +55,7 @@ void Headers::read(Client &client, string &buffer, ssize_t &size)
 			if (count >= MAX_VALUE)
 			{
 				printf("Error: Headers::read state VALUE MAX_VALUE i = %d c = %c\n", count, character);
-				client.request.ReqstDone = 400;
-				return;
+				return 400;
 			}
 			count++;
 			break;
@@ -72,27 +68,25 @@ void Headers::read(Client &client, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: Headers::read state END_VALUE i = %ld c = %c\n", it - buffer.begin(), character);
-				client.request.ReqstDone = 400;
-				return;
+				return 400;
 			}
 			break;
 		case END_HEADERS:
 			if (character == '\n')
 			{
-				checkrequest(client);
 				buffer.erase(0, it - buffer.begin() + 1);
 				size -= it - buffer.begin() + 1;
 				client.request.hold.clear();
-				client.request.subState = START_BOUND;
+				// checkrequest(client);
+				client.request.subState = FIRST_BOUNDARY;
 				client.request.mainState = BODY;
 				// client.request.decode.reset();
-				return;
+				return checkrequest(client);
 			}
 			else
 			{
 				printf("Error: Headers::read state END_HEADER i = %ld c = %c\n", it - buffer.begin(), character);
-				client.request.ReqstDone = 400;
-				return;
+				return 400;
 			}
 			break;
 		}
@@ -100,21 +94,13 @@ void Headers::read(Client &client, string &buffer, ssize_t &size)
 		// printf(" i = %ld count = %d  char = |%c| hold = |%s|\n",i,count,c, hold.c_str());
 		// std::cout << "hold = "<< hold <<"\n";
 	}
+    return 0;
 }
 
-void Headers::checkrequest(Client &client)
+int Headers::checkrequest(Client &client)
 {
-	if (client.request.Method == "GET")
-	{
-		// puts("ss");
-		client.request.ReqstDone = 200;
-		return;
-	}
-	if (client.request.Method != "POST")
-	{
-		// client.request.ReqstDone = 0;
-		return;
-	}
+	if (client.request.Method == "GET" )
+		return 200;
 
 	std::stringstream stream;
 	std::multimap<std::string, std::string>::iterator itHeader;
@@ -125,26 +111,23 @@ void Headers::checkrequest(Client &client)
 		if (itHeader->second != "chunked")
 		{
 			std::cout << "error request not implemnted";
-			return;
+			return 400;
 		}
 		client.request.decodeFlag = true;
 		// return ;
 	}
 	itHeader = client.request.mapHeaders.find("Content-Length");
-	client.request.mainState = 0;
 	if (itHeader == client.request.mapHeaders.end())
 	{ // if you're in this scoup you should have all indormation about body
 		std::cout << "error Headers::checkrequest no Content-Length \n";
-		client.request.mainState = 0;
-		return;
+		return 400;
 	}
 	stream << itHeader->second;
 	stream >> client.request.ContentLength;
 	if (!isDigit(itHeader->second) || stream.fail())
 	{
 		std::cout << "error Headers::checkrequest ContentLength\n";
-		client.request.mainState = 0;
-		return;
+		return 400;
 	}
 	// if (client.request.ContentLength == 0) {
 	//     std::cout << "error Headers::checkrequest ContentLength == 0\n"; client.request.mainState = 0;
@@ -155,20 +138,11 @@ void Headers::checkrequest(Client &client)
 	if (itHeader == client.request.mapHeaders.end() || posBoundary == std::string::npos)
 	{ // if multipart/form-data || multipart/mixed || multipart/related || multipart/alternative
 		std::cout << "error Headers::checkrequest Content-Type\n";
-		client.request.mainState = 0;
-		return;
+		return 400;
 	}
-	std::string tmp;
-
-	tmp = "\r\n--" + itHeader->second.substr(posBoundary + sizeof("boundary"));
-	// std::cout << "boundary  " << tmp << "\n";
-	client.request.sizeBoundary = tmp.size();
-	// client.request.boundary = tmp.c_str();
-	// printf("char = %d\n", client.request.boundary[0]);
-	client.request.boundary = tmp;
-	// std::cout << "boundary  " << client.request.sizeBoundary << "\n";
-	client.request.mainState = BODY;
-	// Request.state = START_BOUND; multipart/form-data
+	client.request.boundary = "\r\n--" + itHeader->second.substr(posBoundary + sizeof("boundary"));
+	client.request.sizeBoundary = client.request.boundary.size();
+    return 0;
 }
 
 void Headers::reset()

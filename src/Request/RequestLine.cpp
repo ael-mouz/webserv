@@ -1,18 +1,19 @@
 #include "../../include/Request/RequestLine.hpp"
 #include "../../include/Request/Request_FSM.hpp"
+#include "../../include/Server/Client.hpp"
 // return done || error
 // continue skip witout adding
 // break add
 // !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~
 
-void RequestLine::read(Request_Fsm &Request, string &buffer, ssize_t &size)
+int RequestLine::read(Client &client, string &buffer, ssize_t &size)
 {
 	unsigned char character;
 	// std::cout <<buffer << std::endl;
 	for (string::iterator it = buffer.begin(); it != buffer.end(); it++)
 	{
 		character = *it;
-		switch (Request.subState)
+		switch (client.request.subState)
 		{
 		case REQUEST:
 			if (character == 'G')
@@ -24,10 +25,9 @@ void RequestLine::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: RequestLine::read subState REQUEST i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
-				return;
+				return 400;
 			}
-			Request.subState = METHOD;
+			client.request.subState = METHOD;
 			count++;
 			continue;
 		case METHOD:
@@ -36,46 +36,42 @@ void RequestLine::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: RequestLine::read subState METHOD i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
-				return;
+				return 400;
 			}
 			if (count == PossiblMethod.find(method)->first)
 			{
-				Request.Method = PossiblMethod[method];
-				Request.subState = METHOD_SPACE;
+				client.request.Method = PossiblMethod[method];
+				client.request.subState = METHOD_SPACE;
 			}
 			break;
 		case METHOD_SPACE:
 			if (character != ' ')
 			{
 				printf("Error: RequestLine::read subState METHOD_SPACE i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
-				return;
+				return 400;
 			}
-			Request.subState = _URI;
+			client.request.subState = _URI;
 			count = 0;
-			Request.hold.clear();
+			client.request.hold.clear();
 			continue;
 		case _URI:
 			if (character == ' ')
 			{
-				Request.subState = VERSION;
-				Request.URI = Request.hold;
+				client.request.subState = VERSION;
+				client.request.URI = client.request.hold;
 				count = 0;
-				Request.hold.clear();
+				client.request.hold.clear();
 				continue;
 			}
 			else if (!ValidURI(character))
 			{
 				printf("Error: RequestLine::read subState URI ValidURI i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
-				return;
+				return 400;
 			}
 			else if (count > MAX_URI)
 			{
 				printf("Error: RequestLine::read subState URI count > max_lenURI i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
-				return;
+				return 400;
 			}
 			count++;
 			break;
@@ -85,14 +81,13 @@ void RequestLine::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			else
 			{
 				printf("Error: RequestLine::read subState VERSION i = %ld count = %d c = %c\n", it - buffer.begin(), count, character);
-				Request.ReqstDone = 400;
-				return;
+				return 400;
 			}
 			if (count == 8)
 			{
-				Request.subState = CR;
+				client.request.subState = CR;
 				count = 0;
-				Request.hold.clear();
+				client.request.hold.clear();
 				continue;
 			}
 			break;
@@ -100,30 +95,48 @@ void RequestLine::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			if (character != '\r')
 			{
 				printf("Error: RequestLine::read CR i = %ld c = %d\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
-				return;
+				return 400;
 			}
-			Request.subState = LF;
+			client.request.subState = LF;
 			continue;
 		case LF:
 			if (character != '\n')
 			{
 				printf("Error: RequestLine::read NL i = %ld c = %d\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
-				return;
+				return 400;
 			}
-			Request.mainState = HEADERS;
-			Request.subState = CHECK;
-			// printf("main = %d sub = %d\n", Request.mainState, Request.subState);
+			// printf("main = %d sub = %d\n", client.request.mainState, client.request.subState);
 			buffer.erase(0, it - buffer.begin() + 1);
 			size -= it - buffer.begin() + 1;
-			Request.hold.clear();
-			return;
+			client.request.hold.clear();
+
+			client.request.subState = CHECK;
+			client.request.mainState = HEADERS;
+			return 0;
 		}
-		Request.hold += character;
+		client.request.hold += character;
 		// cout << "hold = "<< hold <<"\n";
 	}
+    return 0;
 }
+
+// void RequestLine::checker(Client &client)
+// {
+// 	std::cout << "▻merge Headers Values◅ -------------------------------------------" << std::endl;
+// 	// mergeHeadersValues(client);
+// 	// std::cout << "▻Get config◅ -----------------------------------------------------" << std::endl;
+// 	 client.response.getConfig(client);
+// 	// std::cout << "▻Parse uri◅ ------------------------------------------------------" << std::endl;
+// 	 client.response.parseUri(client.request.URI);
+// 	// std::cout << "▻Get full path◅ --------------------------------------------------" << std::endl;
+// 	 client.response.getFULLpath();
+// 	if ( client.response.responseDone)
+// 		return;
+// 	// std::cout << "▻Regenerate extension◅ -------------------------------------------" << std::endl;
+// 	client.response.regenerateExtonsion();
+// 	if ( client.response.responseDone)
+// 		return;
+// }
 
 void RequestLine::reset()
 {

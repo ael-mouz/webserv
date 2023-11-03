@@ -12,26 +12,26 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 		// countLength += 1;
 		switch (Request.subState)
 		{
-		case START_BOUND:
-			if (count < Request.sizeBoundary &&
-				character == Request.boundary[count])
+		case FIRST_BOUNDARY:
+			if (count == Request.sizeBoundary +1 && ("\r\n" + Request.hold) == Request.boundary + "\r")
 			{
-				count++;
-				break;
+                if (character == '\n')
+                {
+				    Request.hold.clear();
+				    count = 0;
+				    Request.subState = HANDLER_KEY;
+                    continue;
+                }
 			}
-			if (count == Request.sizeBoundary && ("\r\n" + Request.hold) == Request.boundary)
-			{
-				Request.hold.clear();
-				count = 0;
-				Request.subState = AFTER_BOUND;
-			}
-			else if (count > Request.sizeBoundary)
+			if (count > Request.sizeBoundary +1)
 			{
 				printf("Error: Multipart::read state START_BOUND i = %ld c = %c\n", it - buffer.begin(), character);
 				Request.ReqstDone = 400;
 				return;
 			}
-		case AFTER_BOUND: // case if there is only one final boundary
+			count++;
+            break;
+		case AFTER_BOUNDARY: // case if there is only one final boundary
 			if (character == '-')
 			{
 				Request.subState = CHECK_END;
@@ -39,7 +39,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			}
 			else if (character == '\r')
 			{
-				Request.subState = LF_BOUNDRY;
+				Request.subState = LF_BOUNDARY;
 				Request.hold.clear();
 				writeToFile = 0;
 				continue;
@@ -50,7 +50,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 				Request.ReqstDone = 400;
 				return;
 			}
-		case LF_BOUNDRY:
+		case LF_BOUNDARY:
 			if (character == '\n')
 			{
 				if (fileF != NULL)
@@ -99,10 +99,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 					createFile(Request.hold, file.fileName); // check the error in other sta // // organize file
 					if (writeToFile == -1)
 					{
-						printf("Error: Multipart::read state HANDLER_VALUE "
-							   "fdFile i = %ld "
-							   "c = %c\n",
-							   it - buffer.begin(), character);
+						printf("Error: Multipart::read state HANDLER_VALUE ""fdFile i = %ld ""c = %c\n",it - buffer.begin(), character);
 						Request.ReqstDone = 400;
 						return;
 					}
@@ -117,9 +114,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			}
 			if (count >= MAX_VALUE)
 			{
-				printf("Error: Headers::read state VALUE MAX_VALUE i = %d c = "
-					   "%c\n",
-					   count, character);
+				printf("Error: Headers::read state VALUE MAX_VALUE i = %d c = ""%c\n", count, character);
 				Request.ReqstDone = 400;
 				return;
 			}
@@ -164,9 +159,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			}
 			else
 			{
-				printf("Error: Headers::read state AFTER_WRITE_DATA i = %ld c "
-					   "= %c\n",
-					   it - buffer.begin(), character);
+				printf("Error: Headers::read state AFTER_WRITE_DATA i = %ld c ""= %c\n", it - buffer.begin(), character);
 				Request.ReqstDone = 400;
 				return;
 			}
@@ -176,7 +169,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			{
 				count++;
 				if (count == Request.sizeBoundary)
-					Request.subState = AFTER_BOUND;
+					Request.subState = AFTER_BOUNDARY;
 			}
 			else
 			{

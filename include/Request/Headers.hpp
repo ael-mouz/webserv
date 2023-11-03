@@ -19,8 +19,8 @@ private:
 	int count;
 
 public:
-	void read(Client &client, string &buffer, ssize_t &size);
-	void checkrequest(Client &client);
+	int read(Client &client, string &buffer, ssize_t &size);
+	int checkrequest(Client &client);
 	void reset();
 	Headers();
 	~Headers();

@@ -65,7 +65,7 @@ void RunServers::receiveData(vector<Client>::iterator &it, ssize_t &size)
 	// printf("%d\n", it->request.ReqstDone);
 	if (it->request.ReqstDone)
 	{
-		printf("data complet from  = %d\n", it->socketClient); ///!!!
+		// printf("data complet from  = %d\n", it->socketClient); ///!!!
 		it->read = false;
 		it->write = true;
 	}

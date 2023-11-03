@@ -184,19 +184,19 @@ void Response::getConfig(Client &client)
 		if (it != this->serverConf.OtherServerConfig.end())
 			this->Config = &it->second;
 	}
-	if (this->Config)
-	{
-		std::cout << "╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
-		std::cout << "║" BOLD " GLOBAL TABLE " RESET_ALL << std::setw(64) << "║" << std::endl;
-		std::cout << "╠═════════════════╦═════════════════════════════════════════════════════════╣" << std::endl;
-		std::cout << "║ Port            ║" << std::setw(58) << "▻" + this->Config->Port << "◅║" << std::endl;
-		std::cout << "║ Host            ║" << std::setw(58) << "▻" + this->Config->Host << "◅║" << std::endl;
-		std::cout << "║ ServerNames     ║" << std::setw(58) << "▻" + this->Config->ServerNames << "◅║" << std::endl;
-		std::cout << "║ ErrorPage       ║" << std::setw(58) << "▻" + this->Config->ErrorPage << "◅║" << std::endl;
-		std::cout << "║ LimitBodySize   ║" << std::setw(58) << "▻" + this->Config->LimitClientBodySize << "◅║" << std::endl;
-		std::cout << "║ GlobalRoot      ║" << std::setw(58) << "▻" + this->Config->GlobalRoot << "◅║" << std::endl;
-		std::cout << "╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
-	}
+	// if (this->Config)
+	// {
+	// 	std::cout << "╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
+	// 	std::cout << "║" BOLD " GLOBAL TABLE " RESET_ALL << std::setw(64) << "║" << std::endl;
+	// 	std::cout << "╠═════════════════╦═════════════════════════════════════════════════════════╣" << std::endl;
+	// 	std::cout << "║ Port            ║" << std::setw(58) << "▻" + this->Config->Port << "◅║" << std::endl;
+	// 	std::cout << "║ Host            ║" << std::setw(58) << "▻" + this->Config->Host << "◅║" << std::endl;
+	// 	std::cout << "║ ServerNames     ║" << std::setw(58) << "▻" + this->Config->ServerNames << "◅║" << std::endl;
+	// 	std::cout << "║ ErrorPage       ║" << std::setw(58) << "▻" + this->Config->ErrorPage << "◅║" << std::endl;
+	// 	std::cout << "║ LimitBodySize   ║" << std::setw(58) << "▻" + this->Config->LimitClientBodySize << "◅║" << std::endl;
+	// 	std::cout << "║ GlobalRoot      ║" << std::setw(58) << "▻" + this->Config->GlobalRoot << "◅║" << std::endl;
+	// 	std::cout << "╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
+	// }
 }
 
 void Response::regenerateExtonsion()
@@ -334,23 +334,23 @@ void Response::getFULLpath()
 		std::cout << "TYPE              : file" << std::endl;
 	else
 		std::cout << "TYPE              : invalide not found" << std::endl;
-	std::cout << "↦  ╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
-	std::cout << "↦  ║" FG_BLUE BOLD " ROUTE " << RESET_ALL << std::setw(71) << "║" << std::endl;
-	std::cout << "↦  ╠═════════════════╦═════════════════════════════════════════════════════════╣\n";
-	std::cout << "↦  ║ RoutePath       ║" << std::setw(58) << "▻" + route->RoutePath << "◅║" << std::endl;
-	std::cout << "↦  ║ UploadPath      ║" << std::setw(58) << "▻" + route->UploadPath << "◅║" << std::endl;
-	std::cout << "↦  ║ Redirection     ║" << std::setw(58) << "▻" + route->Redirection << "◅║" << std::endl;
-	std::cout << "↦  ║ RedirectStatus  ║" << std::setw(58) << "▻" + route->RedirectionStatus << "◅║" << std::endl;
-	std::cout << "↦  ║ RedirectionURL  ║" << std::setw(58) << "▻" + route->RedirectionURL << "◅║" << std::endl;
-	std::cout << "↦  ║ Root            ║" << std::setw(58) << "▻" + route->Root << "◅║" << std::endl;
-	std::cout << "↦  ║ Autoindex       ║" << std::setw(58) << "▻" + route->Autoindex << "◅║" << std::endl;
-	std::cout << "↦  ║ Index           ║" << std::setw(58) << "▻" + route->Index << "◅║" << std::endl;
-	std::cout << "↦  ║ Cgi_Exec        ║" << std::setw(58) << "▻" + route->CgiExec << "◅║" << std::endl;
-	std::cout << "↦  ║ Methods         ║" << std::setw(58) << "▻" + route->Accepted_Methods << "◅║" << std::endl;
-	std::cout << "↦  ║ Methods1        ║" << std::setw(58) << "▻" + route->Accepted_Methods_ << "◅║" << std::endl;
-	std::cout << "↦  ║ Methods2        ║" << std::setw(58) << "▻" + route->Accepted_Methods__ << "◅║" << std::endl;
-	std::cout << "↦  ║ Methods3        ║" << std::setw(58) << "▻" + route->Accepted_Methods___ << "◅║" << std::endl;
-	std::cout << "↦  ╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
+	// std::cout << "↦  ╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
+	// std::cout << "↦  ║" FG_BLUE BOLD " ROUTE " << RESET_ALL << std::setw(71) << "║" << std::endl;
+	// std::cout << "↦  ╠═════════════════╦═════════════════════════════════════════════════════════╣\n";
+	// std::cout << "↦  ║ RoutePath       ║" << std::setw(58) << "▻" + route->RoutePath << "◅║" << std::endl;
+	// std::cout << "↦  ║ UploadPath      ║" << std::setw(58) << "▻" + route->UploadPath << "◅║" << std::endl;
+	// std::cout << "↦  ║ Redirection     ║" << std::setw(58) << "▻" + route->Redirection << "◅║" << std::endl;
+	// std::cout << "↦  ║ RedirectStatus  ║" << std::setw(58) << "▻" + route->RedirectionStatus << "◅║" << std::endl;
+	// std::cout << "↦  ║ RedirectionURL  ║" << std::setw(58) << "▻" + route->RedirectionURL << "◅║" << std::endl;
+	// std::cout << "↦  ║ Root            ║" << std::setw(58) << "▻" + route->Root << "◅║" << std::endl;
+	// std::cout << "↦  ║ Autoindex       ║" << std::setw(58) << "▻" + route->Autoindex << "◅║" << std::endl;
+	// std::cout << "↦  ║ Index           ║" << std::setw(58) << "▻" + route->Index << "◅║" << std::endl;
+	// std::cout << "↦  ║ Cgi_Exec        ║" << std::setw(58) << "▻" + route->CgiExec << "◅║" << std::endl;
+	// std::cout << "↦  ║ Methods         ║" << std::setw(58) << "▻" + route->Accepted_Methods << "◅║" << std::endl;
+	// std::cout << "↦  ║ Methods1        ║" << std::setw(58) << "▻" + route->Accepted_Methods_ << "◅║" << std::endl;
+	// std::cout << "↦  ║ Methods2        ║" << std::setw(58) << "▻" + route->Accepted_Methods__ << "◅║" << std::endl;
+	// std::cout << "↦  ║ Methods3        ║" << std::setw(58) << "▻" + route->Accepted_Methods___ << "◅║" << std::endl;
+	// std::cout << "↦  ╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
 }
 
 void Response::handleCGIScript(Client &client)

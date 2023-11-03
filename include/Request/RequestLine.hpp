@@ -2,7 +2,7 @@
 
 #include "../Server/Utils.hpp"
 
-class Request_Fsm;
+class Client;
 
 enum methods
 {
@@ -31,7 +31,8 @@ private:
 	map<int, string> PossiblMethod; // global ??
 
 public:
-	void read(Request_Fsm &Request, string &buffer, ssize_t &size);
+	int read(Client &client, string &buffer, ssize_t &size);
+    // void checker(Client &client);
 	void reset();
 	RequestLine();
 	~RequestLine();

@@ -10,11 +10,10 @@ class Client;
 
 enum _mainState
 {
-	ERROR,
 	REQUEST_LINE,
 	HEADERS,
 	BODY,
-	END,
+    // CGI,
 };
 
 struct File
@@ -37,6 +36,7 @@ public:
 	string hold;
 	string key;
 	string boundary;
+    bool isCGI;
 	bool decodeFlag;
 	int sizeBoundary;
 	size_t ContentLength;

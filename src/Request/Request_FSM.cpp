@@ -2,29 +2,29 @@
 #include "../../include/Request/Multipart.hpp"
 #include "../../include/Server/Client.hpp"
 
+
 void Request_Fsm::read(Client &client, string &buffer, ssize_t &size)
 {
-	if (mainState == REQUEST_LINE)
-	{
-		// std::cout <<buffer << std::endl;
-		requestLine.read(*this, buffer, size);
-	}
-	// printf("%s\n", &Method[0]);
-	if (!buffer.empty() && mainState == HEADERS)
-	{
-		headers.read(client, buffer, size);
-	}
-	if (!buffer.empty() && mainState == BODY)
-	{
-		if (decodeFlag)
-			decode.read(*this, buffer, size);
+    switch (mainState) {
+        case REQUEST_LINE:
+		    ReqstDone = requestLine.read(client, buffer, size);
+            if (buffer.empty() || ReqstDone != 0)
+                break;
+        case HEADERS:
+		    ReqstDone = headers.read(client, buffer, size);
+            if (buffer.empty() || ReqstDone != 0)
+                break;
+        case BODY:
+		    if (decodeFlag)
+		    	decode.read(*this, buffer, size);
 
-		if (!buffer.empty())
-		{
-			multi.read(*this, buffer, size);
-			// multi.CGI(*this, buffer, size);
-		}
-	}
+		    if (!buffer.empty())
+		    {
+		    	multi.read(*this, buffer, size);
+		    	// multi.CGI(*this, buffer, size);
+		    }
+        //case CGI
+    }
 }
 
 void Request_Fsm::clear(void) // im smart

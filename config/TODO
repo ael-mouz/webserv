@@ -5,22 +5,14 @@
     *handel checker in headers class
         /mulpart form data
         /transfer chunked
+    * countent len
 
 -manage Server
     * keep alive /cloes socket
     * remove client with a safe way
 
--class server
-    * add wich server coming the client in classe client ??
-
 
 -hundel delete rederect files
     *
 
--organise project
-    *try with one classe runserver
-
-
--merge
-    *rename file upload slect
 
