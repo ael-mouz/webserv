@@ -25,7 +25,7 @@ void RunServers::runing()
 				if (FD_ISSET(it->socketClient, &readFds))
 				{
 					ssize_t size = recv(it->socketClient, recvbuffer, 4096 * 4, 0);
-					 if (size <= 0)
+					if (size <= 0)
 					{
 						close(it->socketClient);
 						clients.erase(it);
