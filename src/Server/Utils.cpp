@@ -72,7 +72,7 @@ void logMessage(LogLevel level, const std::string &message)
 	struct tm *localTime = localtime(&currentTime);
 	char timestamp[20];
 	strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localTime);
-	std::cout << "[" << timestamp << "] [" << levelStr << "] " << message << std::endl;
+	std::cout << BOLD << "[" << FG_YELLOW << timestamp << FG_WHITE << "] " << FG_GREEN << "[" << levelStr << "] " << FG_WHITE << message << std::endl;
 }
 
 void printMap(const std::multimap<std::string, std::string> &map)

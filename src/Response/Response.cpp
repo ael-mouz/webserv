@@ -44,7 +44,7 @@ void Response::clear()
 
 void Response::handelRange(stringstream &header, std::string &range)
 {
-	header << "HTTP/1.1 206 Partial Content\r\n";
+	header << "HTTP/1.1 206 " << this->Config->status.getStatus("206") << "\r\n";
 	header << "Content-Type: " << this->Config->mime.getMimeType(this->extension) << "\r\n";
 	size_t equalsPos = range.find('=');
 	size_t hyphenPos = range.find('-');
@@ -63,8 +63,10 @@ void Response::handelRange(stringstream &header, std::string &range)
 		return;
 	}
 }
+
 void Response::handleNormalFiles(Client &client)
 {
+	// std::cout << "▻NormalFiles◅ ----------------------------------------------------" << std::endl;
 	this->infile.open(this->fullpath.c_str(), std::ios::binary);
 	if (!this->infile.is_open() ||
 		this->extension.empty()) /// TODO: maybe this is not corect
@@ -98,10 +100,16 @@ void Response::sendResponse(Client &client)
 		if (!this->HeaderResponse.empty())
 		{
 			if (send(client.socketClient, client.response.HeaderResponse.c_str(), client.response.HeaderResponse.length(), 0) <= 0)
+			{
 				this->closeClient = true, this->responseSent = true, this->isBodySent = true;
-			std::cout << "HEDER SENT : --------------------------------------------" << std::endl;
-			std::cout << convertText(this->HeaderResponse);
-			std::cout << "---------------------------------------------------------" << std::endl;
+				return;
+			}
+			std::cout << "HEADER SENT TO:      " << client.socketClient << " | "
+					  << client.response.Config->Host << ":"
+					  << client.response.Config->Port << std::endl;
+			// std::cout << "HEDER SENT : --------------------------------------------" << std::endl;
+			// std::cout << convertText(this->HeaderResponse);
+			// std::cout << "---------------------------------------------------------" << std::endl;
 			// this->responseSent = true;
 		}
 		this->isHeaderSent = true;
@@ -111,7 +119,10 @@ void Response::sendResponse(Client &client)
 		if (!this->BodyResponse.empty())
 		{
 			if (send(client.socketClient, client.response.BodyResponse.c_str(), client.response.BodyResponse.length(), 0) <= 0)
-				this->closeClient = true;
+			{
+				this->closeClient = true, this->responseSent = true, this->isBodySent = true;
+				return;
+			}
 			this->responseSent = true, this->isBodySent = true;
 		}
 		else if (infile.is_open())
@@ -124,19 +135,26 @@ void Response::sendResponse(Client &client)
 				if (bytesRead > 0)
 				{
 					if (send(client.socketClient, buffer, bytesRead, 0) <= 0)
+					{
 						this->closeClient = true, this->responseSent = true, this->isBodySent = true;
+						return;
+					}
 				}
 			}
 			else
 			{
-				std::cout << "RESPONSE DONE BODY SENT" << std::endl;
+				std::cout << "RESPONSE DONE BODY SENT TO:" << client.socketClient << " | "
+						  << client.response.Config->Host << ":"
+						  << client.response.Config->Port << std::endl;
 				this->responseSent = true;
 				this->isBodySent = true;
 			}
 		}
 		else
 		{
-			std::cout << "RESPONSE DONE NO BODY" << std::endl;
+			std::cout << "RESPONSE DONE NO BODY TO: " << client.socketClient << " | "
+					  << client.response.Config->Host << ":"
+					  << client.response.Config->Port << std::endl;
 			this->responseSent = true;
 			this->isBodySent = true;
 		}
@@ -147,46 +165,38 @@ void Response::response(Client &client)
 {
 	if (responseDone)
 		return;
-	std::cout << "▻Start Response◅ -------------------------------------------------" << std::endl;
-	std::cout << "▻merge Headers Values◅ -------------------------------------------" << std::endl;
+	// std::cout << "▻Start Response◅ -------------------------------------------------" << std::endl;
+
 	mergeHeadersValues(client);
-	std::cout << "▻Get config◅ -----------------------------------------------------" << std::endl;
 	getConfig(client);
-	std::cout << "▻Parse uri◅ ------------------------------------------------------" << std::endl;
 	parseUri(client.request.URI);
-	std::cout << "▻Get Route◅ -----------------------------------------------------" << std::endl;
 	getRoute();
-	std::cout << "▻Generate redirection◅ -----------------------------------------------------" << std::endl;
 	genrateRederiction();
 	if (responseDone)
 		return;
-	std::cout << "▻Get full path◅ --------------------------------------------------" << std::endl;
 	getFULLpath();
 	if (responseDone)
 		return;
-	std::cout << "▻Regenerate extension◅ -------------------------------------------" << std::endl;
 	regenerateExtonsion();
 	if (responseDone)
 		return;
 	if (this->isCgi)
 	{
-		std::cout << "▻Generate Cgi env◅ -----------------------------------------------" << std::endl;
 		generateCGIEnv(client);
-		std::cout << "▻Run Cgi◅ --------------------------------------------------------" << std::endl;
 		handleCGIScript(client);
 		if (responseDone)
 			return;
 	}
 	else
 	{
-		std::cout << "▻NormalFiles◅ ----------------------------------------------------" << std::endl;
 		handleNormalFiles(client);
 	}
-	std::cout << "▻End Response◅ ---------------------------------------------------" << std::endl;
+	// std::cout << "▻End Response◅ ---------------------------------------------------" << std::endl;
 }
 
 void Response::mergeHeadersValues(Client &client)
 {
+	// std::cout << "▻merge Headers Values◅ -------------------------------------------" << std::endl;
 	std::multimap<std::string, std::string> newHeaders;
 	for (std::multimap<std::string, std::string>::iterator it =
 			 client.request.mapHeaders.begin();
@@ -201,14 +211,18 @@ void Response::mergeHeadersValues(Client &client)
 			mergedIt->second += ", " + it->second;
 	}
 	client.request.mapHeaders = newHeaders;
-	printMap(newHeaders);
+	if (client.request.mapHeaders.find("Connection") != client.request.mapHeaders.end())
+		std::cout << client.request.mapHeaders.find("Connection")->second << std::endl;
+	else
+		std::cout << "EROOORORRRRRRRR " << std::endl;
+	// printMap(newHeaders);
 }
 
 void Response::getConfig(Client &client)
 {
+	// std::cout << "▻Get config◅ -----------------------------------------------------" << std::endl;
 	this->Config = &this->serverConf.DefaultServerConfig;
-	std::multimap<std::string, std::string>::iterator it =
-		client.request.mapHeaders.find("Host");
+	std::multimap<std::string, std::string>::iterator it = client.request.mapHeaders.find("Host");
 	std::string servername;
 	if (it != client.request.mapHeaders.end())
 		servername = trim(it->second, " \t");
@@ -236,6 +250,7 @@ void Response::getConfig(Client &client)
 
 void Response::regenerateExtonsion()
 {
+	// std::cout << "▻Regenerate extension◅ -------------------------------------------" << std::endl;
 	size_t pos5 = this->fullpath.find_last_of(".");
 	if (pos5 != std::string::npos)
 		this->extension =
@@ -243,15 +258,16 @@ void Response::regenerateExtonsion()
 	if (this->extension == "pl" || this->extension == "py" ||
 		this->extension == "php" || this->extension == "rb")
 		this->isCgi = true;
-	std::cout << "extension  : " << this->extension << std::endl;
-	std::cout << "query      : " << this->query << std::endl;
-	std::cout << "path info  : " << this->path_info << std::endl;
-	std::cout << "full path  : " << this->fullpath << std::endl;
-	std::cout << "cgi        : " << (this->isCgi ? "true" : "false") << std::endl;
+	// std::cout << "extension  : " << this->extension << std::endl;
+	// std::cout << "query      : " << this->query << std::endl;
+	// std::cout << "path info  : " << this->path_info << std::endl;
+	// std::cout << "full path  : " << this->fullpath << std::endl;
+	// std::cout << "cgi        : " << (this->isCgi ? "true" : "false") << std::endl;
 }
 
 void Response::parseUri(std::string uri) // TODO:: uri empty ?/?
 {
+	// std::cout << "▻Parse uri◅ ------------------------------------------------------" << std::endl;
 	size_t posquery = uri.find("?");
 	if (posquery != std::string::npos)
 	{
@@ -278,14 +294,15 @@ void Response::parseUri(std::string uri) // TODO:: uri empty ?/?
 	if (pos != std::string::npos)
 		this->extension =
 			this->fullpath.substr(pos + 1, this->fullpath.length() - pos + 1);
-	std::cout << "extension  : " << this->extension << std::endl;
-	std::cout << "query      : " << this->query << std::endl;
-	std::cout << "path info  : " << this->path_info << std::endl;
-	std::cout << "script     : " << this->fullpath << std::endl;
+	// std::cout << "extension  : " << this->extension << std::endl;
+	// std::cout << "query      : " << this->query << std::endl;
+	// std::cout << "path info  : " << this->path_info << std::endl;
+	// std::cout << "script     : " << this->fullpath << std::endl;
 }
 
 void Response::getRoute()
 {
+	// std::cout << "▻Get Route◅ -----------------------------------------------------" << std::endl;
 	std::string dir;
 	this->route = this->Config->getRoute(this->fullpath);
 	if (this->route.RoutePath == "default")
@@ -300,16 +317,17 @@ void Response::getRoute()
 				this->route = this->Config->getRoute(dir);
 				dir = getParentDirectories(dir);
 			}
-			if (dir.empty() && this->route.RoutePath == "default")
-				std::cout << "Default match     : " << this->route.RoutePath << std::endl;
-			else
-				std::cout << "Directory match   : " << this->route.RoutePath << std::endl, match = 1;
+			// if (dir.empty() && this->route.RoutePath == "default")
+			// 	std::cout << "Default match     : " << this->route.RoutePath << std::endl;
+			// else
+			// 	std::cout << "Directory match   : " << this->route.RoutePath << std::endl, match = 1;
 		}
-		else
-			std::cout << "Extention match   : " << this->route.RoutePath << std::endl, match = 2;
+		// else
+		// 	std::cout << "Extention match   : " << this->route.RoutePath << std::endl, match = 2;
 	}
-	else
-		std::cout << "Full match        : " << this->route.RoutePath << std::endl, match = 3;
+	// else
+	// 	std::cout << "Full match        : " << this->route.RoutePath << std::endl, match = 3;
+
 	// std::cout << "↦  ╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
 	// std::cout << "↦  ║" FG_BLUE BOLD " ROUTE " << RESET_ALL << std::setw(71) << "║" << std::endl;
 	// std::cout << "↦  ╠═════════════════╦═════════════════════════════════════════════════════════╣\n";
@@ -331,6 +349,7 @@ void Response::getRoute()
 
 void Response::genrateRederiction()
 {
+	// std::cout << "▻Generate redirection◅ -----------------------------------------------------" << std::endl;
 	if (this->route.Redirection == "on")
 	{
 		std::stringstream Headers__;
@@ -357,6 +376,7 @@ void Response::genrateRederiction()
 
 void Response::getFULLpath()
 {
+	// std::cout << "▻Get full path◅ --------------------------------------------------" << std::endl;
 	if (route.Root != "default" && route.RoutePath != "default" && match == 1)
 		this->entryPath = this->fullpath.substr(route.RoutePath.size()),
 		this->fullpath = route.Root + this->fullpath.substr(route.RoutePath.size()),
@@ -369,11 +389,11 @@ void Response::getFULLpath()
 		this->entryPath = this->fullpath,
 		this->fullpath = this->Config->GlobalRoot + this->fullpath,
 		this->path_translated = this->Config->GlobalRoot + this->path_info;
-	std::cout << "FULL PATH         : " << this->fullpath << std::endl;
+	// std::cout << "FULL PATH         : " << this->fullpath << std::endl;
 	int dirr = isDirectory(this->fullpath.c_str());
 	if (dirr == 1)
 	{
-		std::cout << "TYPE              : directory" << std::endl;
+		// std::cout << "TYPE              : directory" << std::endl;
 		if (route.Autoindex == "on")
 		{
 			generateAutoIndex();
@@ -386,14 +406,15 @@ void Response::getFULLpath()
 			this->fullpath = this->fullpath + "/" + route.Index;
 		std::cout << "THE NEW FULL PATH : " << this->fullpath << std::endl;
 	}
-	else if (dirr == 2)
-		std::cout << "TYPE              : file" << std::endl;
-	else
-		std::cout << "TYPE              : invalide not found" << std::endl;
+	// else if (dirr == 2)
+	// std::cout << "TYPE              : file" << std::endl;
+	// else
+	// std::cout << "TYPE              : invalide not found" << std::endl;
 }
 
 void Response::handleCGIScript(Client &client)
 {
+	// std::cout << "▻Run Cgi◅ --------------------------------------------------------" << std::endl
 	int tempFD = -1;
 	if (client.request.Method == "POST")
 	{
@@ -435,40 +456,33 @@ void Response::handleCGIScript(Client &client)
 		envp[i] = NULL;
 		dup2(pipefd[1], STDOUT_FILENO);
 		close(pipefd[1]);
-		alarm(10);
+		alarm(5);
 		if (tempFD != -1 && client.request.Method == "POST")
 			dup2(tempFD, STDIN_FILENO), close(tempFD);
 		if (this->route.CgiExec != "default")
 		{
-			std::cerr << this->route.CgiExec << std::endl;
-			size_t pos_ = this->route.CgiExec.find_last_of("/");
-			if (pos_ != std::string::npos)
-			{
-				std::string exec = this->route.CgiExec.substr(pos_ + 1);
-				std::cerr << "exec : " << exec << std::endl;
-				char *const args[] = {(char *)exec.c_str(), (char *)this->fullpath.c_str(), NULL};
-				execve(this->route.CgiExec.c_str(), args, envp);
-			}
+			char *const args[] = {(char *)this->route.CgiExec.c_str(), (char *)this->fullpath.c_str(), NULL};
+			execve(this->route.CgiExec.c_str(), args, envp);
 		}
 		else if (this->extension == "py")
 		{
-			char *const args[] = {(char *)"python3", (char *)this->fullpath.c_str(), NULL};
-			execve("/usr/bin/python3", args, envp);
+			char *const args[] = {(char *)this->Config->pythonCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
+			execve(this->Config->pythonCgi.c_str(), args, envp);
 		}
 		else if (this->extension == "pl")
 		{
-			char *const args[] = {(char *)"perl", (char *)this->fullpath.c_str(), NULL};
-			execve("/usr/bin/perl", args, envp);
+			char *const args[] = {(char *)this->Config->perlCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
+			execve(this->Config->perlCgi.c_str(), args, envp);
 		}
 		else if (this->extension == "rb")
 		{
-			char *const args[] = {(char *)"ruby", (char *)this->fullpath.c_str(), NULL};
-			execve("/usr/bin/ruby", args, envp);
+			char *const args[] = {(char *)this->Config->rubyCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
+			execve(this->Config->rubyCgi.c_str(), args, envp);
 		}
 		else if (this->extension == "php")
 		{
-			char *const args[] = {(char *)"php-cgi_bin", (char *)this->fullpath.c_str(), NULL};
-			execve("/Users/ael-mouz/Desktop/webserv/tests/php-cgi_bin", args, envp); // must change
+			char *const args[] = {(char *)this->Config->phpCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
+			execve(this->Config->phpCgi.c_str(), args, envp); // must change
 		}
 		perror("execve failed");
 		for (int i = 0; envp[i] != nullptr; i++)
@@ -493,9 +507,44 @@ void Response::handleCGIScript(Client &client)
 			char buffer[4096];
 			ssize_t bytesRead;
 			while ((bytesRead = read(pipefd[0], buffer, 4096)) > 0)
-				resCgi += buffer;
-			std::cout << resCgi << std::endl;
-			this->HeaderResponse = resCgi;
+				resCgi.append(buffer, bytesRead);
+			// std::cout << convertText(resCgi) << std::endl;
+			/*****************************************/
+			std::istringstream responseStream(resCgi);
+			std::string resHeaders__, resBody__;
+			// std::string responseLine,reshttpVersion, resStatus, resStatusString,;
+			// std::getline(responseStream, responseLine);
+			// std::vector<std::string> responseParts = splitString(responseLine, " ");
+			// if (responseParts.size() >= 3)
+			// {
+			// 	reshttpVersion = responseParts[0];
+			// 	resStatus = responseParts[1];
+			// 	resStatusString = responseParts[2];
+			// }
+			// else
+			// 	responseStream.seekg(0, std::ios::beg); /// TODO:: maybe i should do this ???
+			std::string line;
+			while (std::getline(responseStream, line))
+			{
+				if (line.empty() || line == "\r")
+					break;
+				resHeaders__ += line + "\n";
+			}
+			std::multimap<std::string, std::string> MAPheders = parseResponseHeader(resHeaders__);
+			if (this->responseDone)
+				return;
+			size_t pos = resCgi.find("\r\n\r\n");
+			if (pos != std::string::npos)
+				resBody__ = resCgi.substr(pos + 4, resCgi.length() - pos + 4);
+			resHeaders__ = generateResponseHeaderCGI(MAPheders, resBody__);
+			// std::cout << "HEDERS: \n"
+			// 		  << convertText(resHeaders__) << std::endl;
+			// std::cout << "BODY: \n"
+			// 		  << convertText(resBody__) << std::endl;
+			/*****************************************/
+			// this->HeaderResponse = resCgi;//TODO:: ereas it;
+			this->HeaderResponse = resHeaders__;
+			this->BodyResponse = resBody__;
 			this->responseDone = true;
 		}
 		else
@@ -512,6 +561,7 @@ void Response::handleCGIScript(Client &client)
 
 void Response::generateCGIEnv(Client &client)
 {
+	// std::cout << "▻Generate Cgi env◅ -----------------------------------------------" << std::endl;
 	std::multimap<std::string, std::string>::iterator it;
 	std::multimap<std::string, std::string>::iterator end;
 	std::multimap<std::string, std::string> env;
@@ -561,11 +611,9 @@ void Response::generateCGIEnv(Client &client)
 		if (it->first == "Content-Type" || it->first == "Content-Length")
 			continue;
 		std::string keyEnv = "HTTP_" + it->first;
-		for (std::string::iterator ch = keyEnv.begin(); ch != keyEnv.end();
-			 ++ch)
+		for (std::string::iterator ch = keyEnv.begin(); ch != keyEnv.end(); ++ch)
 			*ch = std::toupper(*ch);
-		for (std::string::iterator ch = keyEnv.begin(); ch != keyEnv.end();
-			 ++ch)
+		for (std::string::iterator ch = keyEnv.begin(); ch != keyEnv.end(); ++ch)
 		{
 			if (*ch == '-')
 				*ch = '_';
@@ -573,7 +621,7 @@ void Response::generateCGIEnv(Client &client)
 		std::string valueEnv = it->second;
 		env.insert(std::pair<std::string, std::string>(keyEnv, valueEnv));
 	}
-	printMap(env);
+	// printMap(env);
 	this->env = env;
 }
 
@@ -647,6 +695,7 @@ void Response::generateResponse(std::string status)
 	infile.close();
 	return;
 }
+
 std::string humanReadableSize(off_t size)
 {
 	std::ostringstream sizeStr;
@@ -657,7 +706,7 @@ std::string humanReadableSize(off_t size)
 	else if (size >= (1 << 10))
 		sizeStr << (size / (1 << 10)) << " KB";
 	else
-		sizeStr << size << " bytes";
+		sizeStr << size << " B";
 	return sizeStr.str();
 }
 
@@ -729,12 +778,11 @@ void Response::generateAutoIndex(void)
 		{
 			std::string fileType = (S_ISDIR(fileStat.st_mode)) ? "directory" : "file";
 			std::string sizeStr = humanReadableSize(fileStat.st_size);
-
-			 autoIndex << "<td class='" << fileType << " col'>" << sizeStr << "</td>\n";
-			 autoIndex << "<td class='" << fileType << " col'>" << std::oct << (fileStat.st_mode & 0777) << "</td>\n";
-			 autoIndex << "<td class='" << fileType << " col'>" << std::ctime(&fileStat.st_atime);
-			 autoIndex << "<td class='" << fileType << " col'>" << std::ctime(&fileStat.st_mtime);
-			 autoIndex << "<td class='" << fileType << " col'>" << std::ctime(&fileStat.st_ctime);
+			autoIndex << "<td class='" << fileType << " col'>" << sizeStr << "</td>\n";
+			autoIndex << "<td class='" << fileType << " col'>" << std::oct << (fileStat.st_mode & 0777) << "</td>\n";
+			autoIndex << "<td class='" << fileType << " col'>" << std::ctime(&fileStat.st_atime);
+			autoIndex << "<td class='" << fileType << " col'>" << std::ctime(&fileStat.st_mtime);
+			autoIndex << "<td class='" << fileType << " col'>" << std::ctime(&fileStat.st_ctime);
 			// autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << fileStat.st_size << " bytes</td>\n";
 			// autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << std::oct << (fileStat.st_mode & 0777) << "</td>\n";
 			// autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << std::ctime(&fileStat.st_atime) << "</td>\n";
@@ -750,34 +798,45 @@ void Response::generateAutoIndex(void)
 	std::stringstream header_;
 	header_ << "HTTP/1.1 200 OK\r\n";
 	header_ << "Content-Type: text/html; charset=UTF-8\r\n";
-	header_ << "Content-Length: " + std::to_string(autoIndex.str().length()) + "\r\n\r\n";
+	header_ << "Content-length: " + intToString(autoIndex.str().length()) + "\r\n\r\n";
 	this->HeaderResponse = header_.str();
 	closedir(dir);
 	this->responseDone = true;
 	return;
 }
 
-// std::multimap<std::string, std::string> Response::parseHeader(int
-// clientSocket, std::string buffer)
-// {
-// 	std::multimap<std::string, std::string> headers;
-// 	std::istringstream stream(buffer);
-// 	std::string line;
-// 	while (std::getline(stream, line))
-// 	{
-// 		if (line.empty() || line == "\r")
-// 			break;
-// 		size_t pos = line.find(':');
-// 		if (pos == std::string::npos)
-// 		{
-// 			generateResponse("400");
-// 			send(clientSocket, this->responseStatus.c_str(),
-// this->responseStatus.length(), 0); 			break;
-// 		}
-// 		std::string key = line.substr(0, pos);
-// 		std::string value = line.substr(pos + 2);
-// 		headers.insert(std::make_pair(key, value));
-// 	}
-// 	printMap(headers);
-// 	return headers;
-// }
+std::multimap<std::string, std::string> Response::parseResponseHeader(std::string header)
+{
+	std::multimap<std::string, std::string> headers;
+	std::istringstream stream(header);
+	std::string line;
+	while (std::getline(stream, line))
+	{
+		if (line.empty() || line == "\r")
+			break;
+		size_t pos = line.find(':');
+		if (pos == std::string::npos)
+		{
+			generateResponse("502");
+			this->responseDone = true;
+			break;
+		}
+		std::string key = line.substr(0, pos);
+		std::string value = line.substr(pos + 2, line.length() - (pos + 2) - 1);
+		headers.insert(std::make_pair(key, value));
+	}
+	printMap(headers);
+	return headers;
+}
+
+std::string Response::generateResponseHeaderCGI(std::multimap<std::string, std::string> &headers, std::string &body)
+{
+	std::stringstream header_;
+	header_ << "HTTP/1.1 200 OK\r\n";
+	for (std::multimap<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
+		header_ << it->first + ": " + it->second + "\r\n";
+	if (headers.find("Content-length") == headers.end())
+		header_ << "Content-length: " << body.length() << "\r\n";
+	header_ << "\r\n";
+	return header_.str();
+}

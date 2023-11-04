@@ -54,6 +54,7 @@ public:
 	void generateResponse(std::string status);
 	void generateAutoIndex(void);
 	void sendResponse(Client &client);
-	// std::multimap<std::string, std::string> parseHeader(int clientSocket,
+	std::multimap<std::string, std::string> parseResponseHeader(std::string header);
+	std::string generateResponseHeaderCGI(std::multimap<std::string, std::string> &headers, std::string &body);
 	// std::string buffer);
 };

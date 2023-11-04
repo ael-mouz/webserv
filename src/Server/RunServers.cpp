@@ -26,6 +26,9 @@ void RunServers::runing()
 					ssize_t size = recv(it->socketClient, recvbuffer, 4096 * 4, 0);
 					if (size <= 0)
 					{
+						std::cout << "REQ close conection :    " << it->socketClient << " | "
+								  << it->serverConf.DefaultServerConfig.Host << ":" << it->serverConf.DefaultServerConfig.Port << std::endl;
+						close(it->socketClient);
 						close(it->socketClient);
 						clients.erase(it);
 						continue;
@@ -43,6 +46,8 @@ void RunServers::runing()
 					{
 						if (it->response.closeClient)
 						{
+							std::cout << "RES close conection :    " << it->socketClient << " | "
+									  << it->serverConf.DefaultServerConfig.Host << ":" << it->serverConf.DefaultServerConfig.Port << std::endl;
 							close(it->socketClient);
 							clients.erase(it);
 							continue;
@@ -69,7 +74,10 @@ void RunServers::receiveData(vector<Client>::iterator &it, ssize_t &size)
 	// printf("%d\n", it->request.ReqstDone);
 	if (it->request.ReqstDone)
 	{
-		printf("data complet from  = %d\n", it->socketClient); ///!!!
+		// printf("data complet from  = %d\n", it->socketClient); ///!!!
+		std::cout << "data complet from :  " << it->socketClient << " | "
+				  << it->serverConf.DefaultServerConfig.Host << ":"
+				  << it->serverConf.DefaultServerConfig.Port << std::endl;
 		it->read = false;
 		it->write = true;
 	}
@@ -81,6 +89,7 @@ void RunServers::resetFds()
 	FD_ZERO(&readFds);
 	FD_ZERO(&writeFds);
 	readFds = serverFds;
+	maxFds = maxFdstmp;
 	for (vector<Client>::iterator it = clients.begin(); it != clients.end();
 		 it++)
 	{
@@ -88,29 +97,33 @@ void RunServers::resetFds()
 			FD_SET(it->socketClient, &readFds);
 		else if (it->write)
 			FD_SET(it->socketClient, &writeFds);
+		if (it->socketClient > maxFds)
+			maxFds = it->socketClient;
 	}
 }
 
 void RunServers::acceptClients()
 {
-	for (vector<Server>::iterator it = servers.begin(); it != servers.end();
-		 it++)
+	for (vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
 	{
 		if (FD_ISSET(it->socketServer, &readFds))
 		{
-			newSocket =
-				accept(it->socketServer, NULL, NULL); // way we pute NULL ??
-			if (newSocket <= -1)
+			newSocket = -1;
+			newSocket = accept(it->socketServer, NULL, NULL); // way we pute NULL ??
+			if (newSocket <= 0) ///TODO :CHECK FOR 0 OR -1
 			{
 				/// !!
+				std::cout << "accept failed : " << std::endl;
 			}
 			else
 			{
-				printf("new client fd = %d\n", newSocket); ///!!
+				// printf("new client fd = %d\n", newSocket); ///!!
 				Client client(it->serverConf, newSocket);
 				clients.push_back(client);
-				if (newSocket > maxFds)
-					maxFds = newSocket;
+				std::cout << "accept client :      " << newSocket << " | "
+						  << it->serverConf.DefaultServerConfig.Host << ":" << it->serverConf.DefaultServerConfig.Port << std::endl;
+				// if (newSocket > maxFds)
+				// 	maxFds = newSocket;
 			}
 		}
 	}
@@ -164,15 +177,15 @@ RunServers::RunServers(char **av) : numberOfEvents(0)
 	config.checkServerConfig(av[1]);
 	config.filterServerConfig();
 	vector<ServerConf> &serverConf = config.getServerConfig();
-	maxFds = -1;
+	maxFdstmp = -1;
 	for (vector<ServerConf>::iterator it = serverConf.begin();
 		 it != serverConf.end(); it++)
 	{
 		Server serv;
 		serv.serverConf = *it;
 		int fd = bindSockets(serv);
-		if (fd > maxFds)
-			maxFds = fd;
+		if (fd > maxFdstmp)
+			maxFdstmp = fd;
 		servers.push_back(serv);
 	}
 	FD_ZERO(&serverFds);
