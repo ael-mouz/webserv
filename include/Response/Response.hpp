@@ -3,7 +3,6 @@
 #include "../Config/ServerConf.hpp"
 #include "../Config/ServerConfig.hpp"
 #include "../Server/Utils.hpp"
-// #include "../Server/Client.hpp"
 
 class Client;
 
@@ -26,21 +25,20 @@ public:
 	bool isCgi;
 	bool responseDone;
 	bool responseSent;
-	std::ifstream infile;
+	int fd;
+	FILE *fptr;
 	size_t fileSize;
-	size_t ofsset;
+	size_t offset;
 	int match;
 	Route route;
-	ServerConf &serverConf;
 	ServerConfig *Config;
 	std::multimap<std::string, std::string> env;
 
-	Response(ServerConf &serverConf);
+	Response(void);
 	~Response(void);
-	/*add this in request ???? */
-	void getRoute();
+	void getRoute(void);
 	void response(Client &client);
-	void clear();
+	void clear(void);
 	void genrateRederiction();
 	void mergeHeadersValues(Client &client);
 	void getConfig(Client &client);
@@ -49,7 +47,7 @@ public:
 	void regenerateExtonsion();
 	void handleCGIScript(Client &client);
 	void handleNormalFiles(Client &client);
-	void handelRange(stringstream &header, std::string &range);
+	void handleRange(stringstream &header,const std::string &range);
 	void generateCGIEnv(Client &client);
 	void generateResponse(std::string status);
 	void generateAutoIndex(void);

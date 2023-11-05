@@ -2,7 +2,7 @@
 #include "../../include/Config/ServerConfig.hpp"
 #include "../../include/Server/Client.hpp"
 
-Response::Response(ServerConf &serverConf) : serverConf(serverConf)
+Response::Response()
 {
 	this->responseDone = false;
 	this->isCgi = false;
@@ -11,11 +11,13 @@ Response::Response(ServerConf &serverConf) : serverConf(serverConf)
 	this->responseSent = false;
 	closeClient = false;
 	fileSize = 0;
-	ofsset = 0;
+	offset = 0;
 	match = 0;
 }
 
-Response::~Response() {}
+Response::~Response() {
+	// fclose(fptr); // maybe leak file discriptor
+}
 
 void Response::clear()
 {
@@ -34,57 +36,64 @@ void Response::clear()
 	isHeaderSent = false;
 	responseDone = false;
 	responseSent = false;
-	infile.close();
 	fileSize = 0;
-	ofsset = 0;
+	offset = 0;
 	match = 0;
 	Config = NULL;
 	env.clear();
+	fclose(fptr);
+	fptr = NULL;
 }
 
-void Response::handelRange(stringstream &header, std::string &range)
+void Response::handleRange(stringstream &header, const std::string &range)
 {
-	header << "HTTP/1.1 206 " << this->Config->status.getStatus("206") << "\r\n";
-	header << "Content-Type: " << this->Config->mime.getMimeType(this->extension) << "\r\n";
 	size_t equalsPos = range.find('=');
 	size_t hyphenPos = range.find('-');
-	if (equalsPos != std::string::npos && hyphenPos != std::string::npos)
-	{
-		this->ofsset = 0;
-		std::string startByteStr = range.substr(equalsPos + 1, hyphenPos - equalsPos - 1);
-		std::istringstream(startByteStr) >> this->ofsset;
-		header << "Content-Range: bytes " << this->ofsset << "-" << (this->fileSize - 1) << "/" << this->fileSize << "\r\n", infile.seekg(this->ofsset);
-		this->fileSize -= this->ofsset;
-	}
-	else
+
+	if (equalsPos == std::string::npos || hyphenPos == std::string::npos)
 	{
 		generateResponse("416");
 		this->responseDone = true;
 		return;
 	}
+	this->offset = 0;
+	std::string startByteStr = range.substr(equalsPos + 1, hyphenPos - equalsPos - 1);
+	std::istringstream(startByteStr) >> this->offset;
+	if (this->offset >= this->fileSize)
+	{
+		generateResponse("416");
+		this->responseDone = true;
+		return;
+	}
+	header << "HTTP/1.1 206 " << this->Config->status.getStatus("206") << "\r\n";
+	header << "Accept-Ranges: bytes\r\n";
+	header << "Content-Type: " << this->Config->mime.getMimeType(this->extension) << "\r\n";
+	header << "Content-Range: bytes " << this->offset << "-" << (this->fileSize - 1) << "/" << this->fileSize << "\r\n";
+	fseek(this->fptr, this->offset, SEEK_SET);
+	this->fileSize -= this->offset;
 }
 
 void Response::handleNormalFiles(Client &client)
 {
 	// std::cout << "▻NormalFiles◅ ----------------------------------------------------" << std::endl;
-	this->infile.open(this->fullpath.c_str(), std::ios::binary);
-	if (!this->infile.is_open() ||
-		this->extension.empty()) /// TODO: maybe this is not corect
+	this->fptr = fopen(this->fullpath.c_str(), "rb");
+	if (!this->fptr || this->extension.empty()) /// TODO: maybe this is not corect
 	{
 		generateResponse("404");
 		this->responseDone = true;
 		return;
 	}
-	this->infile.seekg(0, std::ios::end);
-	this->fileSize = this->infile.tellg();
-	this->infile.seekg(0, std::ios::beg);
+	fseek(this->fptr, 0, SEEK_END);
+	this->fileSize = ftell(this->fptr);
+	fseek(this->fptr, 0, SEEK_SET);
 	std::stringstream header;
 	std::multimap<std::string, std::string>::iterator it = client.request.mapHeaders.find("Range");
 	if (it != client.request.mapHeaders.end())
-		handelRange(header, it->second);
+		handleRange(header, it->second);
 	else
 	{
 		header << "HTTP/1.1 200 OK\r\n";
+		header << "Accept-Ranges: bytes\r\n";
 		header << "Content-Type: " << this->Config->mime.getMimeType(this->extension) << "\r\n";
 	}
 	header << "Content-Length: " << fileSize << "\r\n";
@@ -107,10 +116,6 @@ void Response::sendResponse(Client &client)
 			std::cout << "HEADER SENT TO:      " << client.socketClient << " | "
 					  << client.response.Config->Host << ":"
 					  << client.response.Config->Port << std::endl;
-			// std::cout << "HEDER SENT : --------------------------------------------" << std::endl;
-			// std::cout << convertText(this->HeaderResponse);
-			// std::cout << "---------------------------------------------------------" << std::endl;
-			// this->responseSent = true;
 		}
 		this->isHeaderSent = true;
 	}
@@ -125,13 +130,12 @@ void Response::sendResponse(Client &client)
 			}
 			this->responseSent = true, this->isBodySent = true;
 		}
-		else if (infile.is_open())
+		else if (this->fptr)
 		{
-			if (!this->infile.eof())
+			if (!feof(this->fptr))
 			{
-				char buffer[512];
-				this->infile.read(buffer, 512);
-				ssize_t bytesRead = this->infile.gcount();
+				char buffer[1024];
+				ssize_t bytesRead = fread(buffer, 1, sizeof(buffer), this->fptr);
 				if (bytesRead > 0)
 				{
 					if (send(client.socketClient, buffer, bytesRead, 0) <= 0)
@@ -211,17 +215,13 @@ void Response::mergeHeadersValues(Client &client)
 			mergedIt->second += ", " + it->second;
 	}
 	client.request.mapHeaders = newHeaders;
-	if (client.request.mapHeaders.find("Connection") != client.request.mapHeaders.end())
-		std::cout << client.request.mapHeaders.find("Connection")->second << std::endl;
-	else
-		std::cout << "EROOORORRRRRRRR " << std::endl;
 	// printMap(newHeaders);
 }
 
 void Response::getConfig(Client &client)
 {
 	// std::cout << "▻Get config◅ -----------------------------------------------------" << std::endl;
-	this->Config = &this->serverConf.DefaultServerConfig;
+	this->Config = &client.serverConf.DefaultServerConfig;
 	std::multimap<std::string, std::string>::iterator it = client.request.mapHeaders.find("Host");
 	std::string servername;
 	if (it != client.request.mapHeaders.end())
@@ -229,8 +229,8 @@ void Response::getConfig(Client &client)
 	if (!servername.empty())
 	{
 		std::map<std::string, ServerConfig>::iterator it;
-		it = this->serverConf.OtherServerConfig.find(servername);
-		if (it != this->serverConf.OtherServerConfig.end())
+		it = client.serverConf.OtherServerConfig.find(servername);
+		if (it != client.serverConf.OtherServerConfig.end())
 			this->Config = &it->second;
 	}
 	// if (this->Config)
@@ -757,7 +757,7 @@ void Response::generateAutoIndex(void)
 	{
 		if (entry->d_type == DT_DIR && std::strcmp(entry->d_name, ".") == 0)
 			continue;
-		std::string icon = (entry->d_type == DT_DIR) ? "/folder.svg" : "/file.png";
+		std::string icon = (entry->d_type == DT_DIR) ? "/images/folder.svg" : "/images/file.png";
 		autoIndex << "<tr>";
 		autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << "'>";
 		if (!this->entryPath.empty() && this->entryPath != "/" && this->entryPath.back() != '/')
@@ -773,7 +773,7 @@ void Response::generateAutoIndex(void)
 			path = this->fullpath + "/" + entry->d_name;
 		else
 			path = this->fullpath + entry->d_name;
-		std::cout << path << std::endl;
+		// std::cout << path << std::endl;
 		if (stat(path.c_str(), &fileStat) == 0)
 		{
 			std::string fileType = (S_ISDIR(fileStat.st_mode)) ? "directory" : "file";

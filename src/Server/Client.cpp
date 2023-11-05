@@ -1,7 +1,7 @@
 #include "../../include/Server/Client.hpp"
 
 Client::Client(ServerConf &serverConf, int socketClient)
-	: socketClient(socketClient), serverConf(serverConf), response(serverConf)
+	: socketClient(socketClient), serverConf(serverConf)
 {
 	read = true;
 	write = false;
@@ -11,13 +11,14 @@ Client &Client::operator=(const Client &overl)
 {
 	socketClient = overl.socketClient;
 	request = overl.request;
+	response = overl.response;
 	read = overl.read;
 	write = overl.write;
 	return (*this);
 }
 
 Client::Client(const Client &copy)
-	: serverConf(copy.serverConf), response(copy.serverConf)
+	: serverConf(copy.serverConf)
 {
 	*this = copy;
 }
