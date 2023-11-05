@@ -13,7 +13,6 @@ enum _mainState
 	REQUEST_LINE,
 	HEADERS,
 	BODY,
-    // CGI,
 };
 
 struct File

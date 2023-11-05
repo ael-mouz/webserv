@@ -5,26 +5,25 @@
 
 void Request_Fsm::read(Client &client, string &buffer, ssize_t &size)
 {
-    switch (mainState) {
-        case REQUEST_LINE:
-		    ReqstDone = requestLine.read(client, buffer, size);
-            if (buffer.empty() || ReqstDone != 0)
-                break;
-        case HEADERS:
-		    ReqstDone = headers.read(client, buffer, size);
-            if (buffer.empty() || ReqstDone != 0)
-                break;
-        case BODY:
-		    if (decodeFlag)
-		    	decode.read(*this, buffer, size);
-
-		    if (!buffer.empty())
-		    {
-		    	multi.read(*this, buffer, size);
-		    	// multi.CGI(*this, buffer, size);
-		    }
-        //case CGI
-    }
+	switch (mainState) {
+		case REQUEST_LINE:
+			ReqstDone = requestLine.read(client, buffer, size);
+			if (buffer.empty() || ReqstDone != 0)
+				break;
+		case HEADERS:
+			ReqstDone = headers.read(client, buffer, size);
+			if (buffer.empty() || ReqstDone != 0)
+				break;
+		case BODY:
+			if (decodeFlag)
+				decode.read(*this, buffer, size);
+			if (isCGI)
+			{
+				multi.CGI(*this, buffer, size);
+				break;
+			}
+			multi.read(*this, buffer, size);
+	}
 }
 
 void Request_Fsm::clear(void) // im smart
@@ -48,6 +47,7 @@ void Request_Fsm::clear(void) // im smart
 	sizeBoundary = 0;
 	ContentLength = 0;
 	decodeFlag = false;
+	isCGI = false;
 	requestLine.reset();
 	headers.reset();
 	multi.reset();
@@ -61,6 +61,7 @@ Request_Fsm::Request_Fsm()
 	ReqstDone = 0;
 	subState = 0;
 	decodeFlag = false;
+	isCGI = false;
 	sizeBoundary = 0;
 	ContentLength = 0;
 }

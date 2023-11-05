@@ -5,11 +5,16 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 {
 	unsigned char character;
 
-	// countLength += size;
+	countLength += size;
+    if (countLength > Request.ContentLength)
+    {
+        printf("Error: Multipart::read size > Request.ContentLength\n");
+		Request.ReqstDone = 400;
+		return;
+    }
 	for (string::iterator it = buffer.begin(); it != buffer.end(); it++)
 	{
 		character = *it;
-		// countLength += 1;
 		switch (Request.subState)
 		{
 		case FIRST_BOUNDARY:
@@ -42,7 +47,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 				Request.subState = LF_BOUNDARY;
 				Request.hold.clear();
 				writeToFile = 0;
-				continue;
+                continue;
 			}
 			else
 			{
@@ -59,7 +64,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 					fileF = NULL;
 				}
 				Request.subState = HANDLER_KEY;
-				continue;
+                continue;
 			}
 			else
 			{
@@ -74,7 +79,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 				count = 0;
 				Request.key = Request.hold;
 				Request.hold.clear(); // store key
-				continue;
+                continue;
 			}
 			else if (!ValidKey(character))
 			{
@@ -125,7 +130,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			{
 				Request.subState = CHECK_AFTER_VALUE;
 				Request.hold.clear();
-				continue;
+                continue;
 			}
 			else
 			{
@@ -137,7 +142,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			if (character == '\r')
 			{
 				Request.subState = START_DATA;
-				continue;
+                continue;
 			}
 			else if (ValidKey(character))
 			{
@@ -155,7 +160,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			{
 				Request.hold.clear();
 				Request.subState = WRITE_DATA;
-				continue;
+                continue;
 			}
 			else
 			{
@@ -182,25 +187,20 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 						if (posBoundary == string::npos)
 						{
 							fwrite(&buffer[index], 1, size - Request.sizeBoundary - index, fileF);
-							countLength += size - Request.sizeBoundary - index;
 							it = buffer.begin() + (size - Request.sizeBoundary - 1);
 						}
 						else
 						{
 							fwrite(&buffer[index], 1, posBoundary - index, fileF);
-							countLength += posBoundary - index;
 							it = buffer.begin() + posBoundary - 1;
 						}
 						continue;
 					}
 					fputc(character, fileF);
-					countLength += 1;
 					continue;
 				}
 				fwrite(&Request.hold[0], 1, Request.hold.size(), fileF);
-				countLength += Request.hold.size();
 				fputc(character, fileF);
-				countLength += 1;
 				Request.hold.clear();
 				count = 0;
 				continue;
@@ -236,6 +236,13 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 		case LF_END: // check size of content length
 			if (character == '\n')
 			{
+                printf("parsheadelen = %ld countLength = %ld\n",Request.ContentLength, countLength);
+                if (countLength != Request.ContentLength)
+                {
+                    printf("Error: Multipart::read LF_END\n");
+	            	Request.ReqstDone = 400;
+	            	return;
+                }
 				Request.ReqstDone = 200;
 				Request.hold.clear();
 				return;
@@ -249,9 +256,6 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			break;
 		}
 		Request.hold += character;
-		// countLength += 1;
-		// printf("i = %ld stat = %d c= %d :
-		// %c\n",it-buffer.begin(),Request.state, c, c);
 	}
 }
 

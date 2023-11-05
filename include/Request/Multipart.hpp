@@ -26,9 +26,9 @@ private:
 	FILE *fileF;
 	int count;
 	int writeToFile;
-	size_t countLength;
 
 public:
+	size_t countLength;
 	void read(Request_Fsm &Request, string &buffer, ssize_t &size);
 	void CGI(Request_Fsm &Request, string &buffer, ssize_t &size);
 	void createFile(const string &value, std::string &fileName);

@@ -67,9 +67,9 @@ void Response::sendResponse(Client &client)
 		{
 			if (send(client.socketClient, client.response.HeaderResponse.c_str(), client.response.HeaderResponse.length(), 0) <= 0)
 				std::cout << "Error sending data\n";
-			std::cout << "HEDER SENT : --------------------------------------------" << std::endl;
-			std::cout << convertText(this->HeaderResponse);
-			std::cout << "---------------------------------------------------------" << std::endl;
+			// std::cout << "HEDER SENT : --------------------------------------------" << std::endl;
+			// std::cout << convertText(this->HeaderResponse);
+			// std::cout << "---------------------------------------------------------" << std::endl;
 			// this->responseSent = true;
 		}
 		this->isHeaderSent = true;
@@ -80,9 +80,9 @@ void Response::sendResponse(Client &client)
 		{
 			if (send(client.socketClient, client.response.BodyResponse.c_str(), client.response.BodyResponse.length(), 0) <= 0)
 				std::cout << "Error sending data\n";
-			std::cout << "BODY SENT : ---------------------------------------------" << std::endl;
-			std::cout << this->BodyResponse << std::endl;
-			std::cout << "---------------------------------------------------------" << std::endl;
+			// std::cout << "BODY SENT : ---------------------------------------------" << std::endl;
+			// std::cout << this->BodyResponse << std::endl;
+			// std::cout << "---------------------------------------------------------" << std::endl;
 			this->responseSent = true;
 			this->isBodySent = true;
 		}
@@ -121,34 +121,34 @@ void Response::response(Client &client)
 {
 	if (responseDone)
 		return;
-	std::cout << "▻Start Response◅ -------------------------------------------------" << std::endl;
-	std::cout << "▻merge Headers Values◅ -------------------------------------------" << std::endl;
+	// std::cout << "▻Start Response◅ -------------------------------------------------" << std::endl;
+	// std::cout << "▻merge Headers Values◅ -------------------------------------------" << std::endl;
 	mergeHeadersValues(client);
-	std::cout << "▻Get config◅ -----------------------------------------------------" << std::endl;
+	// std::cout << "▻Get config◅ -----------------------------------------------------" << std::endl;
 	getConfig(client);
-	std::cout << "▻Parse uri◅ ------------------------------------------------------" << std::endl;
+	// std::cout << "▻Parse uri◅ ------------------------------------------------------" << std::endl;
 	parseUri(client.request.URI);
-	std::cout << "▻Get full path◅ --------------------------------------------------" << std::endl;
+	// std::cout << "▻Get full path◅ --------------------------------------------------" << std::endl;
 	getFULLpath();
 	if (responseDone)
 		return;
-	std::cout << "▻Regenerate extension◅ -------------------------------------------" << std::endl;
+	// std::cout << "▻Regenerate extension◅ -------------------------------------------" << std::endl;
 	regenerateExtonsion();
 	if (responseDone)
 		return;
 	if (this->isCgi)
 	{
-		std::cout << "▻Generate Cgi env◅ -----------------------------------------------" << std::endl;
+		// std::cout << "▻Generate Cgi env◅ -----------------------------------------------" << std::endl;
 		generateCGIEnv(client);
-		std::cout << "▻Run Cgi◅ --------------------------------------------------------" << std::endl;
+		// std::cout << "▻Run Cgi◅ --------------------------------------------------------" << std::endl;
 		handleCGIScript(client);
 		if (responseDone)
 			return;
 	}
 	else
-		std::cout << "▻NormalFiles◅ ----------------------------------------------------" << std::endl;
+		// std::cout << "▻NormalFiles◅ ----------------------------------------------------" << std::endl;
 	handleNormalFiles();
-	std::cout << "▻End Response◅ ---------------------------------------------------" << std::endl;
+	// std::cout << "▻End Response◅ ---------------------------------------------------" << std::endl;
 }
 
 void Response::mergeHeadersValues(Client &client)
@@ -208,12 +208,12 @@ void Response::regenerateExtonsion()
 	if (this->extension == "pl" || this->extension == "py" ||
 		this->extension == "php" || this->extension == "rb")
 		this->isCgi = true;
-	std::cout << "extension  : " << this->extension << std::endl;
-	std::cout << "query      : " << this->query << std::endl;
-	std::cout << "path info  : " << this->path_info << std::endl;
-	std::cout << "full path  : " << this->fullpath << std::endl;
-	std::cout << "cgi        : " << (this->isCgi ? "true" : "false")
-			  << std::endl;
+	// std::cout << "extension  : " << this->extension << std::endl;
+	// std::cout << "query      : " << this->query << std::endl;
+	// std::cout << "path info  : " << this->path_info << std::endl;
+	// std::cout << "full path  : " << this->fullpath << std::endl;
+	// std::cout << "cgi        : " << (this->isCgi ? "true" : "false")
+			//   << std::endl;
 }
 
 void Response::parseUri(std::string uri) // TODO:: uri empty ?/?
@@ -244,10 +244,10 @@ void Response::parseUri(std::string uri) // TODO:: uri empty ?/?
 	if (pos != std::string::npos)
 		this->extension =
 			this->fullpath.substr(pos + 1, this->fullpath.length() - pos + 1);
-	std::cout << "extension  : " << this->extension << std::endl;
-	std::cout << "query      : " << this->query << std::endl;
-	std::cout << "path info  : " << this->path_info << std::endl;
-	std::cout << "script     : " << this->fullpath << std::endl;
+	// std::cout << "extension  : " << this->extension << std::endl;
+	// std::cout << "query      : " << this->query << std::endl;
+	// std::cout << "path info  : " << this->path_info << std::endl;
+	// std::cout << "script     : " << this->fullpath << std::endl;
 }
 
 void Response::getFULLpath()
@@ -268,16 +268,16 @@ void Response::getFULLpath()
 				route_ = this->Config->getRoute(dir);
 				dir = getParentDirectories(dir);
 			}
-			if (dir.empty() && route_.RoutePath == "default")
-				std::cout << "Default match     : " << route_.RoutePath << std::endl;
-			else
-				std::cout << "Directory match   : " << route_.RoutePath << std::endl, match = 1;
+			// if (dir.empty() && route_.RoutePath == "default")
+			// 	std::cout << "Default match     : " << route_.RoutePath << std::endl;
+			// else
+			// 	std::cout << "Directory match   : " << route_.RoutePath << std::endl, match = 1;
 		}
-		else
-			std::cout << "Extention match   : " << route_.RoutePath << std::endl, match = 2;
+		// else
+		// 	std::cout << "Extention match   : " << route_.RoutePath << std::endl, match = 2;
 	}
-	else
-		std::cout << "Full match        : " << route_.RoutePath << std::endl, match = 3;
+	// else
+	// 	std::cout << "Full match        : " << route_.RoutePath << std::endl, match = 3;
 	route = &route_;
 	if (this->route->Redirection == "on")
 	{
@@ -313,11 +313,11 @@ void Response::getFULLpath()
 		this->entryPath = this->fullpath,
 		this->fullpath = this->Config->GlobalRoot + this->fullpath,
 		this->path_translated = this->Config->GlobalRoot + this->path_info;
-	std::cout << "FULL PATH         : " << this->fullpath << std::endl;
+	// std::cout << "FULL PATH         : " << this->fullpath << std::endl;
 	int dirr = isDirectory(this->fullpath.c_str());
 	if (dirr == 1)
 	{
-		std::cout << "TYPE              : directory" << std::endl;
+		// std::cout << "TYPE              : directory" << std::endl;
 		if (route->Autoindex == "on")
 		{
 			generateAutoIndex();
@@ -328,12 +328,12 @@ void Response::getFULLpath()
 			this->fullpath += "/index.html";
 		else
 			this->fullpath = this->fullpath + "/" + route->Index;
-		std::cout << "THE NEW FULL PATH : " << this->fullpath << std::endl;
+		// std::cout << "THE NEW FULL PATH : " << this->fullpath << std::endl;
 	}
-	else if (dirr == 2)
-		std::cout << "TYPE              : file" << std::endl;
-	else
-		std::cout << "TYPE              : invalide not found" << std::endl;
+	// else if (dirr == 2)
+	// 	std::cout << "TYPE              : file" << std::endl;
+	// else
+	// 	std::cout << "TYPE              : invalide not found" << std::endl;
 	// std::cout << "↦  ╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
 	// std::cout << "↦  ║" FG_BLUE BOLD " ROUTE " << RESET_ALL << std::setw(71) << "║" << std::endl;
 	// std::cout << "↦  ╠═════════════════╦═════════════════════════════════════════════════════════╣\n";
@@ -446,7 +446,7 @@ void Response::handleCGIScript(Client &client)
 			ssize_t bytesRead;
 			while ((bytesRead = read(pipefd[0], buffer, 4096)) > 0)
 				resCgi += buffer;
-			std::cout << resCgi << std::endl;
+			// std::cout << resCgi << std::endl;
 			this->HeaderResponse = resCgi;
 			this->responseDone = true;
 		}
@@ -525,7 +525,7 @@ void Response::generateCGIEnv(Client &client)
 		std::string valueEnv = it->second;
 		env.insert(std::pair<std::string, std::string>(keyEnv, valueEnv));
 	}
-	printMap(env);
+	// printMap(env);
 	this->env = env;
 }
 

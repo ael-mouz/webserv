@@ -97,52 +97,63 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
     return 0;
 }
 
+int Headers::checkMultiPart(Client &client, multimap<string, string>::iterator& it)
+{
+    size_t posBoundary = it->second.find("boundary="); //if boudry vid or not in correct form ??
+	if (posBoundary == string::npos)
+	{
+		cout << "error Headers::checkrequest Content-Type\n";
+		return 400;
+	}
+	client.request.boundary = "\r\n--" + it->second.substr(posBoundary + sizeof("boundary"));
+	client.request.sizeBoundary = client.request.boundary.size();
+    return 0;
+}
+
+int Headers::checkContentLen(Client &client, multimap<string, string>::iterator& it)
+{
+    stringstream stream;
+	stream << it->second;
+	stream >> client.request.ContentLength;
+	if (!isDigit(it->second) || stream.fail())
+	{
+		cout << "error Headers::checkrequest ContentLength\n";
+		return 400;
+	}
+    if (client.request.ContentLength == 0)
+    {
+        cout << "error Headers::checkContentLen len = 0\n";
+        return 200;
+    }
+    return 0;
+}
+
 int Headers::checkrequest(Client &client)
 {
-	if (client.request.Method == "GET" )
+	if (client.request.Method == "GET" || client.request.Method == "DELETE")
 		return 200;
+	multimap<string, string>::iterator it;
 
-	std::stringstream stream;
-	std::multimap<std::string, std::string>::iterator itHeader;
-
-	itHeader = client.request.mapHeaders.find("Transfer-Encoding");
-	if (itHeader != client.request.mapHeaders.end())
+	it = client.request.mapHeaders.find("Transfer-Encoding");
+	if (it != client.request.mapHeaders.end())
 	{
-		if (itHeader->second != "chunked")
+		if (it->second != "chunked")
 		{
-			std::cout << "error request not implemnted";
+			cout << "error request not implemnted";
 			return 400;
 		}
 		client.request.decodeFlag = true;
-		// return ;
 	}
-	itHeader = client.request.mapHeaders.find("Content-Length");
-	if (itHeader == client.request.mapHeaders.end())
-	{ // if you're in this scoup you should have all indormation about body
-		std::cout << "error Headers::checkrequest no Content-Length \n";
-		return 400;
-	}
-	stream << itHeader->second;
-	stream >> client.request.ContentLength;
-	if (!isDigit(itHeader->second) || stream.fail())
+	it = client.request.mapHeaders.find("Content-Type"); // Content-Type: multipart/form-data; boundary=- ???
+    if (it ->second.find("multipart/form-data") != string::npos && checkMultiPart(client, it) != 0)// if multipart/form-data || multipart/mixed || multipart/related || multipart/alternative
+        return (checkMultiPart(client, it));
+	it = client.request.mapHeaders.find("Content-Length");
+	if (client.request.decodeFlag == false && it == client.request.mapHeaders.end())
 	{
-		std::cout << "error Headers::checkrequest ContentLength\n";
+		cout << "error Headers::checkrequest no Content-Length \n";
 		return 400;
 	}
-	// if (client.request.ContentLength == 0) {
-	//     std::cout << "error Headers::checkrequest ContentLength == 0\n"; client.request.mainState = 0;
-	//     return ;
-	// }
-	itHeader = client.request.mapHeaders.find("Content-Type"); // Content-Type: multipart/form-data; boundary=- ???
-	size_t posBoundary = itHeader->second.find("boundary=");
-	if (itHeader == client.request.mapHeaders.end() || posBoundary == std::string::npos)
-	{ // if multipart/form-data || multipart/mixed || multipart/related || multipart/alternative
-		std::cout << "error Headers::checkrequest Content-Type\n";
-		return 400;
-	}
-	client.request.boundary = "\r\n--" + itHeader->second.substr(posBoundary + sizeof("boundary"));
-	client.request.sizeBoundary = client.request.boundary.size();
-    return 0;
+    return checkContentLen(client, it);
 }
 
 void Headers::reset()
