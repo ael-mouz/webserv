@@ -66,7 +66,11 @@ enum LogLevel
 	SERROR,
 	SWARNING,
 	SINFO,
-	SDEBUG
+	SDEBUG,
+	SREQ,
+	SRES,
+	SACCEPT,
+	SCLOSE
 };
 
 struct Route
@@ -103,7 +107,8 @@ struct Route
 std::string trim(const std::string &str, const std::string &charactersToTrim);
 std::vector<std::string> splitString(const std::string &input, const std::string &delimiter);
 std::string convertText(std::string a);
-void logMessage(LogLevel level, const std::string &message);
+// void logMessage(LogLevel level, const std::string &message);
+void logMessage(LogLevel level, const std::string &host, int fd, const std::string &message);
 void printMap(const std::multimap<std::string, std::string> &map);
 size_t getFreeSpace(const char *path);
 void replaceAll(std::string &str, const std::string &from, const std::string &to);

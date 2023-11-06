@@ -21,7 +21,3 @@ foreach (sort keys %ENV) {
 print "</ul>\n";
 print "</body>\n";
 print "</html>\n";
-while(1)
-{
-	print "helloo";
-}

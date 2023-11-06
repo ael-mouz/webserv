@@ -10,7 +10,7 @@ class Response
 {
 private:
 public:
-	std::string responseStatus;
+	std::string responseString;
 	std::string HeaderResponse;
 	std::string BodyResponse;
 	std::string query;

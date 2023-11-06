@@ -4,24 +4,7 @@
 
 Response::Response()
 {
-	this->responseDone = false;
-	this->isCgi = false;
-	this->isBodySent = false;
-	this->isHeaderSent = false;
-	this->responseSent = false;
-	closeClient = false;
-	fileSize = 0;
-	offset = 0;
-	match = 0;
-}
-
-Response::~Response() {
-	// fclose(fptr); // maybe leak file discriptor
-}
-
-void Response::clear()
-{
-	responseStatus.clear();
+	responseString.clear();
 	HeaderResponse.clear();
 	BodyResponse.clear();
 	query.clear();
@@ -36,6 +19,35 @@ void Response::clear()
 	isHeaderSent = false;
 	responseDone = false;
 	responseSent = false;
+	// responselength = 0;
+	fileSize = 0;
+	offset = 0;
+	match = 0;
+	Config = NULL;
+	env.clear();
+	fptr = NULL;
+}
+
+Response::~Response() {}
+
+void Response::clear()
+{
+	responseString.clear();
+	HeaderResponse.clear();
+	BodyResponse.clear();
+	query.clear();
+	path_info.clear();
+	path_translated.clear();
+	fullpath.clear();
+	extension.clear();
+	entryPath.clear();
+	isCgi = false;
+	isBodySent = false;
+	closeClient = false;
+	isHeaderSent = false;
+	responseDone = false;
+	responseSent = false;
+	// responselength = 0;
 	fileSize = 0;
 	offset = 0;
 	match = 0;
@@ -104,18 +116,12 @@ void Response::handleNormalFiles(Client &client)
 
 void Response::sendResponse(Client &client)
 {
+	this->responseString.clear();
 	if (!this->isHeaderSent)
 	{
 		if (!this->HeaderResponse.empty())
 		{
-			if (send(client.socketClient, client.response.HeaderResponse.c_str(), client.response.HeaderResponse.length(), 0) <= 0)
-			{
-				this->closeClient = true, this->responseSent = true, this->isBodySent = true;
-				return;
-			}
-			std::cout << "HEADER SENT TO:      " << client.socketClient << " | "
-					  << client.response.Config->Host << ":"
-					  << client.response.Config->Port << std::endl;
+			this->responseString = client.response.HeaderResponse;
 		}
 		this->isHeaderSent = true;
 	}
@@ -123,11 +129,9 @@ void Response::sendResponse(Client &client)
 	{
 		if (!this->BodyResponse.empty())
 		{
-			if (send(client.socketClient, client.response.BodyResponse.c_str(), client.response.BodyResponse.length(), 0) <= 0)
-			{
-				this->closeClient = true, this->responseSent = true, this->isBodySent = true;
-				return;
-			}
+			std::string host = "http://" + client.serverConf.DefaultServerConfig.Host + ":" + client.serverConf.DefaultServerConfig.Port;
+			logMessage(SRES, host, client.socketClient, "Response sent to " + client.clientIP );
+			this->responseString += client.response.BodyResponse;
 			this->responseSent = true, this->isBodySent = true;
 		}
 		else if (this->fptr)
@@ -138,30 +142,31 @@ void Response::sendResponse(Client &client)
 				ssize_t bytesRead = fread(buffer, 1, sizeof(buffer), this->fptr);
 				if (bytesRead > 0)
 				{
-					if (send(client.socketClient, buffer, bytesRead, 0) <= 0)
-					{
-						this->closeClient = true, this->responseSent = true, this->isBodySent = true;
-						return;
-					}
+					std::string res;
+					res.append(buffer, bytesRead);
+					this->responseString += res;
 				}
 			}
 			else
 			{
-				std::cout << "RESPONSE DONE BODY SENT TO:" << client.socketClient << " | "
-						  << client.response.Config->Host << ":"
-						  << client.response.Config->Port << std::endl;
+				std::string host = "http://" + client.serverConf.DefaultServerConfig.Host + ":" + client.serverConf.DefaultServerConfig.Port;
+				logMessage(SRES, host, client.socketClient, "Response sent to " + client.clientIP);
 				this->responseSent = true;
 				this->isBodySent = true;
 			}
 		}
 		else
 		{
-			std::cout << "RESPONSE DONE NO BODY TO: " << client.socketClient << " | "
-					  << client.response.Config->Host << ":"
-					  << client.response.Config->Port << std::endl;
+			std::string host = "http://" + client.serverConf.DefaultServerConfig.Host + ":" + client.serverConf.DefaultServerConfig.Port;
+			logMessage(SRES, host, client.socketClient, "Response sent to " + client.clientIP);
 			this->responseSent = true;
 			this->isBodySent = true;
 		}
+	}
+	if (send(client.socketClient, this->responseString.c_str(), this->responseString.length(), 0) <= 0)
+	{
+		this->closeClient = true, this->responseSent = true;
+		return;
 	}
 }
 
@@ -253,8 +258,7 @@ void Response::regenerateExtonsion()
 	// std::cout << "▻Regenerate extension◅ -------------------------------------------" << std::endl;
 	size_t pos5 = this->fullpath.find_last_of(".");
 	if (pos5 != std::string::npos)
-		this->extension =
-			this->fullpath.substr(pos5 + 1, this->fullpath.length() - pos5 + 1);
+		this->extension = this->fullpath.substr(pos5 + 1, this->fullpath.length() - pos5 + 1);
 	if (this->extension == "pl" || this->extension == "py" ||
 		this->extension == "php" || this->extension == "rb")
 		this->isCgi = true;
@@ -404,7 +408,7 @@ void Response::getFULLpath()
 			this->fullpath += "/index.html";
 		else
 			this->fullpath = this->fullpath + "/" + route.Index;
-		std::cout << "THE NEW FULL PATH : " << this->fullpath << std::endl;
+		// std::cout << "THE NEW FULL PATH : " << this->fullpath << std::endl;
 	}
 	// else if (dirr == 2)
 	// std::cout << "TYPE              : file" << std::endl;
@@ -418,7 +422,7 @@ void Response::handleCGIScript(Client &client)
 	int tempFD = -1;
 	if (client.request.Method == "POST")
 	{
-		std::cout << "FILE : " << client.request.files[0].fileName << std::endl;
+		// std::cout << "FILE : " << client.request.files[0].fileName << std::endl;
 		tempFD = open(client.request.files[0].fileName.c_str(), O_RDONLY);
 		if (tempFD == -1)
 		{
@@ -484,7 +488,7 @@ void Response::handleCGIScript(Client &client)
 			char *const args[] = {(char *)this->Config->phpCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
 			execve(this->Config->phpCgi.c_str(), args, envp); // must change
 		}
-		perror("execve failed");
+		// perror("execve failed");
 		for (int i = 0; envp[i] != nullptr; i++)
 			delete[] envp[i];
 		delete[] envp;
@@ -576,6 +580,7 @@ void Response::generateCGIEnv(Client &client)
 	std::string SCRIPT_NAME = this->fullpath;
 	std::string SCRIPT_FILENAME = this->fullpath;
 	std::string QUERY_STRING = this->query;
+	std::string REMOTE_ADDR = client.clientIP;
 	std::string CONTENT_TYPE;
 	it = client.request.mapHeaders.find("Content-Type");
 	end = client.request.mapHeaders.end();
@@ -600,7 +605,7 @@ void Response::generateCGIEnv(Client &client)
 	env.insert(std::make_pair("QUERY_STRING", QUERY_STRING));
 	env.insert(std::make_pair("CONTENT_TYPE", CONTENT_TYPE));
 	env.insert(std::make_pair("CONTENT_LENGTH", CONTENT_LENGTH));
-	// env.insert(std::make_pair("REMOTE_ADDR", REMOTE_ADDR)); // TODO:: generate it from socket
+	env.insert(std::make_pair("REMOTE_ADDR", REMOTE_ADDR)); // TODO:: generate it from socket
 	env.insert(std::make_pair("REDIRECT_STATUS", REDIRECT_STATUS)); // NOTE:php only
 	it = client.request.mapHeaders.begin();
 	std::string keyEnv, valueEnv;
@@ -825,7 +830,7 @@ std::multimap<std::string, std::string> Response::parseResponseHeader(std::strin
 		std::string value = line.substr(pos + 2, line.length() - (pos + 2) - 1);
 		headers.insert(std::make_pair(key, value));
 	}
-	printMap(headers);
+	// printMap(headers);
 	return headers;
 }
 
