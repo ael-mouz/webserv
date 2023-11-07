@@ -35,16 +35,42 @@ using namespace std;
 #define MAX_VALUE 400
 
 #define BOLD "\e[1m"
+#define DIM "\e[2m"
+#define UNDERLINED "\e[4m"
+#define BLINK "\e[5m"
+#define REVERSE "\e[7m"
+#define HIDDEN "\e[8m"
+
 #define RESET_ALL "\e[0m"
+
+#define FG_DEFAULT "\e[39m"
+#define FG_BLACK "\e[30m"
 #define FG_RED "\e[31m"
+#define FG_GREEN "\e[32m"
+#define FG_YELLOW "\e[33m"
 #define FG_BLUE "\e[34m"
+#define FG_MAGENTA "\e[35m"
+#define FG_CYAN "\e[36m"
+#define FG_LGRAY "\e[37m"
+#define FG_DGRAY "\e[90m"
+#define FG_LRED "\e[91m"
+#define FG_LGREEN "\e[92m"
+#define FG_LYELLOW "\e[93m"
+#define FG_LBLUE "\e[94m"
+#define FG_LMAGENTA "\e[95m"
+#define FG_LCYAN "\e[96m"
+#define FG_WHITE "\e[97m"
 
 enum LogLevel
 {
 	SERROR,
 	SWARNING,
 	SINFO,
-	SDEBUG
+	SDEBUG,
+	SREQ,
+	SRES,
+	SACCEPT,
+	SCLOSE
 };
 
 struct Route
@@ -81,7 +107,8 @@ struct Route
 std::string trim(const std::string &str, const std::string &charactersToTrim);
 std::vector<std::string> splitString(const std::string &input, const std::string &delimiter);
 std::string convertText(std::string a);
-void logMessage(LogLevel level, const std::string &message);
+// void logMessage(LogLevel level, const std::string &message);
+void logMessage(LogLevel level, const std::string &host, int fd, const std::string &message);
 void printMap(const std::multimap<std::string, std::string> &map);
 size_t getFreeSpace(const char *path);
 void replaceAll(std::string &str, const std::string &from, const std::string &to);

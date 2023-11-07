@@ -17,6 +17,7 @@ class RunServers
 	fd_set writeFds;
 	fd_set serverFds;
 	int maxFds;
+	int maxFdstmp;
 	int newSocket;
 	int numberOfEvents;
 	char *recvbuffer;

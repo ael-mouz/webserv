@@ -236,7 +236,7 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 		case LF_END: // check size of content length
 			if (character == '\n')
 			{
-                printf("parsheadelen = %ld countLength = %ld\n",Request.ContentLength, countLength);
+                // printf("parsheadelen = %ld countLength = %ld\n",Request.ContentLength, countLength);
                 if (countLength != Request.ContentLength)
                 {
                     printf("Error: Multipart::read LF_END\n");

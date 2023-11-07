@@ -19,14 +19,15 @@ void RunServers::runing()
 		}
 		else
 		{
-			for (vector<Client>::iterator it = clients.begin();
-				it != clients.end();)
+			for (vector<Client>::iterator it = clients.begin(); it != clients.end();)
 			{
 				if (FD_ISSET(it->socketClient, &readFds))
 				{
 					ssize_t size = recv(it->socketClient, recvbuffer, 4096 * 4, 0);
 					if (size <= 0)
 					{
+						std::string host = "http://" + it->serverConf.DefaultServerConfig.Host + ":" + it->serverConf.DefaultServerConfig.Port;
+						logMessage(SCLOSE, host, it->socketClient, "Close conection from " + it->clientIP);
 						close(it->socketClient);
 						clients.erase(it);
 						continue;
@@ -42,7 +43,14 @@ void RunServers::runing()
 					it->response.sendResponse(*it);
 					if (it->response.responseSent)
 					{
-						// close(it->socketClient);
+						if (it->response.closeClient)
+						{
+							std::string host = "http://" + it->serverConf.DefaultServerConfig.Host + ":" + it->serverConf.DefaultServerConfig.Port;
+							logMessage(SCLOSE, host, it->socketClient, "Close conection from " + it->clientIP);
+							close(it->socketClient);
+							clients.erase(it);
+							continue;
+						}
 						it->response.clear();
 						it->read = true;
 						it->write = false;
@@ -61,11 +69,11 @@ void RunServers::receiveData(vector<Client>::iterator &it, ssize_t &size)
 {
 	string buffer(recvbuffer, size);
 	it->request.read(*it, buffer, size);
-	//    std::cout << bufRecv << std::endl;
-	// printf("%d\n", it->request.ReqstDone);
 	if (it->request.ReqstDone)
 	{
-		// printf("data complet from  = %d\n", it->socketClient); ///!!!
+		std::string host = "http://" + it->serverConf.DefaultServerConfig.Host + ":" + it->serverConf.DefaultServerConfig.Port;
+		std::string method_ = FG_YELLOW + it->request.Method + FG_WHITE;
+		logMessage(SREQ, host, it->socketClient, "[" + method_ + "]" + RESET_ALL + " Received Data from " + it->clientIP);
 		it->read = false;
 		it->write = true;
 	}
@@ -77,6 +85,7 @@ void RunServers::resetFds()
 	FD_ZERO(&readFds);
 	FD_ZERO(&writeFds);
 	readFds = serverFds;
+	maxFds = maxFdstmp;
 	for (vector<Client>::iterator it = clients.begin(); it != clients.end();
 		 it++)
 	{
@@ -84,29 +93,34 @@ void RunServers::resetFds()
 			FD_SET(it->socketClient, &readFds);
 		else if (it->write)
 			FD_SET(it->socketClient, &writeFds);
+		if (it->socketClient > maxFds)
+			maxFds = it->socketClient;
 	}
 }
 
 void RunServers::acceptClients()
 {
-	for (vector<Server>::iterator it = servers.begin(); it != servers.end();
-		 it++)
+	for (vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
 	{
 		if (FD_ISSET(it->socketServer, &readFds))
 		{
-			newSocket =
-				accept(it->socketServer, NULL, NULL); // way we pute NULL ??
-			if (newSocket <= -1)
+			newSocket = -1;
+			struct sockaddr_in clientAddr;
+			socklen_t clientAddrLen = sizeof(clientAddr);
+			memset(&clientAddr, 0, sizeof(clientAddr));
+			std::string host = "http://" + it->serverConf.DefaultServerConfig.Host + ":" + it->serverConf.DefaultServerConfig.Port;
+			newSocket = accept(it->socketServer, (struct sockaddr *)&clientAddr, &clientAddrLen);
+			if (newSocket == -1)
 			{
-				/// !!
+				//////!!!!!
+				logMessage(SERROR, host, newSocket, "Accept failed");
 			}
 			else
 			{
-				printf("new client fd = %d\n", newSocket); ///!!
-				Client client(it->serverConf, newSocket);
+				std::string clientIP = inet_ntoa(clientAddr.sin_addr);
+				logMessage(SACCEPT, host, newSocket, "Accept connection from " + clientIP);
+				Client client(it->serverConf, newSocket, clientIP);
 				clients.push_back(client);
-				if (newSocket > maxFds)
-					maxFds = newSocket;
 			}
 		}
 	}
@@ -148,8 +162,8 @@ int RunServers::bindSockets(Server &server)
 	if (setsockopt(server.socketServer, SOL_SOCKET, SO_NOSIGPIPE, &noSigpipe, sizeof(noSigpipe)) < 0)
 		throw std::runtime_error("Error: Failed to disable SIGPIPE");
 	// Print the socket descriptor for debugging purposes
-	logMessage(SINFO, "Server listening on http://" + server.serverConf.DefaultServerConfig.Host + ":" + server.serverConf.DefaultServerConfig.Port);
-	std::cout << BOLD FG_BLUE "Server socket created with descriptor: " << server.socketServer << RESET_ALL << std::endl;
+	std::string host = "http://" + server.serverConf.DefaultServerConfig.Host + ":" + server.serverConf.DefaultServerConfig.Port;
+	logMessage(SINFO, host, server.socketServer, "Server start listening");
 	return server.socketServer;
 }
 
@@ -160,15 +174,15 @@ RunServers::RunServers(char **av) : numberOfEvents(0)
 	config.checkServerConfig(av[1]);
 	config.filterServerConfig();
 	vector<ServerConf> &serverConf = config.getServerConfig();
-	maxFds = -1;
+	maxFdstmp = -1;
 	for (vector<ServerConf>::iterator it = serverConf.begin();
 		 it != serverConf.end(); it++)
 	{
 		Server serv;
 		serv.serverConf = *it;
 		int fd = bindSockets(serv);
-		if (fd > maxFds)
-			maxFds = fd;
+		if (fd > maxFdstmp)
+			maxFdstmp = fd;
 		servers.push_back(serv);
 	}
 	FD_ZERO(&serverFds);

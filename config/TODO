@@ -6,6 +6,7 @@
         /mulpart form data
         /transfer chunked
     * countent len
+    * lowwer case headers
 
 -manage Server
     * keep alive /cloes socket

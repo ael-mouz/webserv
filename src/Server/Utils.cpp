@@ -50,29 +50,55 @@ std::string convertText(std::string a)
 	return newbuff;
 }
 
-void logMessage(LogLevel level, const std::string &message)
+void logMessage(LogLevel level, const std::string &host, int fd, const std::string &message)
 {
 	std::string levelStr;
+	std::string color;
 	switch (level)
 	{
 	case SERROR:
 		levelStr = "ERROR";
+		color = FG_RED;
+		break;
+	case SCLOSE:
+		levelStr = "CLOSE";
+		color = FG_RED;
+		break;
+	case SACCEPT:
+		levelStr = "ACCEPT";
+		color = FG_GREEN;
 		break;
 	case SWARNING:
 		levelStr = "WARNING";
+		color = FG_LYELLOW;
 		break;
 	case SINFO:
 		levelStr = "INFO";
+		color = FG_CYAN;
 		break;
 	case SDEBUG:
 		levelStr = "DEBUG";
+		color = FG_MAGENTA;
+		break;
+	case SREQ:
+		levelStr = "REQUEST";
+		color = FG_BLUE;
+		break;
+	case SRES:
+		levelStr = "RESPONSE";
+		color = FG_LBLUE;
 		break;
 	}
 	time_t currentTime = time(NULL);
 	struct tm *localTime = localtime(&currentTime);
 	char timestamp[20];
 	strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localTime);
-	std::cout << "[" << timestamp << "] [" << levelStr << "] " << message << std::endl;
+	std::cout << BOLD << "[" << FG_DGRAY << std::setw(19) << timestamp << FG_WHITE << "] " << RESET_ALL;
+	std::cout << BOLD << "( "  << FG_YELLOW<< std::setw(2) << fd <<FG_WHITE << " ) " << RESET_ALL;
+	std::cout << BOLD << "[" << FG_DGRAY << host << FG_WHITE << "] " << RESET_ALL;
+	std::string level_ = "[" + color + levelStr + FG_WHITE + "]" + RESET_ALL;
+	std::cout << BOLD << level_ << std::setfill('=') << std::setw(32 - level_.length()) << ">" << std::setfill(' ');
+	std::cout << " { " + message + " }" << std::endl;
 }
 
 void printMap(const std::multimap<std::string, std::string> &map)
@@ -129,7 +155,9 @@ std::string getParentDirectories(const std::string &uri)
 {
 	std::string parent;
 	size_t pos = uri.find_last_of("/");
-	if (pos != std::string::npos)
+	if  (pos == 0)
+		parent = "/";
+	else if (pos != std::string::npos)
 		parent = uri.substr(0, pos);
 	return parent;
 }

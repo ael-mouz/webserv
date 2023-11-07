@@ -19,7 +19,6 @@ if name:
     expiration_date = datetime.datetime.now() + datetime.timedelta(days=30)  # Expires in 30 days
     expiration_str = expiration_date.strftime("%a, %d-%b-%Y %H:%M:%S GMT")
     cookie_str = f"user={name}; expires={expiration_str};"
-    print (f"HTTP/1.1 200 OK\r");
     print(f"Set-Cookie: {cookie_str}")
 print("Content-type: text/html\n")
 username = get_username_from_cookie(user_cookie)

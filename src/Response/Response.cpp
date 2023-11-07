@@ -2,20 +2,9 @@
 #include "../../include/Config/ServerConfig.hpp"
 #include "../../include/Server/Client.hpp"
 
-Response::Response(ServerConf &serverConf) : serverConf(serverConf)
+Response::Response()
 {
-	this->responseDone = false;
-	this->isCgi = false;
-	this->isBodySent = false;
-	this->isHeaderSent = false;
-	this->responseSent = false;
-}
-
-Response::~Response() {}
-
-void Response::clear()
-{
-	responseStatus.clear();
+	responseString.clear();
 	HeaderResponse.clear();
 	BodyResponse.clear();
 	query.clear();
@@ -24,35 +13,101 @@ void Response::clear()
 	fullpath.clear();
 	extension.clear();
 	entryPath.clear();
-	isBodySent = false;
-	isHeaderSent = false;
 	isCgi = false;
+	isBodySent = false;
+	closeClient = false;
+	isHeaderSent = false;
 	responseDone = false;
 	responseSent = false;
-	infile.close();
+	// responselength = 0;
 	fileSize = 0;
-	ofsset = 0;
-	route = NULL;
+	offset = 0;
+	match = 0;
 	Config = NULL;
 	env.clear();
+	fptr = NULL;
 }
 
-void Response::handleNormalFiles(void)
+Response::~Response() {}
+
+void Response::clear()
 {
-	this->infile.open(this->fullpath.c_str(), std::ios::binary);
-	if (!this->infile.is_open() ||
-		this->extension.empty()) /// TODO: maybe this is not corect
+	responseString.clear();
+	HeaderResponse.clear();
+	BodyResponse.clear();
+	query.clear();
+	path_info.clear();
+	path_translated.clear();
+	fullpath.clear();
+	extension.clear();
+	entryPath.clear();
+	isCgi = false;
+	isBodySent = false;
+	closeClient = false;
+	isHeaderSent = false;
+	responseDone = false;
+	responseSent = false;
+	// responselength = 0;
+	fileSize = 0;
+	offset = 0;
+	match = 0;
+	Config = NULL;
+	env.clear();
+	fclose(fptr);
+	fptr = NULL;
+}
+
+void Response::handleRange(stringstream &header, const std::string &range)
+{
+	size_t equalsPos = range.find('=');
+	size_t hyphenPos = range.find('-');
+
+	if (equalsPos == std::string::npos || hyphenPos == std::string::npos)
 	{
-		generateResponse("404");
+		generateResponse("416");
 		this->responseDone = true;
 		return;
 	}
-	this->infile.seekg(0, std::ios::end);
-	this->fileSize = this->infile.tellg();
-	this->infile.seekg(0, std::ios::beg);
-	std::stringstream header;
-	header << "HTTP/1.1 200 OK\r\n";
+	this->offset = 0;
+	std::string startByteStr = range.substr(equalsPos + 1, hyphenPos - equalsPos - 1);
+	std::istringstream(startByteStr) >> this->offset;
+	if (this->offset >= this->fileSize)
+	{
+		generateResponse("416");
+		this->responseDone = true;
+		return;
+	}
+	header << "HTTP/1.1 206 " << this->Config->status.getStatus("206") << "\r\n";
+	header << "Accept-Ranges: bytes\r\n";
 	header << "Content-Type: " << this->Config->mime.getMimeType(this->extension) << "\r\n";
+	header << "Content-Range: bytes " << this->offset << "-" << (this->fileSize - 1) << "/" << this->fileSize << "\r\n";
+	fseek(this->fptr, this->offset, SEEK_SET);
+	this->fileSize -= this->offset;
+}
+
+void Response::handleNormalFiles(Client &client)
+{
+	// std::cout << "▻NormalFiles◅ ----------------------------------------------------" << std::endl;
+	this->fptr = fopen(this->fullpath.c_str(), "rb");
+	if (!this->fptr) /// TODO: maybe this is not corect
+	{
+		generateResponse("500");
+		this->responseDone = true;
+		return;
+	}
+	fseek(this->fptr, 0, SEEK_END);
+	this->fileSize = ftell(this->fptr);
+	fseek(this->fptr, 0, SEEK_SET);
+	std::stringstream header;
+	std::multimap<std::string, std::string>::iterator it = client.request.mapHeaders.find("Range");
+	if (it != client.request.mapHeaders.end())
+		handleRange(header, it->second);
+	else
+	{
+		header << "HTTP/1.1 200 OK\r\n";
+		header << "Accept-Ranges: bytes\r\n";
+		header << "Content-Type: " << this->Config->mime.getMimeType(this->extension) << "\r\n";
+	}
 	header << "Content-Length: " << fileSize << "\r\n";
 	header << "\r\n";
 	this->HeaderResponse = header.str();
@@ -61,16 +116,12 @@ void Response::handleNormalFiles(void)
 
 void Response::sendResponse(Client &client)
 {
+	this->responseString.clear();
 	if (!this->isHeaderSent)
 	{
 		if (!this->HeaderResponse.empty())
 		{
-			if (send(client.socketClient, client.response.HeaderResponse.c_str(), client.response.HeaderResponse.length(), 0) <= 0)
-				std::cout << "Error sending data\n";
-			// std::cout << "HEDER SENT : --------------------------------------------" << std::endl;
-			// std::cout << convertText(this->HeaderResponse);
-			// std::cout << "---------------------------------------------------------" << std::endl;
-			// this->responseSent = true;
+			this->responseString = client.response.HeaderResponse;
 		}
 		this->isHeaderSent = true;
 	}
@@ -78,42 +129,44 @@ void Response::sendResponse(Client &client)
 	{
 		if (!this->BodyResponse.empty())
 		{
-			if (send(client.socketClient, client.response.BodyResponse.c_str(), client.response.BodyResponse.length(), 0) <= 0)
-				std::cout << "Error sending data\n";
-			// std::cout << "BODY SENT : ---------------------------------------------" << std::endl;
-			// std::cout << this->BodyResponse << std::endl;
-			// std::cout << "---------------------------------------------------------" << std::endl;
-			this->responseSent = true;
-			this->isBodySent = true;
+			std::string host = "http://" + client.serverConf.DefaultServerConfig.Host + ":" + client.serverConf.DefaultServerConfig.Port;
+			logMessage(SRES, host, client.socketClient, "Response sent to " + client.clientIP);
+			this->responseString += client.response.BodyResponse;
+			this->responseSent = true, this->isBodySent = true;
 		}
-		else if (infile.is_open())
+		else if (this->fptr)
 		{
-			if (!this->infile.eof())
+			if (!feof(this->fptr))
 			{
-				char buffer[512];
-				this->infile.read(buffer, 512);
-				ssize_t bytesRead = this->infile.gcount();
+				char buffer[1024];
+				ssize_t bytesRead = fread(buffer, 1, sizeof(buffer), this->fptr);
 				if (bytesRead > 0)
 				{
-					send(client.socketClient, buffer, bytesRead, 0);
-					// std::cout << "BODY SENT FROM FILE : ---------------------------------------------" << std::endl;
-					// // std::cout << buffer << std::endl;
-					// std::cout << "---------------------------------------------------------" << std::endl;
+					std::string res;
+					res.append(buffer, bytesRead);
+					this->responseString += res;
 				}
 			}
 			else
 			{
-				std::cout << "RESPONSE DONE BODY SENT" << std::endl;
+				std::string host = "http://" + client.serverConf.DefaultServerConfig.Host + ":" + client.serverConf.DefaultServerConfig.Port;
+				logMessage(SRES, host, client.socketClient, "Response sent to " + client.clientIP);
 				this->responseSent = true;
 				this->isBodySent = true;
 			}
 		}
 		else
 		{
-			std::cout << "RESPONSE DONE NO BODY" << std::endl;
+			std::string host = "http://" + client.serverConf.DefaultServerConfig.Host + ":" + client.serverConf.DefaultServerConfig.Port;
+			logMessage(SRES, host, client.socketClient, "Response sent to " + client.clientIP);
 			this->responseSent = true;
 			this->isBodySent = true;
 		}
+	}
+	if (send(client.socketClient, this->responseString.c_str(), this->responseString.length(), 0) <= 0)
+	{
+		this->closeClient = true, this->responseSent = true;
+		return;
 	}
 }
 
@@ -122,37 +175,37 @@ void Response::response(Client &client)
 	if (responseDone)
 		return;
 	// std::cout << "▻Start Response◅ -------------------------------------------------" << std::endl;
-	// std::cout << "▻merge Headers Values◅ -------------------------------------------" << std::endl;
+
 	mergeHeadersValues(client);
-	// std::cout << "▻Get config◅ -----------------------------------------------------" << std::endl;
 	getConfig(client);
-	// std::cout << "▻Parse uri◅ ------------------------------------------------------" << std::endl;
 	parseUri(client.request.URI);
-	// std::cout << "▻Get full path◅ --------------------------------------------------" << std::endl;
+	getRoute();
+	genrateRederiction();
+	if (responseDone)
+		return;
 	getFULLpath();
 	if (responseDone)
 		return;
-	// std::cout << "▻Regenerate extension◅ -------------------------------------------" << std::endl;
 	regenerateExtonsion();
 	if (responseDone)
 		return;
 	if (this->isCgi)
 	{
-		// std::cout << "▻Generate Cgi env◅ -----------------------------------------------" << std::endl;
 		generateCGIEnv(client);
-		// std::cout << "▻Run Cgi◅ --------------------------------------------------------" << std::endl;
 		handleCGIScript(client);
 		if (responseDone)
 			return;
 	}
 	else
-		// std::cout << "▻NormalFiles◅ ----------------------------------------------------" << std::endl;
-	handleNormalFiles();
+	{
+		handleNormalFiles(client);
+	}
 	// std::cout << "▻End Response◅ ---------------------------------------------------" << std::endl;
 }
 
 void Response::mergeHeadersValues(Client &client)
 {
+	// std::cout << "▻merge Headers Values◅ -------------------------------------------" << std::endl;
 	std::multimap<std::string, std::string> newHeaders;
 	for (std::multimap<std::string, std::string>::iterator it =
 			 client.request.mapHeaders.begin();
@@ -167,21 +220,22 @@ void Response::mergeHeadersValues(Client &client)
 			mergedIt->second += ", " + it->second;
 	}
 	client.request.mapHeaders = newHeaders;
+	// printMap(newHeaders);
 }
 
 void Response::getConfig(Client &client)
 {
-	this->Config = &this->serverConf.DefaultServerConfig;
-	std::multimap<std::string, std::string>::iterator it =
-		client.request.mapHeaders.find("Host");
+	// std::cout << "▻Get config◅ -----------------------------------------------------" << std::endl;
+	this->Config = &client.serverConf.DefaultServerConfig;
+	std::multimap<std::string, std::string>::iterator it = client.request.mapHeaders.find("Host");
 	std::string servername;
 	if (it != client.request.mapHeaders.end())
 		servername = trim(it->second, " \t");
 	if (!servername.empty())
 	{
 		std::map<std::string, ServerConfig>::iterator it;
-		it = this->serverConf.OtherServerConfig.find(servername);
-		if (it != this->serverConf.OtherServerConfig.end())
+		it = client.serverConf.OtherServerConfig.find(servername);
+		if (it != client.serverConf.OtherServerConfig.end())
 			this->Config = &it->second;
 	}
 	// if (this->Config)
@@ -201,10 +255,10 @@ void Response::getConfig(Client &client)
 
 void Response::regenerateExtonsion()
 {
+	// std::cout << "▻Regenerate extension◅ -------------------------------------------" << std::endl;
 	size_t pos5 = this->fullpath.find_last_of(".");
 	if (pos5 != std::string::npos)
-		this->extension =
-			this->fullpath.substr(pos5 + 1, this->fullpath.length() - pos5 + 1);
+		this->extension = this->fullpath.substr(pos5 + 1, this->fullpath.length() - pos5 + 1);
 	if (this->extension == "pl" || this->extension == "py" ||
 		this->extension == "php" || this->extension == "rb")
 		this->isCgi = true;
@@ -212,12 +266,12 @@ void Response::regenerateExtonsion()
 	// std::cout << "query      : " << this->query << std::endl;
 	// std::cout << "path info  : " << this->path_info << std::endl;
 	// std::cout << "full path  : " << this->fullpath << std::endl;
-	// std::cout << "cgi        : " << (this->isCgi ? "true" : "false")
-			//   << std::endl;
+	// std::cout << "cgi        : " << (this->isCgi ? "true" : "false") << std::endl;
 }
 
 void Response::parseUri(std::string uri) // TODO:: uri empty ?/?
 {
+	// std::cout << "▻Parse uri◅ ------------------------------------------------------" << std::endl;
 	size_t posquery = uri.find("?");
 	if (posquery != std::string::npos)
 	{
@@ -250,65 +304,104 @@ void Response::parseUri(std::string uri) // TODO:: uri empty ?/?
 	// std::cout << "script     : " << this->fullpath << std::endl;
 }
 
-void Response::getFULLpath()
+void Response::getRoute()
 {
+	// std::cout << "▻Get Route◅ -----------------------------------------------------" << std::endl;
 	std::string dir;
-	int match = 0;
-	Route route_;
-	route_ = this->Config->getRoute(this->fullpath);
-	if (route_.RoutePath == "default")
+	this->route = this->Config->getRoute(this->fullpath);
+	if (this->route.RoutePath == "default")
 	{
 		if (!this->extension.empty())
-			route_ = this->Config->getRoute(this->extension);
-		if (route_.RoutePath == "default")
+			this->route = this->Config->getRoute(this->extension);
+		if (this->route.RoutePath == "default")
 		{
 			dir = getParentDirectories(this->fullpath);
-			while (route_.RoutePath == "default" && !dir.empty())
+			// std::cout << "big dir : " << dir << std::endl;
+			while (this->route.RoutePath == "default" && !dir.empty() && dir != "/")
 			{
-				route_ = this->Config->getRoute(dir);
+				this->route = this->Config->getRoute(dir);
 				dir = getParentDirectories(dir);
+				// std::cout << "sub dir : " << dir << std::endl;
 			}
-			// if (dir.empty() && route_.RoutePath == "default")
-			// 	std::cout << "Default match     : " << route_.RoutePath << std::endl;
-			// else
-			// 	std::cout << "Directory match   : " << route_.RoutePath << std::endl, match = 1;
+			if (dir == "/" && this->route.RoutePath == "default")
+				this->route = this->Config->getRoute(dir);
+			// if (dir.empty() && this->route.RoutePath == "default")
+			// 	std::cout << "Default match     : " << this->route.RoutePath << std::endl;
+			else
+            {
+                match = 1;
+				// std::cout << "Directory match   : " << this->route.RoutePath << std::endl;
+            }
 		}
-		// else
-		// 	std::cout << "Extention match   : " << route_.RoutePath << std::endl, match = 2;
+		else
+        {
+            match = 2;
+			// std::cout << "Extention match   : " << this->route.RoutePath << std::endl;
+        }
 	}
-	// else
-	// 	std::cout << "Full match        : " << route_.RoutePath << std::endl, match = 3;
-	route = &route_;
-	if (this->route->Redirection == "on")
+	else
+    {
+        match = 3;
+		// std::cout << "Full match        : " << this->route.RoutePath << std::endl;
+    }
+
+	// std::cout << "↦  ╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
+	// std::cout << "↦  ║" FG_BLUE BOLD " ROUTE " << RESET_ALL << std::setw(71) << "║" << std::endl;
+	// std::cout << "↦  ╠═════════════════╦═════════════════════════════════════════════════════════╣\n";
+	// std::cout << "↦  ║ RoutePath       ║" << std::setw(58) << "▻" + this->route.RoutePath << "◅║" << std::endl;
+	// std::cout << "↦  ║ UploadPath      ║" << std::setw(58) << "▻" + this->route.UploadPath << "◅║" << std::endl;
+	// std::cout << "↦  ║ Redirection     ║" << std::setw(58) << "▻" + this->route.Redirection << "◅║" << std::endl;
+	// std::cout << "↦  ║ RedirectStatus  ║" << std::setw(58) << "▻" + this->route.RedirectionStatus << "◅║" << std::endl;
+	// std::cout << "↦  ║ RedirectionURL  ║" << std::setw(58) << "▻" + this->route.RedirectionURL << "◅║" << std::endl;
+	// std::cout << "↦  ║ Root            ║" << std::setw(58) << "▻" + this->route.Root << "◅║" << std::endl;
+	// std::cout << "↦  ║ Autoindex       ║" << std::setw(58) << "▻" + this->route.Autoindex << "◅║" << std::endl;
+	// std::cout << "↦  ║ Index           ║" << std::setw(58) << "▻" + this->route.Index << "◅║" << std::endl;
+	// std::cout << "↦  ║ Cgi_Exec        ║" << std::setw(58) << "▻" + this->route.CgiExec << "◅║" << std::endl;
+	// std::cout << "↦  ║ Methods         ║" << std::setw(58) << "▻" + this->route.Accepted_Methods << "◅║" << std::endl;
+	// std::cout << "↦  ║ Methods1        ║" << std::setw(58) << "▻" + this->route.Accepted_Methods_ << "◅║" << std::endl;
+	// std::cout << "↦  ║ Methods2        ║" << std::setw(58) << "▻" + this->route.Accepted_Methods__ << "◅║" << std::endl;
+	// std::cout << "↦  ║ Methods3        ║" << std::setw(58) << "▻" + this->route.Accepted_Methods___ << "◅║" << std::endl;
+	// std::cout << "↦  ╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
+}
+
+void Response::genrateRederiction()
+{
+	// std::cout << "▻Generate redirection◅ -----------------------------------------------------" << std::endl;
+	if (this->route.Redirection == "on")
 	{
 		std::stringstream Headers__;
-		Headers__ << "HTTP/1.1 " + this->route->RedirectionStatus + " " + this->Config->status.getStatus(this->route->RedirectionStatus) + " \r\n";
-		Headers__ << "Location : " + this->route->RedirectionURL + "\r\n";
-		Headers__ << "Content-Length: " << 0 << "\r\n\r\n";
+		Headers__ << "HTTP/1.1 " + this->route.RedirectionStatus + " " + this->Config->status.getStatus(this->route.RedirectionStatus) + " \r\n";
+		Headers__ << "Location: " + this->route.RedirectionURL + "\r\n";
+		Headers__ << "Content-Length: 0\r\n\r\n";
 		this->HeaderResponse = Headers__.str();
-		responseDone = true;
+		this->responseDone = true;
 		return;
 	}
 	if (this->fullpath.back() == '/')
 		this->fullpath.pop_back();
-	else if (this->extension.empty())
+	else if (this->extension.empty() && isDirectory(this->fullpath.c_str()) == 1)
 	{
 		std::stringstream Headers__;
-		Headers__ << "HTTP/1.1 302 Found\r\n";
-		Headers__ << "Location : http://" + this->Config->Host + ":" + this->Config->Port + this->fullpath + "/\r\n";
-		Headers__ << "Content-Length: " << 0 << "\r\n\r\n";
+		Headers__ << "HTTP/1.1 302 " << this->Config->status.getStatus("302") << "\r\n";
+		Headers__ << "Location: http://" + this->Config->Host + ":" + this->Config->Port + this->fullpath + "/\r\n";
+		Headers__ << "Content-Length: 0\r\n\r\n";
 		this->HeaderResponse = Headers__.str();
-		responseDone = true;
+		this->responseDone = true;
 		return;
 	}
-	if (route->Root != "default" && route->RoutePath != "default" && match == 1)
-		this->entryPath = this->fullpath.substr(route->RoutePath.size()),
-		this->fullpath = route->Root + this->fullpath.substr(route->RoutePath.size()),
-		this->path_translated = route->Root + this->path_info; // TODO: handel also the extention find
-	else if (route->Root != "default" && route->RoutePath != "default")
+}
+
+void Response::getFULLpath()
+{
+	// std::cout << "▻Get full path◅ --------------------------------------------------" << std::endl;
+	if (route.Root != "default" && route.RoutePath != "default" && this->match == 1)
+		this->entryPath = this->fullpath.substr(route.RoutePath.size()),
+		this->fullpath = route.Root + this->fullpath.substr(route.RoutePath.size()),
+		this->path_translated = route.Root + this->path_info; // TODO: handel also the extention find
+	else if (route.Root != "default" && route.RoutePath != "default")
 		this->entryPath = this->fullpath,
-		this->fullpath = route->Root + this->fullpath,
-		this->path_translated = route->Root + this->path_info;
+		this->fullpath = route.Root + this->fullpath,
+		this->path_translated = route.Root + this->path_info;
 	else
 		this->entryPath = this->fullpath,
 		this->fullpath = this->Config->GlobalRoot + this->fullpath,
@@ -318,47 +411,38 @@ void Response::getFULLpath()
 	if (dirr == 1)
 	{
 		// std::cout << "TYPE              : directory" << std::endl;
-		if (route->Autoindex == "on")
+		if (route.Autoindex == "on")
 		{
 			generateAutoIndex();
 			responseDone = true;
 			return;
 		}
-		if (route->Index == "default")
+		if (route.Index == "default")
 			this->fullpath += "/index.html";
 		else
-			this->fullpath = this->fullpath + "/" + route->Index;
+			this->fullpath = this->fullpath + "/" + route.Index;
 		// std::cout << "THE NEW FULL PATH : " << this->fullpath << std::endl;
 	}
-	// else if (dirr == 2)
-	// 	std::cout << "TYPE              : file" << std::endl;
-	// else
-	// 	std::cout << "TYPE              : invalide not found" << std::endl;
-	// std::cout << "↦  ╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
-	// std::cout << "↦  ║" FG_BLUE BOLD " ROUTE " << RESET_ALL << std::setw(71) << "║" << std::endl;
-	// std::cout << "↦  ╠═════════════════╦═════════════════════════════════════════════════════════╣\n";
-	// std::cout << "↦  ║ RoutePath       ║" << std::setw(58) << "▻" + route->RoutePath << "◅║" << std::endl;
-	// std::cout << "↦  ║ UploadPath      ║" << std::setw(58) << "▻" + route->UploadPath << "◅║" << std::endl;
-	// std::cout << "↦  ║ Redirection     ║" << std::setw(58) << "▻" + route->Redirection << "◅║" << std::endl;
-	// std::cout << "↦  ║ RedirectStatus  ║" << std::setw(58) << "▻" + route->RedirectionStatus << "◅║" << std::endl;
-	// std::cout << "↦  ║ RedirectionURL  ║" << std::setw(58) << "▻" + route->RedirectionURL << "◅║" << std::endl;
-	// std::cout << "↦  ║ Root            ║" << std::setw(58) << "▻" + route->Root << "◅║" << std::endl;
-	// std::cout << "↦  ║ Autoindex       ║" << std::setw(58) << "▻" + route->Autoindex << "◅║" << std::endl;
-	// std::cout << "↦  ║ Index           ║" << std::setw(58) << "▻" + route->Index << "◅║" << std::endl;
-	// std::cout << "↦  ║ Cgi_Exec        ║" << std::setw(58) << "▻" + route->CgiExec << "◅║" << std::endl;
-	// std::cout << "↦  ║ Methods         ║" << std::setw(58) << "▻" + route->Accepted_Methods << "◅║" << std::endl;
-	// std::cout << "↦  ║ Methods1        ║" << std::setw(58) << "▻" + route->Accepted_Methods_ << "◅║" << std::endl;
-	// std::cout << "↦  ║ Methods2        ║" << std::setw(58) << "▻" + route->Accepted_Methods__ << "◅║" << std::endl;
-	// std::cout << "↦  ║ Methods3        ║" << std::setw(58) << "▻" + route->Accepted_Methods___ << "◅║" << std::endl;
-	// std::cout << "↦  ╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
+	else if (dirr == 2)
+    {
+		// std::cout << "TYPE              : file" << std::endl;
+    }
+	else
+	{
+		// std::cout << "TYPE              : invalide not found" << std::endl;
+		generateResponse("404");
+		this->responseDone = true;
+		return;
+	}
 }
 
 void Response::handleCGIScript(Client &client)
 {
+	// std::cout << "▻Run Cgi◅ --------------------------------------------------------" << std::endl
 	int tempFD = -1;
 	if (client.request.Method == "POST")
 	{
-		std::cout << "FILE : " << client.request.files[0].fileName << std::endl;
+		// std::cout << "FILE : " << client.request.files[0].fileName << std::endl;
 		tempFD = open(client.request.files[0].fileName.c_str(), O_RDONLY);
 		if (tempFD == -1)
 		{
@@ -386,8 +470,7 @@ void Response::handleCGIScript(Client &client)
 		close(pipefd[0]);
 		char **envp = new char *[env.size() + 1];
 		int i = 0;
-		for (std::multimap<std::string, std::string>::iterator it = env.begin();
-			 it != env.end(); it++)
+		for (std::multimap<std::string, std::string>::iterator it = env.begin(); it != env.end(); it++)
 		{
 			std::string env_entry = it->first + "=" + it->second;
 			envp[i] = new char[env_entry.size() + 1];
@@ -397,32 +480,35 @@ void Response::handleCGIScript(Client &client)
 		envp[i] = NULL;
 		dup2(pipefd[1], STDOUT_FILENO);
 		close(pipefd[1]);
-		alarm(10);
+		alarm(5);
 		if (tempFD != -1 && client.request.Method == "POST")
 			dup2(tempFD, STDIN_FILENO), close(tempFD);
-		// char *args[] = {const_cast<char *>("python3"), const_cast<char
-		// *>(env["SCRIPT_FILENAME"].c_str()), NULL};
-		if (this->extension == "py")
+		if (this->route.CgiExec != "default")
 		{
-			char *const args[] = {(char *)"python3", (char *)this->fullpath.c_str(), NULL};
-			execve("/usr/bin/python3", args, envp);
+			char *const args[] = {(char *)this->route.CgiExec.c_str(), (char *)this->fullpath.c_str(), NULL};
+			execve(this->route.CgiExec.c_str(), args, envp);
+		}
+		else if (this->extension == "py")
+		{
+			char *const args[] = {(char *)this->Config->pythonCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
+			execve(this->Config->pythonCgi.c_str(), args, envp);
 		}
 		else if (this->extension == "pl")
 		{
-			char *const args[] = {(char *)"perl", (char *)this->fullpath.c_str(), NULL};
-			execve("/usr/bin/perl", args, envp);
+			char *const args[] = {(char *)this->Config->perlCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
+			execve(this->Config->perlCgi.c_str(), args, envp);
 		}
 		else if (this->extension == "rb")
 		{
-			char *const args[] = {(char *)"ruby", (char *)this->fullpath.c_str(), NULL};
-			execve("/usr/bin/ruby", args, envp);
+			char *const args[] = {(char *)this->Config->rubyCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
+			execve(this->Config->rubyCgi.c_str(), args, envp);
 		}
 		else if (this->extension == "php")
 		{
-			char *const args[] = {(char *)"php-cgi_bin", (char *)this->fullpath.c_str(), NULL};
-			execve("/Users/ael-mouz/Desktop/webserv/tests/php-cgi_bin", args, envp);
+			char *const args[] = {(char *)this->Config->phpCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
+			execve(this->Config->phpCgi.c_str(), args, envp); // must change
 		}
-		perror("execve failed");
+		// perror("execve failed");
 		for (int i = 0; envp[i] != nullptr; i++)
 			delete[] envp[i];
 		delete[] envp;
@@ -445,9 +531,44 @@ void Response::handleCGIScript(Client &client)
 			char buffer[4096];
 			ssize_t bytesRead;
 			while ((bytesRead = read(pipefd[0], buffer, 4096)) > 0)
-				resCgi += buffer;
-			// std::cout << resCgi << std::endl;
-			this->HeaderResponse = resCgi;
+				resCgi.append(buffer, bytesRead);
+			// std::cout << convertText(resCgi) << std::endl;
+			/*****************************************/
+			std::istringstream responseStream(resCgi);
+			std::string resHeaders__, resBody__;
+			// std::string responseLine,reshttpVersion, resStatus, resStatusString,;
+			// std::getline(responseStream, responseLine);
+			// std::vector<std::string> responseParts = splitString(responseLine, " ");
+			// if (responseParts.size() >= 3)
+			// {
+			// 	reshttpVersion = responseParts[0];
+			// 	resStatus = responseParts[1];
+			// 	resStatusString = responseParts[2];
+			// }
+			// else
+			// 	responseStream.seekg(0, std::ios::beg); /// TODO:: maybe i should do this ???
+			std::string line;
+			while (std::getline(responseStream, line))
+			{
+				if (line.empty() || line == "\r")
+					break;
+				resHeaders__ += line + "\n";
+			}
+			std::multimap<std::string, std::string> MAPheders = parseResponseHeader(resHeaders__);
+			if (this->responseDone)
+				return;
+			size_t pos = resCgi.find("\r\n\r\n");
+			if (pos != std::string::npos)
+				resBody__ = resCgi.substr(pos + 4, resCgi.length() - pos + 4);
+			resHeaders__ = generateResponseHeaderCGI(MAPheders, resBody__);
+			// std::cout << "HEDERS: \n"
+			// 		  << convertText(resHeaders__) << std::endl;
+			// std::cout << "BODY: \n"
+			// 		  << convertText(resBody__) << std::endl;
+			/*****************************************/
+			// this->HeaderResponse = resCgi;//TODO:: ereas it;
+			this->HeaderResponse = resHeaders__;
+			this->BodyResponse = resBody__;
 			this->responseDone = true;
 		}
 		else
@@ -464,6 +585,7 @@ void Response::handleCGIScript(Client &client)
 
 void Response::generateCGIEnv(Client &client)
 {
+	// std::cout << "▻Generate Cgi env◅ -----------------------------------------------" << std::endl;
 	std::multimap<std::string, std::string>::iterator it;
 	std::multimap<std::string, std::string>::iterator end;
 	std::multimap<std::string, std::string> env;
@@ -478,6 +600,7 @@ void Response::generateCGIEnv(Client &client)
 	std::string SCRIPT_NAME = this->fullpath;
 	std::string SCRIPT_FILENAME = this->fullpath;
 	std::string QUERY_STRING = this->query;
+	std::string REMOTE_ADDR = client.clientIP;
 	std::string CONTENT_TYPE;
 	it = client.request.mapHeaders.find("Content-Type");
 	end = client.request.mapHeaders.end();
@@ -502,7 +625,7 @@ void Response::generateCGIEnv(Client &client)
 	env.insert(std::make_pair("QUERY_STRING", QUERY_STRING));
 	env.insert(std::make_pair("CONTENT_TYPE", CONTENT_TYPE));
 	env.insert(std::make_pair("CONTENT_LENGTH", CONTENT_LENGTH));
-	// env.insert(std::make_pair("REMOTE_ADDR", REMOTE_ADDR)); // TODO:: generate it from socket
+	env.insert(std::make_pair("REMOTE_ADDR", REMOTE_ADDR));			// TODO:: generate it from socket
 	env.insert(std::make_pair("REDIRECT_STATUS", REDIRECT_STATUS)); // NOTE:php only
 	it = client.request.mapHeaders.begin();
 	std::string keyEnv, valueEnv;
@@ -513,11 +636,9 @@ void Response::generateCGIEnv(Client &client)
 		if (it->first == "Content-Type" || it->first == "Content-Length")
 			continue;
 		std::string keyEnv = "HTTP_" + it->first;
-		for (std::string::iterator ch = keyEnv.begin(); ch != keyEnv.end();
-			 ++ch)
+		for (std::string::iterator ch = keyEnv.begin(); ch != keyEnv.end(); ++ch)
 			*ch = std::toupper(*ch);
-		for (std::string::iterator ch = keyEnv.begin(); ch != keyEnv.end();
-			 ++ch)
+		for (std::string::iterator ch = keyEnv.begin(); ch != keyEnv.end(); ++ch)
 		{
 			if (*ch == '-')
 				*ch = '_';
@@ -534,8 +655,7 @@ void Response::generateResponse(std::string status)
 	std::string extension_;
 	size_t pos = this->Config->ErrorPage.find_last_of(".");
 	if (pos != std::string::npos)
-		extension_ = this->Config->ErrorPage.substr(
-			pos + 1, this->Config->ErrorPage.length() - pos + 1);
+		extension_ = this->Config->ErrorPage.substr(pos + 1, this->Config->ErrorPage.length() - pos + 1);
 	std::ifstream infile(this->Config->ErrorPage.c_str());
 	if (!infile.is_open() || extension_.empty() || extension_ != "html")
 	{
@@ -587,31 +707,11 @@ void Response::generateResponse(std::string status)
 	}
 	else
 	{
-		// std::cout << "extension error page:" << this->extension << std::endl;
-		// this->HeaderResponse = "HTTP/1.1 " + status + " " +
-		// this->Config->status.getStatus(status) + "\r\n"; if (extension ==
-		// "html" || extension == "htm" || extension == "shtml" || extension ==
-		// "css" || extension == "xml" || extension == "gif" || extension
-		// ==
-		// "jpeg" || extension == "jpg" || extension == "js" || extension
-		// ==
-		// "atom" || extension == "rss" || extension == "json" || extension
-		// ==
-		// "ico" || extension == "svgz" || extension == "svg" || extension
-		// ==
-		// "pdf" || extension == "doc" || extension == "ppt" || extension
-		// ==
-		// "xls" || extension == "docx" || extension == "xlsx" || extension
-		// == "pptx" || extension == "wmlc" || extension == "wasm" || extension
-		// == "3gp" || extension == "mp4" || extension == "avi")
-		// 	this->HeaderResponse += "Content-Type: " +
-		// this->Config->mime.getMimeType(extension) + "\r\n"; else
-		// 	this->HeaderResponse += "Content-Type: " +
-		// this->Config->mime.getMimeType("txt") + "\r\n";
 		std::stringstream body;
 		body << infile.rdbuf();
 		this->BodyResponse = body.str();
 		std::stringstream header_;
+		header_ << "HTTP/1.1 " + status + " " + this->Config->status.getStatus(status) + "\r\n";
 		header_ << "Content-Type: " + this->Config->mime.getMimeType("html") + "\r\n";
 		header_ << "Content-Length: " + intToString(body.str().length()) + "\r\n\r\n";
 		this->HeaderResponse = header_.str();
@@ -619,6 +719,20 @@ void Response::generateResponse(std::string status)
 	}
 	infile.close();
 	return;
+}
+
+std::string humanReadableSize(off_t size)
+{
+	std::ostringstream sizeStr;
+	if (size >= (1 << 30))
+		sizeStr << (size / (1 << 30)) << " GB";
+	else if (size >= (1 << 20))
+		sizeStr << (size / (1 << 20)) << " MB";
+	else if (size >= (1 << 10))
+		sizeStr << (size / (1 << 10)) << " KB";
+	else
+		sizeStr << size << " B";
+	return sizeStr.str();
 }
 
 void Response::generateAutoIndex(void)
@@ -668,12 +782,10 @@ void Response::generateAutoIndex(void)
 	{
 		if (entry->d_type == DT_DIR && std::strcmp(entry->d_name, ".") == 0)
 			continue;
-		std::string icon =
-			(entry->d_type == DT_DIR) ? "/folder.svg" : "/file.png";
+		std::string icon = (entry->d_type == DT_DIR) ? "/images/folder.svg" : "/images/file.png";
 		autoIndex << "<tr>";
 		autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << "'>";
-		if (!this->entryPath.empty() && this->entryPath != "/" &&
-			this->entryPath.back() != '/')
+		if (!this->entryPath.empty() && this->entryPath != "/" && this->entryPath.back() != '/')
 			autoIndex << "<img src='" << icon << "' class='icon'><a href='" << this->entryPath + "/" + entry->d_name << "' class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << "'>" << entry->d_name << "</a></td>\n";
 		else if (!this->entryPath.empty() && this->entryPath != "/")
 			autoIndex << "<img src='" << icon << "' class='icon'><a href='" << this->entryPath + entry->d_name << "' class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << "'>" << entry->d_name << "</a></td>\n";
@@ -686,14 +798,21 @@ void Response::generateAutoIndex(void)
 			path = this->fullpath + "/" + entry->d_name;
 		else
 			path = this->fullpath + entry->d_name;
-		std::cout << path << std::endl;
+		// std::cout << path << std::endl;
 		if (stat(path.c_str(), &fileStat) == 0)
 		{
-			autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << fileStat.st_size << " bytes</td>\n";
-			autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << std::oct << (fileStat.st_mode & 0777) << "</td>\n";
-			autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << std::ctime(&fileStat.st_atime) << "</td>\n";
-			autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << std::ctime(&fileStat.st_mtime) << "</td>\n";
-			autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << std::ctime(&fileStat.st_ctime) << "</td>\n";
+			std::string fileType = (S_ISDIR(fileStat.st_mode)) ? "directory" : "file";
+			std::string sizeStr = humanReadableSize(fileStat.st_size);
+			autoIndex << "<td class='" << fileType << " col'>" << sizeStr << "</td>\n";
+			autoIndex << "<td class='" << fileType << " col'>" << std::oct << (fileStat.st_mode & 0777) << "</td>\n";
+			autoIndex << "<td class='" << fileType << " col'>" << std::ctime(&fileStat.st_atime);
+			autoIndex << "<td class='" << fileType << " col'>" << std::ctime(&fileStat.st_mtime);
+			autoIndex << "<td class='" << fileType << " col'>" << std::ctime(&fileStat.st_ctime);
+			// autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << fileStat.st_size << " bytes</td>\n";
+			// autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << std::oct << (fileStat.st_mode & 0777) << "</td>\n";
+			// autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << std::ctime(&fileStat.st_atime) << "</td>\n";
+			// autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << std::ctime(&fileStat.st_mtime) << "</td>\n";
+			// autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << std::ctime(&fileStat.st_ctime) << "</td>\n";
 		}
 	}
 	autoIndex << "</tr>\n";
@@ -704,34 +823,45 @@ void Response::generateAutoIndex(void)
 	std::stringstream header_;
 	header_ << "HTTP/1.1 200 OK\r\n";
 	header_ << "Content-Type: text/html; charset=UTF-8\r\n";
-	header_ << "Content-Length: " + std::to_string(autoIndex.str().length()) + "\r\n\r\n";
+	header_ << "Content-length: " + intToString(autoIndex.str().length()) + "\r\n\r\n";
 	this->HeaderResponse = header_.str();
 	closedir(dir);
 	this->responseDone = true;
 	return;
 }
 
-// std::multimap<std::string, std::string> Response::parseHeader(int
-// clientSocket, std::string buffer)
-// {
-// 	std::multimap<std::string, std::string> headers;
-// 	std::istringstream stream(buffer);
-// 	std::string line;
-// 	while (std::getline(stream, line))
-// 	{
-// 		if (line.empty() || line == "\r")
-// 			break;
-// 		size_t pos = line.find(':');
-// 		if (pos == std::string::npos)
-// 		{
-// 			generateResponse("400");
-// 			send(clientSocket, this->responseStatus.c_str(),
-// this->responseStatus.length(), 0); 			break;
-// 		}
-// 		std::string key = line.substr(0, pos);
-// 		std::string value = line.substr(pos + 2);
-// 		headers.insert(std::make_pair(key, value));
-// 	}
-// 	printMap(headers);
-// 	return headers;
-// }
+std::multimap<std::string, std::string> Response::parseResponseHeader(std::string header)
+{
+	std::multimap<std::string, std::string> headers;
+	std::istringstream stream(header);
+	std::string line;
+	while (std::getline(stream, line))
+	{
+		if (line.empty() || line == "\r")
+			break;
+		size_t pos = line.find(':');
+		if (pos == std::string::npos)
+		{
+			generateResponse("502");
+			this->responseDone = true;
+			break;
+		}
+		std::string key = line.substr(0, pos);
+		std::string value = line.substr(pos + 2, line.length() - (pos + 2) - 1);
+		headers.insert(std::make_pair(key, value));
+	}
+	// printMap(headers);
+	return headers;
+}
+
+std::string Response::generateResponseHeaderCGI(std::multimap<std::string, std::string> &headers, std::string &body)
+{
+	std::stringstream header_;
+	header_ << "HTTP/1.1 200 OK\r\n";
+	for (std::multimap<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
+		header_ << it->first + ": " + it->second + "\r\n";
+	if (headers.find("Content-length") == headers.end())
+		header_ << "Content-length: " << body.length() << "\r\n";
+	header_ << "\r\n";
+	return header_.str();
+}

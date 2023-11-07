@@ -1,20 +1,25 @@
 #!/usr/bin/perl
-
-use strict;
 use warnings;
+use strict;
+use CGI;
+my $cgi = CGI->new();
 
-# Print the HTTP headers
-print "HTTP/1.1 200 OK\r\n";
-print "Content-Type: text/html\r\n";
-print "\r\n";
+my $content = "<!DOCTYPE html>\n";
+$content .="<html>\n";
+$content .="<head>\n";
+$content .="<title>Perl Example</title>\n";
+$content .="</head>\n";
+$content .="<body>\n";
+$content .="<h1>CGI scripts!</h1>\n";
+$content .="</body>\n";
+$content .="</html>\n";
 
-# Print the HTML content
-print "<!DOCTYPE html>\n";
-print "<html>\n";
-print "<head>\n";
-print "<title>Perl Example</title>\n";
-print "</head>\n";
-print "<body>\n";
-print "<h1>CGI scripts are working fine on our server!</h1>\n";
-print "</body>\n";
-print "</html>\n";
+my $content_length = length($content);
+
+print $cgi->header(
+	-type => 'text/plain',
+	-charset => 'UTF-8',
+	-content_length => $content_length,
+);
+
+print $content
