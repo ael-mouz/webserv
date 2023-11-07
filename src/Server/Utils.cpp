@@ -133,7 +133,7 @@ void replaceAll(std::string &str, const std::string &from, const std::string &to
 	}
 }
 
-std::string intToString(int number)
+std::string intToString(size_t number)
 {
 	std::ostringstream oss;
 	oss << number;

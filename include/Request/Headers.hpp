@@ -22,7 +22,7 @@ public:
 	int read(Client &client, string &buffer, ssize_t &size);
 	int checkrequest(Client &client);
     int checkMultiPart(Client &client, multimap<string, string>::iterator& it);
-    int checkContentLen(Client &client, multimap<string, string>::iterator& it);
+    int checkContentLen(Client &client);
 	void reset();
 	Headers();
 	~Headers();

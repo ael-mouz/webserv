@@ -110,9 +110,17 @@ int Headers::checkMultiPart(Client &client, multimap<string, string>::iterator& 
     return 0;
 }
 
-int Headers::checkContentLen(Client &client, multimap<string, string>::iterator& it)
+int Headers::checkContentLen(Client &client)
 {
     stringstream stream;
+    multimap<string, string>::iterator it;
+
+    it = client.request.mapHeaders.find("Content-Length");
+	if (client.request.decodeFlag == false && it == client.request.mapHeaders.end())
+	{
+		cout << "error Headers::checkrequest no Content-Length \n";
+		return 411;
+	}
 	stream << it->second;
 	stream >> client.request.ContentLength;
 	if (!isDigit(it->second) || stream.fail())
@@ -124,6 +132,14 @@ int Headers::checkContentLen(Client &client, multimap<string, string>::iterator&
     {
         cout << "error Headers::checkContentLen len = 0\n";
         return 200;
+    }
+    stringstream stream1(client.response.Config->LimitClientBodySize);
+    size_t limitClientBodySize;
+    stream1 >> limitClientBodySize;
+    if (client.request.ContentLength > limitClientBodySize)
+    {
+        cout << "error Headers::checkContentLen client.request.ContentLength > limitClientBodySize client body size\n";
+        return 413;
     }
     return 0;
 }
@@ -140,20 +156,15 @@ int Headers::checkrequest(Client &client)
 		if (it->second != "chunked")
 		{
 			cout << "error request not implemnted";
-			return 400;
+			return 501;
 		}
 		client.request.decodeFlag = true;
 	}
 	it = client.request.mapHeaders.find("Content-Type"); // Content-Type: multipart/form-data; boundary=- ???
     if (it ->second.find("multipart/form-data") != string::npos && checkMultiPart(client, it) != 0)// if multipart/form-data || multipart/mixed || multipart/related || multipart/alternative
         return (checkMultiPart(client, it));
-	it = client.request.mapHeaders.find("Content-Length");
-	if (client.request.decodeFlag == false && it == client.request.mapHeaders.end())
-	{
-		cout << "error Headers::checkrequest no Content-Length \n";
-		return 400;
-	}
-    return checkContentLen(client, it);
+
+    return checkContentLen(client);
 }
 
 void Headers::reset()

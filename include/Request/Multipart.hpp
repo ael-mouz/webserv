@@ -3,6 +3,7 @@
 #include "../Server/Utils.hpp"
 
 class Request_Fsm;
+class Client;
 
 enum multipartState
 {
@@ -29,9 +30,9 @@ private:
 
 public:
 	size_t countLength;
-	void read(Request_Fsm &Request, string &buffer, ssize_t &size);
+	void read(Client &client, string &buffer, ssize_t &size);
 	void CGI(Request_Fsm &Request, string &buffer, ssize_t &size);
-	void createFile(const string &value, std::string &fileName);
+	void createFile(Client &client,const string &value, std::string &fileName);
 	bool createFileCGI(Request_Fsm &Request);
 	void reset();
 	Multipart();

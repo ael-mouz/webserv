@@ -112,7 +112,7 @@ void logMessage(LogLevel level, const std::string &host, int fd, const std::stri
 void printMap(const std::multimap<std::string, std::string> &map);
 size_t getFreeSpace(const char *path);
 void replaceAll(std::string &str, const std::string &from, const std::string &to);
-std::string intToString(int number);
+std::string intToString(size_t number);
 std::string getParentDirectories(const std::string &uri);
 int isDirectory(const char *path);
 bool isDigit(const std::string &str);

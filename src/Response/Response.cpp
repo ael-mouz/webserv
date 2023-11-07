@@ -172,14 +172,19 @@ void Response::sendResponse(Client &client)
 
 void Response::response(Client &client)
 {
-	if (responseDone)
-		return;
-	// std::cout << "▻Start Response◅ -------------------------------------------------" << std::endl;
-
-	mergeHeadersValues(client);
 	getConfig(client);
 	parseUri(client.request.URI);
 	getRoute();
+    if(client.request.ReqstDone != 200)
+    {
+        // std::cout << intToString(client.request.ReqstDone) << std::endl;
+        generateResponse(intToString(client.request.ReqstDone));
+        this->responseDone = true;
+        return;
+    }
+	if (responseDone)
+		return;
+	// std::cout << "▻Start Response◅ -------------------------------------------------" << std::endl;
 	genrateRederiction();
 	if (responseDone)
 		return;
@@ -191,6 +196,7 @@ void Response::response(Client &client)
 		return;
 	if (this->isCgi)
 	{
+	    mergeHeadersValues(client);
 		generateCGIEnv(client);
 		handleCGIScript(client);
 		if (responseDone)
@@ -438,7 +444,7 @@ void Response::getFULLpath()
 
 void Response::handleCGIScript(Client &client)
 {
-	// std::cout << "▻Run Cgi◅ --------------------------------------------------------" << std::endl
+	// std::cout << "▻Run Cgi◅ --------------------------------------------------------" << std::endl;
 	int tempFD = -1;
 	if (client.request.Method == "POST")
 	{
@@ -480,7 +486,7 @@ void Response::handleCGIScript(Client &client)
 		envp[i] = NULL;
 		dup2(pipefd[1], STDOUT_FILENO);
 		close(pipefd[1]);
-		alarm(5);
+		alarm(50);
 		if (tempFD != -1 && client.request.Method == "POST")
 			dup2(tempFD, STDIN_FILENO), close(tempFD);
 		if (this->route.CgiExec != "default")
@@ -580,7 +586,7 @@ void Response::handleCGIScript(Client &client)
 		close(pipefd[0]);
 	}
 	close(tempFD);
-	// unlink(client.request.files[0].fileName.c_str());
+	// unlink(client.request.files[0].fileName.c_str());// TODO check if there a file
 }
 
 void Response::generateCGIEnv(Client &client)

@@ -9,7 +9,7 @@ ServerConfig::ServerConfig()
 	this->Host = "127.0.0.1";
 	this->ServerNames = "webserver";
 	this->GlobalRoot = dir + "/www";
-	this->GlobalUpload = dir + "/upload";
+	this->GlobalUpload = dir + "/upload/";
 	this->LimitClientBodySize = "10M";
 	this->ErrorPage = "default";
 	this->phpCgi = dir + "/tests/php-cgi_bin";

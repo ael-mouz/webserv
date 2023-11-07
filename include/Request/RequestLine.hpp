@@ -32,7 +32,7 @@ private:
 
 public:
 	int read(Client &client, string &buffer, ssize_t &size);
-    // void checker(Client &client);
+    int checker(Client &client);
 	void reset();
 	RequestLine();
 	~RequestLine();

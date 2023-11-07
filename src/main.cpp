@@ -8,9 +8,6 @@ int main(int ac, char **av) {
     try {
         if (ac != 2)
             throw std::invalid_argument("Usage: ./webserv [configuration file]");
-#ifdef DEBUG_C
-        config.printServers();
-#endif
         RunServers servers(av);
 
         servers.runing();

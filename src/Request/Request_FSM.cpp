@@ -22,7 +22,7 @@ void Request_Fsm::read(Client &client, string &buffer, ssize_t &size)
 				multi.CGI(*this, buffer, size);
 				break;
 			}
-			multi.read(*this, buffer, size);
+			multi.read(client, buffer, size);
 	}
 }
 

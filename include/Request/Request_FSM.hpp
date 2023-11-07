@@ -34,10 +34,10 @@ public:
 	int subState;
 	string hold;
 	string key;
-	string boundary;
+	string boundary; // put it is header classe and make a geter
+	int sizeBoundary; // put it is header classe and make a geter
     bool isCGI;
 	bool decodeFlag;
-	int sizeBoundary;
 	size_t ContentLength;
 	int ReqstDone;
 	string Method;

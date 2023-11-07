@@ -1,37 +1,39 @@
 #include "../../include/Request/Multipart.hpp"
 #include "../../include/Request/Request_FSM.hpp"
+#include "../../include/Server/Client.hpp"
 
-void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
+void Multipart::read(Client &client, string &buffer, ssize_t &size)
 {
 	unsigned char character;
 
 	countLength += size;
-    if (countLength > Request.ContentLength)
+    // printf("parsheadelen = %ld countLength = %ld\n",client.request.ContentLength, countLength);
+    if (countLength > client.request.ContentLength)
     {
-        printf("Error: Multipart::read size > Request.ContentLength\n");
-		Request.ReqstDone = 400;
+        printf("Error: Multipart::read size > client.request.ContentLength\n");
+		client.request.ReqstDone = 400;
 		return;
     }
 	for (string::iterator it = buffer.begin(); it != buffer.end(); it++)
 	{
 		character = *it;
-		switch (Request.subState)
+		switch (client.request.subState)
 		{
 		case FIRST_BOUNDARY:
-			if (count == Request.sizeBoundary +1 && ("\r\n" + Request.hold) == Request.boundary + "\r")
+			if (count == client.request.sizeBoundary +1 && ("\r\n" + client.request.hold) == client.request.boundary + "\r")
 			{
                 if (character == '\n')
                 {
-				    Request.hold.clear();
+				    client.request.hold.clear();
 				    count = 0;
-				    Request.subState = HANDLER_KEY;
+				    client.request.subState = HANDLER_KEY;
                     continue;
                 }
 			}
-			if (count > Request.sizeBoundary +1)
+			if (count > client.request.sizeBoundary +1)
 			{
 				printf("Error: Multipart::read state START_BOUND i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
+				client.request.ReqstDone = 400;
 				return;
 			}
 			count++;
@@ -39,20 +41,20 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 		case AFTER_BOUNDARY: // case if there is only one final boundary
 			if (character == '-')
 			{
-				Request.subState = CHECK_END;
+				client.request.subState = CHECK_END;
 				break;
 			}
 			else if (character == '\r')
 			{
-				Request.subState = LF_BOUNDARY;
-				Request.hold.clear();
+				client.request.subState = LF_BOUNDARY;
+				client.request.hold.clear();
 				writeToFile = 0;
                 continue;
 			}
 			else
 			{
 				printf("Error: Multipart::read state AFTER_BOUND i = %ld c = %d\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
+				client.request.ReqstDone = 400;
 				return;
 			}
 		case LF_BOUNDARY:
@@ -63,34 +65,34 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 					fclose(fileF);
 					fileF = NULL;
 				}
-				Request.subState = HANDLER_KEY;
+				client.request.subState = HANDLER_KEY;
                 continue;
 			}
 			else
 			{
 				printf("Error: Headers::read state BEFOR_KRY i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
+				client.request.ReqstDone = 400;
 				return;
 			}
 		case HANDLER_KEY: // set max
 			if (character == ':')
 			{
-				Request.subState = HANDLER_VALUE;
+				client.request.subState = HANDLER_VALUE;
 				count = 0;
-				Request.key = Request.hold;
-				Request.hold.clear(); // store key
+				client.request.key = client.request.hold;
+				client.request.hold.clear(); // store key
                 continue;
 			}
 			else if (!ValidKey(character))
 			{
 				printf("Error: Multipart::read state HANDLER_KEY i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
+				client.request.ReqstDone = 400;
 				return;
 			}
 			else if (count >= MAX_KEY)
 			{
 				printf("Error: Headers::read state KEY MAX_KEY i = %d c = %c\n", count, character);
-				Request.ReqstDone = 400;
+				client.request.ReqstDone = 400;
 				return;
 			}
 			count++;
@@ -99,28 +101,28 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 			if (character == '\r')
 			{
 				File file;
-				if (Request.key == "Content-Disposition")
+				if (client.request.key == "Content-Disposition")
 				{
-					createFile(Request.hold, file.fileName); // check the error in other sta // // organize file
+					createFile(client ,client.request.hold, file.fileName); // check the error in other sta // // organize file
 					if (writeToFile == -1)
 					{
 						printf("Error: Multipart::read state HANDLER_VALUE ""fdFile i = %ld ""c = %c\n",it - buffer.begin(), character);
-						Request.ReqstDone = 400;
+						client.request.ReqstDone = 500;
 						return;
 					}
 				}
-				file.Content.insert(make_pair(Request.key, trim(Request.hold, " \t")));
-				Request.files.insert(Request.files.begin(), file); // clear file ??
-				Request.hold.clear();
-				Request.key.clear();
-				Request.subState = LF_VALUE;
+				file.Content.insert(make_pair(client.request.key, trim(client.request.hold, " \t")));
+				client.request.files.insert(client.request.files.begin(), file); // clear file ??
+				client.request.hold.clear();
+				client.request.key.clear();
+				client.request.subState = LF_VALUE;
 				count = 0;
 				continue;
 			}
 			if (count >= MAX_VALUE)
 			{
 				printf("Error: Headers::read state VALUE MAX_VALUE i = %d c = ""%c\n", count, character);
-				Request.ReqstDone = 400;
+				client.request.ReqstDone = 400;
 				return;
 			}
 			count++;
@@ -128,66 +130,66 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 		case LF_VALUE:
 			if (character == '\n')
 			{
-				Request.subState = CHECK_AFTER_VALUE;
-				Request.hold.clear();
+				client.request.subState = CHECK_AFTER_VALUE;
+				client.request.hold.clear();
                 continue;
 			}
 			else
 			{
 				printf("Error: Headers::read state AFTER_VALUE i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
+				client.request.ReqstDone = 400;
 				return;
 			}
 		case CHECK_AFTER_VALUE:
 			if (character == '\r')
 			{
-				Request.subState = START_DATA;
+				client.request.subState = START_DATA;
                 continue;
 			}
 			else if (ValidKey(character))
 			{
-				Request.subState = HANDLER_KEY;
+				client.request.subState = HANDLER_KEY;
 			}
 			else
 			{
 				printf("Error: Headers::read state CHECK i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
+				client.request.ReqstDone = 400;
 				return;
 			}
 			break;
 		case START_DATA:
 			if (character == '\n')
 			{
-				Request.hold.clear();
-				Request.subState = WRITE_DATA;
+				client.request.hold.clear();
+				client.request.subState = WRITE_DATA;
                 continue;
 			}
 			else
 			{
 				printf("Error: Headers::read state AFTER_WRITE_DATA i = %ld c ""= %c\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
+				client.request.ReqstDone = 400;
 				return;
 			}
 			break;
 		case WRITE_DATA:
-			if (count < Request.sizeBoundary && character == Request.boundary[count])
+			if (count < client.request.sizeBoundary && character == client.request.boundary[count])
 			{
 				count++;
-				if (count == Request.sizeBoundary)
-					Request.subState = AFTER_BOUNDARY;
+				if (count == client.request.sizeBoundary)
+					client.request.subState = AFTER_BOUNDARY;
 			}
 			else
 			{
 				if (count == 0)
 				{
-					if (buffer.end() - it > Request.sizeBoundary + 4)
+					if (buffer.end() - it > client.request.sizeBoundary + 4)
 					{
 						int index = it - buffer.begin();
-						size_t posBoundary = buffer.find(Request.boundary, index);
+						size_t posBoundary = buffer.find(client.request.boundary, index);
 						if (posBoundary == string::npos)
 						{
-							fwrite(&buffer[index], 1, size - Request.sizeBoundary - index, fileF);
-							it = buffer.begin() + (size - Request.sizeBoundary - 1);
+							fwrite(&buffer[index], 1, size - client.request.sizeBoundary - index, fileF);
+							it = buffer.begin() + (size - client.request.sizeBoundary - 1);
 						}
 						else
 						{
@@ -199,9 +201,9 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 					fputc(character, fileF);
 					continue;
 				}
-				fwrite(&Request.hold[0], 1, Request.hold.size(), fileF);
+				fwrite(&client.request.hold[0], 1, client.request.hold.size(), fileF);
 				fputc(character, fileF);
-				Request.hold.clear();
+				client.request.hold.clear();
 				count = 0;
 				continue;
 			}
@@ -209,53 +211,53 @@ void Multipart::read(Request_Fsm &Request, string &buffer, ssize_t &size)
 		case CHECK_END:
 			if (character == '-')
 			{
-				Request.hold.clear(); //<==
+				client.request.hold.clear(); //<==
 				(fileF != NULL) && (fclose(fileF));
-				Request.subState = CR_END;
+				client.request.subState = CR_END;
 			}
 			else
 			{
 				printf("Error: Headers::read state CHECK_END i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
+				client.request.ReqstDone = 400;
 				return;
 			}
 			break;
 		case CR_END:
 			if (character == '\r')
 			{
-				Request.hold.clear();
-				Request.subState = LF_END;
+				client.request.hold.clear();
+				client.request.subState = LF_END;
 			}
 			else
 			{
 				printf("Error: Headers::read state CR_END i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
+				client.request.ReqstDone = 400;
 				return;
 			}
 			break;
 		case LF_END: // check size of content length
 			if (character == '\n')
 			{
-                // printf("parsheadelen = %ld countLength = %ld\n",Request.ContentLength, countLength);
-                if (countLength != Request.ContentLength)
+                // printf("parsheadelen = %ld countLength = %ld\n",client.request.ContentLength, countLength);
+                if (countLength != client.request.ContentLength)
                 {
                     printf("Error: Multipart::read LF_END\n");
-	            	Request.ReqstDone = 400;
+	            	client.request.ReqstDone = 400;
 	            	return;
                 }
-				Request.ReqstDone = 200;
-				Request.hold.clear();
+				client.request.ReqstDone = 200;
+				client.request.hold.clear();
 				return;
 			}
 			else
 			{
 				printf("Error: Headers::read state CR_END i = %ld c = %c\n", it - buffer.begin(), character);
-				Request.ReqstDone = 400;
+				client.request.ReqstDone = 400;
 				return;
 			}
 			break;
 		}
-		Request.hold += character;
+		client.request.hold += character;
 	}
 }
 
@@ -265,7 +267,7 @@ void Multipart::CGI(Request_Fsm &Request, string &buffer, ssize_t &size)
 	{
 		if (createFileCGI(Request) == false)
 		{
-			Request.mainState = 0;
+			Request.ReqstDone = 500;
 			return;
 		}
 	}
@@ -279,15 +281,16 @@ void Multipart::CGI(Request_Fsm &Request, string &buffer, ssize_t &size)
 		writeToFile = 0;
 		Request.ReqstDone = 1;
 		fclose(fileF);
+        fileF = NULL;
 	}
 	if (countLength > Request.ContentLength)
 	{
-		// printf("countLength > Request.ContentLength\n"); Request.mainState =
-		// 0;
+		// printf("countLength > Request.ContentLength\n"); Request.mainState =// 0;
+        Request.ReqstDone = 400;
 		return;
 	}
 }
-void Multipart::createFile(const string &value, string &fileName)
+void Multipart::createFile(Client &client, const string &value, string &fileName)
 {
 	size_t fileNamePos = value.find("filename=");
 
@@ -297,7 +300,9 @@ void Multipart::createFile(const string &value, string &fileName)
 		return;
 	}
 	fileName = trim(value.substr(fileNamePos + sizeof("filename")), " \"");
-	fileName = "/tmp/" + fileName;
+    std::string path = client.response.route.UploadPath;
+    (path != "default") ? fileName = path + fileName : fileName = client.response.Config->GlobalUpload + fileName;
+    // std::cout << fileName << std::endl;//////
 	fileF = fopen(&fileName[0], "w");
 	if (!fileF)
 	{
@@ -310,7 +315,7 @@ void Multipart::createFile(const string &value, string &fileName)
 
 bool Multipart::createFileCGI(Request_Fsm &Request)
 {
-	string randomName = "file-XXXXXXXXXXXXXXXXX";
+	string randomName = ".file-XXXXXXXXXXXXXXXXX";
 
 	if (mktemp(&randomName[0]) == NULL) // mkstemp
 	{

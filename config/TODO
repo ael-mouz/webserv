@@ -1,5 +1,4 @@
 -errors parsing request
-    with docker inginix
     * do more tests for parse body syntax error
     * delete files
     *handel checker in headers class
@@ -7,13 +6,24 @@
         /transfer chunked
     * countent len
     * lowwer case headers
+    * storag a ayman d .....
+    * this->status["408"] = "Request Timeout"; //
 
 -manage Server
     * keep alive /cloes socket
     * remove client with a safe way
 
 
--hundel delete rederect files
+-handle delete rederect files
     *
 
+check with docker inginix //a ayman
+    * client.request.ContentLength == 0;
 
+-Utils
+    -to string with templated function //a ayman
+    -
+
+- decode uri
+
+- handel mime type

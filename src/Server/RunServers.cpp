@@ -173,6 +173,9 @@ RunServers::RunServers(char **av) : numberOfEvents(0)
 	config.parser(av[1]);
 	config.checkServerConfig(av[1]);
 	config.filterServerConfig();
+    #ifdef DEBUG_C
+        config.printServers();
+    #endif
 	vector<ServerConf> &serverConf = config.getServerConfig();
 	maxFdstmp = -1;
 	for (vector<ServerConf>::iterator it = serverConf.begin();
