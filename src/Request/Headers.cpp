@@ -151,6 +151,8 @@ void Headers::checkrequest(Client &client)
 	//     return ;
 	// }
 	itHeader = client.request.mapHeaders.find("Content-Type"); // Content-Type: multipart/form-data; boundary=- ???
+	//==90706==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x619000005450 at pc 0x000105c76edc bp 0x7ffee9f91920 sp 0x7ffee9f91918
+	// READ of size 1 at 0x619000005450 thread T0
 	size_t posBoundary = itHeader->second.find("boundary=");
 	if (itHeader == client.request.mapHeaders.end() || posBoundary == std::string::npos)
 	{ // if multipart/form-data || multipart/mixed || multipart/related || multipart/alternative

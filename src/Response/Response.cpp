@@ -89,9 +89,9 @@ void Response::handleNormalFiles(Client &client)
 {
 	// std::cout << "▻NormalFiles◅ ----------------------------------------------------" << std::endl;
 	this->fptr = fopen(this->fullpath.c_str(), "rb");
-	if (!this->fptr || this->extension.empty()) /// TODO: maybe this is not corect
+	if (!this->fptr) /// TODO: maybe this is not corect
 	{
-		generateResponse("404");
+		generateResponse("500");
 		this->responseDone = true;
 		return;
 	}
@@ -130,7 +130,7 @@ void Response::sendResponse(Client &client)
 		if (!this->BodyResponse.empty())
 		{
 			std::string host = "http://" + client.serverConf.DefaultServerConfig.Host + ":" + client.serverConf.DefaultServerConfig.Port;
-			logMessage(SRES, host, client.socketClient, "Response sent to " + client.clientIP );
+			logMessage(SRES, host, client.socketClient, "Response sent to " + client.clientIP);
 			this->responseString += client.response.BodyResponse;
 			this->responseSent = true, this->isBodySent = true;
 		}
@@ -316,21 +316,25 @@ void Response::getRoute()
 		if (this->route.RoutePath == "default")
 		{
 			dir = getParentDirectories(this->fullpath);
-			while (this->route.RoutePath == "default" && !dir.empty())
+			std::cout << "big dir : " << dir << std::endl;
+			while (this->route.RoutePath == "default" && !dir.empty() && dir != "/")
 			{
 				this->route = this->Config->getRoute(dir);
 				dir = getParentDirectories(dir);
+				std::cout << "sub dir : " << dir << std::endl;
 			}
-			// if (dir.empty() && this->route.RoutePath == "default")
-			// 	std::cout << "Default match     : " << this->route.RoutePath << std::endl;
-			// else
-			// 	std::cout << "Directory match   : " << this->route.RoutePath << std::endl, match = 1;
+			if (dir == "/" && this->route.RoutePath == "default")
+				this->route = this->Config->getRoute(dir);
+			if (dir.empty() && this->route.RoutePath == "default")
+				std::cout << "Default match     : " << this->route.RoutePath << std::endl;
+			else
+				std::cout << "Directory match   : " << this->route.RoutePath << std::endl, match = 1;
 		}
-		// else
-		// 	std::cout << "Extention match   : " << this->route.RoutePath << std::endl, match = 2;
+		else
+			std::cout << "Extention match   : " << this->route.RoutePath << std::endl, match = 2;
 	}
-	// else
-	// 	std::cout << "Full match        : " << this->route.RoutePath << std::endl, match = 3;
+	else
+		std::cout << "Full match        : " << this->route.RoutePath << std::endl, match = 3;
 
 	// std::cout << "↦  ╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
 	// std::cout << "↦  ║" FG_BLUE BOLD " ROUTE " << RESET_ALL << std::setw(71) << "║" << std::endl;
@@ -366,10 +370,10 @@ void Response::genrateRederiction()
 	}
 	if (this->fullpath.back() == '/')
 		this->fullpath.pop_back();
-	else if (this->extension.empty())
+	else if (this->extension.empty() && isDirectory(this->fullpath.c_str()) == 1)
 	{
 		std::stringstream Headers__;
-		Headers__ << "HTTP/1.1 302" << this->Config->status.getStatus("302") << "\r\n";
+		Headers__ << "HTTP/1.1 302 " << this->Config->status.getStatus("302") << "\r\n";
 		Headers__ << "Location: http://" + this->Config->Host + ":" + this->Config->Port + this->fullpath + "/\r\n";
 		Headers__ << "Content-Length: 0\r\n\r\n";
 		this->HeaderResponse = Headers__.str();
@@ -381,7 +385,7 @@ void Response::genrateRederiction()
 void Response::getFULLpath()
 {
 	// std::cout << "▻Get full path◅ --------------------------------------------------" << std::endl;
-	if (route.Root != "default" && route.RoutePath != "default" && match == 1)
+	if (route.Root != "default" && route.RoutePath != "default" && this->match == 1)
 		this->entryPath = this->fullpath.substr(route.RoutePath.size()),
 		this->fullpath = route.Root + this->fullpath.substr(route.RoutePath.size()),
 		this->path_translated = route.Root + this->path_info; // TODO: handel also the extention find
@@ -393,7 +397,7 @@ void Response::getFULLpath()
 		this->entryPath = this->fullpath,
 		this->fullpath = this->Config->GlobalRoot + this->fullpath,
 		this->path_translated = this->Config->GlobalRoot + this->path_info;
-	// std::cout << "FULL PATH         : " << this->fullpath << std::endl;
+	std::cout << "FULL PATH         : " << this->fullpath << std::endl;
 	int dirr = isDirectory(this->fullpath.c_str());
 	if (dirr == 1)
 	{
@@ -408,12 +412,17 @@ void Response::getFULLpath()
 			this->fullpath += "/index.html";
 		else
 			this->fullpath = this->fullpath + "/" + route.Index;
-		// std::cout << "THE NEW FULL PATH : " << this->fullpath << std::endl;
+		std::cout << "THE NEW FULL PATH : " << this->fullpath << std::endl;
 	}
-	// else if (dirr == 2)
-	// std::cout << "TYPE              : file" << std::endl;
-	// else
-	// std::cout << "TYPE              : invalide not found" << std::endl;
+	else if (dirr == 2)
+		std::cout << "TYPE              : file" << std::endl;
+	else
+	{
+		std::cout << "TYPE              : invalide not found" << std::endl;
+		generateResponse("404");
+		this->responseDone = true;
+		return;
+	}
 }
 
 void Response::handleCGIScript(Client &client)
@@ -605,7 +614,7 @@ void Response::generateCGIEnv(Client &client)
 	env.insert(std::make_pair("QUERY_STRING", QUERY_STRING));
 	env.insert(std::make_pair("CONTENT_TYPE", CONTENT_TYPE));
 	env.insert(std::make_pair("CONTENT_LENGTH", CONTENT_LENGTH));
-	env.insert(std::make_pair("REMOTE_ADDR", REMOTE_ADDR)); // TODO:: generate it from socket
+	env.insert(std::make_pair("REMOTE_ADDR", REMOTE_ADDR));			// TODO:: generate it from socket
 	env.insert(std::make_pair("REDIRECT_STATUS", REDIRECT_STATUS)); // NOTE:php only
 	it = client.request.mapHeaders.begin();
 	std::string keyEnv, valueEnv;

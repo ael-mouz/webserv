@@ -81,11 +81,11 @@ void logMessage(LogLevel level, const std::string &host, int fd, const std::stri
 		color = FG_MAGENTA;
 		break;
 	case SREQ:
-		levelStr = "HTTP_REQUEST";
+		levelStr = "REQUEST";
 		color = FG_BLUE;
 		break;
 	case SRES:
-		levelStr = "HTTP_RESPONSE";
+		levelStr = "RESPONSE";
 		color = FG_LBLUE;
 		break;
 	}
@@ -155,7 +155,9 @@ std::string getParentDirectories(const std::string &uri)
 {
 	std::string parent;
 	size_t pos = uri.find_last_of("/");
-	if (pos != std::string::npos)
+	if  (pos == 0)
+		parent = "/";
+	else if (pos != std::string::npos)
 		parent = uri.substr(0, pos);
 	return parent;
 }
