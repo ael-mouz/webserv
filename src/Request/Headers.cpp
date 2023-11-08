@@ -97,53 +97,6 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
     return 0;
 }
 
-int Headers::checkMultiPart(Client &client, multimap<string, string>::iterator& it)
-{
-    size_t posBoundary = it->second.find("boundary="); //if boudry vid or not in correct form ??
-	if (posBoundary == string::npos)
-	{
-		cout << "error Headers::checkrequest Content-Type\n";
-		return 400;
-	}
-	client.request.boundary = "\r\n--" + it->second.substr(posBoundary + sizeof("boundary"));
-	client.request.sizeBoundary = client.request.boundary.size();
-    return 0;
-}
-
-int Headers::checkContentLen(Client &client)
-{
-    stringstream stream;
-    multimap<string, string>::iterator it;
-
-    it = client.request.mapHeaders.find("Content-Length");
-	if (client.request.decodeFlag == false && it == client.request.mapHeaders.end())
-	{
-		cout << "error Headers::checkrequest no Content-Length \n";
-		return 411;
-	}
-	stream << it->second;
-	stream >> client.request.ContentLength;
-	if (!isDigit(it->second) || stream.fail())
-	{
-		cout << "error Headers::checkrequest ContentLength\n";
-		return 400;
-	}
-    if (client.request.ContentLength == 0)
-    {
-        cout << "error Headers::checkContentLen len = 0\n";
-        return 200;
-    }
-    stringstream stream1(client.response.Config->LimitClientBodySize);
-    size_t limitClientBodySize;
-    stream1 >> limitClientBodySize;
-    if (client.request.ContentLength > limitClientBodySize)
-    {
-        cout << "error Headers::checkContentLen client.request.ContentLength > limitClientBodySize client body size\n";
-        return 413;
-    }
-    return 0;
-}
-
 int Headers::checkrequest(Client &client)
 {
 	if (client.request.Method == "GET" || client.request.Method == "DELETE")
@@ -155,27 +108,92 @@ int Headers::checkrequest(Client &client)
 	{
 		if (it->second != "chunked")
 		{
-			cout << "error request not implemnted";
+			printf("error request not implemnted\n");
 			return 501;
 		}
 		client.request.decodeFlag = true;
 	}
+    int returnValue = ContentLenChecker(client);
+    if (returnValue != 0)
+        return returnValue;
 	it = client.request.mapHeaders.find("Content-Type"); // Content-Type: multipart/form-data; boundary=- ???
-    if (it ->second.find("multipart/form-data") != string::npos && checkMultiPart(client, it) != 0)// if multipart/form-data || multipart/mixed || multipart/related || multipart/alternative
-        return (checkMultiPart(client, it));
-
-    return checkContentLen(client);
+    if (it == client.request.mapHeaders.end())
+    {
+        printf("Error: Headers::checkrequest there is no Content-Type\n");
+        return 400;
+    }
+    if (it ->second.find("multipart/form-data") != string::npos) {
+        if ((returnValue = MultiPartChecker(client, it->second)) != 0)// if multipart/form-data || multipart/mixed || multipart/related || multipart/alternative
+            return returnValue;
+    }
+    else if ((returnValue = MimeTypeChecker(client, it->second)) != 0)
+        return returnValue;
+    return 0;
 }
+
+int Headers::ContentLenChecker(Client &client)
+{
+    stringstream stream;
+    multimap<string, string>::iterator it;
+
+    it = client.request.mapHeaders.find("Content-Length");
+	if (client.request.decodeFlag == false && it == client.request.mapHeaders.end())
+	{
+		printf("error Headers::checkrequest no shuncked no Content-Length \n");
+		return 411;
+	}
+    else if (client.request.decodeFlag == true && it == client.request.mapHeaders.end())
+        return 0;
+	stream << it->second;
+	stream >> client.request.ContentLength;
+	if (!isDigit(it->second) || stream.fail())
+	{
+		printf("error Headers::checkrequest ContentLength\n");
+		return 400;
+	}
+    if (client.request.ContentLength == 0)
+    {
+        printf("error Headers::checkContentLen len = 0\n");
+        return 200;
+    }
+    stringstream stream1(client.response.Config->LimitClientBodySize);
+    size_t limitClientBodySize;
+    stream1 >> limitClientBodySize;
+    if (client.request.ContentLength > limitClientBodySize)
+    {
+        printf("error Headers::checkContentLen client.request.ContentLength > limitClientBodySize client body size\n");
+        return 413;
+    }
+    return 0;
+}
+
+int Headers::MultiPartChecker(Client &client, string& value)
+{
+    size_t posBoundary = value.find("boundary="); //if boudry vid or not in correct form ??
+	if (posBoundary == string::npos)
+	{
+		cout << "error Headers::checkrequest Content-Type\n";
+		return 400;
+	}
+	client.request.boundary = "\r\n--" + value.substr(posBoundary + sizeof("boundary"));
+	client.request.sizeBoundary = client.request.boundary.size();
+    return 0;
+}
+
+int Headers::MimeTypeChecker(Client &client, string& value)
+{
+    (void)client;
+    (void)value;
+    printf("Headers::MimeTypeChecker\n");
+    return 200;
+}
+
 
 void Headers::reset()
 {
 	count = 0;
 }
 
-Headers::Headers()
-{
-	// state = CHECK;
-	count = 0;
-}
+Headers::Headers() : count(0) {}
 
 Headers::~Headers() {}

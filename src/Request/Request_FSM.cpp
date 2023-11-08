@@ -41,7 +41,7 @@ void Request_Fsm::clear(void) // im smart
 		it->Content.clear();
 	}
 	files.clear();
-	mainState = REQUEST_LINE;
+	mainState = METHOD;
 	ReqstDone = 0;
 	subState = 0;
 	sizeBoundary = 0;
@@ -57,7 +57,7 @@ void Request_Fsm::clear(void) // im smart
 
 Request_Fsm::Request_Fsm()
 {
-	mainState = REQUEST_LINE;
+	mainState = METHOD;
 	ReqstDone = 0;
 	subState = 0;
 	decodeFlag = false;

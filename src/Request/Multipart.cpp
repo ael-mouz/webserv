@@ -245,7 +245,7 @@ void Multipart::read(Client &client, string &buffer, ssize_t &size)
 	            	client.request.ReqstDone = 400;
 	            	return;
                 }
-				client.request.ReqstDone = 200;
+				client.request.ReqstDone = 201;
 				client.request.hold.clear();
 				return;
 			}
@@ -279,7 +279,7 @@ void Multipart::CGI(Request_Fsm &Request, string &buffer, ssize_t &size)
 	if (countLength == Request.ContentLength)
 	{
 		writeToFile = 0;
-		Request.ReqstDone = 1;
+		Request.ReqstDone = 200;
 		fclose(fileF);
         fileF = NULL;
 	}

@@ -4,18 +4,9 @@
 
 class Client;
 
-enum methods
-{
-	GET = 3,
-	POST = 4,
-	DELETE = 6,
-};
-
 enum requestState
 {
-	REQUEST,
 	METHOD,
-	METHOD_SPACE,
 	_URI,
 	URI_SPACE,
 	VERSION,
@@ -27,8 +18,6 @@ class RequestLine
 {
 private:
 	int count;
-	int method;
-	map<int, string> PossiblMethod; // global ??
 
 public:
 	int read(Client &client, string &buffer, ssize_t &size);

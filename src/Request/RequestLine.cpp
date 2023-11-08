@@ -15,65 +15,28 @@ int RequestLine::read(Client &client, string &buffer, ssize_t &size)
 		character = *it;
 		switch (client.request.subState)
 		{
-		// case REQUEST:
-        //     if ((client.request.hold == "GET" || client.request.hold == "POST" || client.request.hold == "DELETE")
-        //         && character == ' ')
-        //     {
-        //         client.request.Method = client.request.hold;
-        //         client.request.hold.clear();
-        //         client.request.subState = _URI;
-        //         break;
-        //     }
-        //     if (count < 3 && character == "GET"[count])
-        //         ;
-        //     else if (count < 4 && character == "POST"[count])
-        //         ;
-        //     else if (count < 6 && character == "DELETE"[count])
-        //         ;
-        //     else {
-        //         printf("Error: RequestLine::read subState REQUEST i = %ld c = %c\n", it - buffer.begin(), character);
-		// 		return 405;
-        //     }
-        //     count++;
-		case REQUEST:
-			if (character == 'G')
-				method = GET;
-			else if (character == 'P')
-				method = POST;
-			else if (character == 'D')
-				method = DELETE;
-			else
-			{
-				printf("Error: RequestLine::read subState REQUEST i = %ld c = %c\n", it - buffer.begin(), character);
-				return 405;
-			}
-			client.request.subState = METHOD;
-			count++;
-			continue;
 		case METHOD:
-			if (character == PossiblMethod[method][count])
-				count++;
-			else
-			{
-				printf("Error: RequestLine::read subState METHOD i = %ld c = %c\n", it - buffer.begin(), character);
+            if ((client.request.hold == "GET" || client.request.hold == "POST" || client.request.hold == "DELETE")
+                && character == ' ')
+            {
+                count = 0;
+                client.request.Method = client.request.hold;
+                client.request.hold.clear();
+                client.request.subState = _URI;
+                continue;
+            }
+            if (count < 3 && character == "GET"[count])
+                ;
+            else if (count < 4 && character == "POST"[count])
+                ;
+            else if (count < 6 && character == "DELETE"[count])
+                ;
+            else {
+                printf("Error: RequestLine::read subState REQUEST i = %ld c = %c count = %d\n", it - buffer.begin(), character, count);
 				return 405;
-			}
-			if (count == PossiblMethod.find(method)->first)
-			{
-				client.request.Method = PossiblMethod[method];
-				client.request.subState = METHOD_SPACE;
-			}
-			break;
-		case METHOD_SPACE:
-			if (character != ' ')
-			{
-				printf("Error: RequestLine::read subState METHOD_SPACE i = %ld c = %c\n", it - buffer.begin(), character);
-				return 400;
-			}
-			client.request.subState = _URI;
-			count = 0;
-			client.request.hold.clear();
-			continue;
+            }
+            count++;
+            break;
 		case _URI:
 			if (character == ' ')
 			{
@@ -147,13 +110,13 @@ int RequestLine::checker(Client &client)
 	client.response.getRoute();
 	client.response.genrateRederiction();
 	if (client.response.responseDone)
-		return 1;
+		return 200;
 	client.response.getFULLpath();
 	if (client.response.responseDone)
-		return 1;
+		return 200;
 	client.response.regenerateExtonsion();
 	if (client.response.responseDone)
-		return 1;
+		return 200;
     if(client.response.isCgi)
         client.request.isCGI = true;
     return 0;
@@ -161,15 +124,11 @@ int RequestLine::checker(Client &client)
 
 void RequestLine::reset()
 {
-	method = 0;
 	count = 0;
 }
 
 RequestLine::RequestLine()
 {
-	PossiblMethod[GET] = "GET";
-	PossiblMethod[POST] = "POST";
-	PossiblMethod[DELETE] = "DELETE";
 	count = 0;
 }
 

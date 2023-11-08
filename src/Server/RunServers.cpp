@@ -189,8 +189,7 @@ RunServers::RunServers(char **av) : numberOfEvents(0)
 		servers.push_back(serv);
 	}
 	FD_ZERO(&serverFds);
-	for (vector<Server>::iterator it = servers.begin(); it != servers.end();
-		 it++)
+	for (vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
 		FD_SET(it->socketServer, &serverFds);
 }
 
