@@ -1,5 +1,4 @@
 #include "../../include/Request/RequestLine.hpp"
-// #include "../../include/Request/Request_FSM.hpp"
 #include "../../include/Server/Client.hpp"
 // return done || error
 // continue skip witout adding
@@ -127,9 +126,6 @@ void RequestLine::reset()
 	count = 0;
 }
 
-RequestLine::RequestLine()
-{
-	count = 0;
-}
+RequestLine::RequestLine() : count(0) {}
 
 RequestLine::~RequestLine() {}

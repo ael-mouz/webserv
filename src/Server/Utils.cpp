@@ -205,3 +205,11 @@ size_t HexaToDicimal(const std::string &hexStr)
 	converter >> std::hex >> result;
 	return result;
 }
+
+string strToLower(const string& str)
+{
+    string lower;
+    for (string::const_iterator it = str.begin(); it != str.end(); it++)
+        lower += std::tolower(*it);
+    return lower;
+}

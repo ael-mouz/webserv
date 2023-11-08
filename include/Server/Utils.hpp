@@ -119,3 +119,4 @@ bool isDigit(const std::string &str);
 bool ValidURI(const int &c);
 bool ValidKey(const int &c);
 size_t HexaToDicimal(const std::string &hexStr);
+string strToLower(const string& str);

@@ -24,7 +24,7 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 		case KEY: // set max
 			if (character == ':')
 			{
-				client.request.key = client.request.hold;
+				client.request.key = strToLower(client.request.hold);
 				client.request.hold.clear(); // store key
 				client.request.subState = VALUE;
 				count = 0;
@@ -103,7 +103,7 @@ int Headers::checkrequest(Client &client)
 		return 200;
 	multimap<string, string>::iterator it;
 
-	it = client.request.mapHeaders.find("Transfer-Encoding");
+	it = client.request.mapHeaders.find("transfer-encoding");
 	if (it != client.request.mapHeaders.end())
 	{
 		if (it->second != "chunked")
@@ -118,7 +118,7 @@ int Headers::checkrequest(Client &client)
 	{
         return returnValue;
 	}
-	it = client.request.mapHeaders.find("Content-Type"); // Content-Type: multipart/form-data; boundary=- ???
+	it = client.request.mapHeaders.find("content-type"); // Content-Type: multipart/form-data; boundary=- ???
     if (it == client.request.mapHeaders.end())
     {
         printf("Error: Headers::checkrequest there is no Content-Type\n");
@@ -138,7 +138,7 @@ int Headers::ContentLenChecker(Client &client)
     stringstream stream;
     multimap<string, string>::iterator it;
 
-    it = client.request.mapHeaders.find("Content-Length");
+    it = client.request.mapHeaders.find("content-length");
 	if (client.request.decodeFlag == false && it == client.request.mapHeaders.end())
 	{
 		printf("error Headers::checkrequest no shuncked no Content-Length \n");

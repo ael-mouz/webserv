@@ -99,7 +99,7 @@ void Response::handleNormalFiles(Client &client)
 	this->fileSize = ftell(this->fptr);
 	fseek(this->fptr, 0, SEEK_SET);
 	std::stringstream header;
-	std::multimap<std::string, std::string>::iterator it = client.request.mapHeaders.find("Range");
+	std::multimap<std::string, std::string>::iterator it = client.request.mapHeaders.find("range");
 	if (it != client.request.mapHeaders.end())
 		handleRange(header, it->second);
 	else
@@ -233,7 +233,7 @@ void Response::getConfig(Client &client)
 {
 	// std::cout << "▻Get config◅ -----------------------------------------------------" << std::endl;
 	this->Config = &client.serverConf.DefaultServerConfig;
-	std::multimap<std::string, std::string>::iterator it = client.request.mapHeaders.find("Host");
+	std::multimap<std::string, std::string>::iterator it = client.request.mapHeaders.find("host");
 	std::string servername;
 	if (it != client.request.mapHeaders.end())
 		servername = trim(it->second, " \t");
@@ -608,11 +608,11 @@ void Response::generateCGIEnv(Client &client)
 	std::string QUERY_STRING = this->query;
 	std::string REMOTE_ADDR = client.clientIP;
 	std::string CONTENT_TYPE;
-	it = client.request.mapHeaders.find("Content-Type");
+	it = client.request.mapHeaders.find("content-type");
 	end = client.request.mapHeaders.end();
 	if (it != end)
 		CONTENT_TYPE = it->second;
-	it = client.request.mapHeaders.find("Content-Length");
+	it = client.request.mapHeaders.find("content-tength");
 	end = client.request.mapHeaders.end();
 	std::string CONTENT_LENGTH = "0";
 	if (it != end)

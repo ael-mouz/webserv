@@ -11,7 +11,7 @@ Status::Status()
 	this->status["203"] = "Non-Authoritative Information";
 	this->status["204"] = "No Content";
 	this->status["205"] = "Reset Content";
-	this->status["206"] = "Partial Content";
+	this->status["206"] = "Partial Content";//
 
 	this->status["300"] = "Multiple Choices";
 	this->status["301"] = "Moved Permanently";

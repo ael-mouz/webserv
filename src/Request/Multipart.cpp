@@ -1,5 +1,5 @@
 #include "../../include/Request/Multipart.hpp"
-#include "../../include/Request/Request_FSM.hpp"
+// #include "../../include/Request/Request_FSM.hpp"
 #include "../../include/Server/Client.hpp"
 
 void Multipart::read(Client &client, string &buffer, ssize_t &size)
@@ -315,14 +315,15 @@ void Multipart::createFile(Client &client, const string &value, string &fileName
 
 bool Multipart::createFileCGI(Request_Fsm &Request)
 {
-	string randomName = ".file-XXXXXXXXXXXXXXXXX";
+	string randomName = "/tmp/.file-XXXXXXXXXXXXXXXXX";
 
-	if (mktemp(&randomName[0]) == NULL) // mkstemp
+	int fd = mkstemp(&randomName[0]);
+    if (fd < 0) // mkstemp
 	{
 		printf("error mktemp\n");
 		return false;
 	}
-	randomName = "/tmp/" + randomName;
+    close(fd);
 	fileF = fopen(&randomName[0], "w");
 	if (!fileF)
 	{
