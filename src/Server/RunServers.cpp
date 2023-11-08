@@ -29,6 +29,7 @@ void RunServers::runing()
 						std::string host = "http://" + it->serverConf.DefaultServerConfig.Host + ":" + it->serverConf.DefaultServerConfig.Port;
 						logMessage(SCLOSE, host, it->socketClient, "Close conection from " + it->clientIP);
 						close(it->socketClient);
+                        // it->request.clear();//
 						clients.erase(it);
 						continue;
 					}
@@ -48,9 +49,14 @@ void RunServers::runing()
 							std::string host = "http://" + it->serverConf.DefaultServerConfig.Host + ":" + it->serverConf.DefaultServerConfig.Port;
 							logMessage(SCLOSE, host, it->socketClient, "Close conection from " + it->clientIP);
 							close(it->socketClient);
+                            it->response.clear();
 							clients.erase(it);
 							continue;
 						}
+                        	// close(it->socketClient);
+                            // it->response.clear();
+							// clients.erase(it);
+							// continue;
 						it->response.clear();
 						it->read = true;
 						it->write = false;

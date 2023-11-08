@@ -639,7 +639,7 @@ void Response::generateCGIEnv(Client &client)
 			 client.request.mapHeaders.begin();
 		 it != client.request.mapHeaders.end(); ++it)
 	{
-		if (it->first == "Content-Type" || it->first == "Content-Length")
+		if (it->first == "content-type" || it->first == "content-length")
 			continue;
 		std::string keyEnv = "HTTP_" + it->first;
 		for (std::string::iterator ch = keyEnv.begin(); ch != keyEnv.end(); ++ch)
@@ -709,6 +709,8 @@ void Response::generateResponse(std::string status)
 		header_ << "Content-Length: " + intToString(body.str().length()) + "\r\n\r\n";
 		this->HeaderResponse = header_.str();
 		this->responseDone = true;
+        if (infile.is_open())
+            infile.close();
 		return;
 	}
 	else

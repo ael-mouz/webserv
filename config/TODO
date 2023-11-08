@@ -27,4 +27,8 @@ check with docker inginix //a ayman
 
 - handel mime type ==>default application/octet-stream
 
--CGI aaaaaa ayman
+- CGI aaaaaa ayman / probleme send video
+
+- handel close client in case of errors
+
+- leaks file discriptor request and response
