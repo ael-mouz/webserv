@@ -8,9 +8,7 @@ Status::Status()
 	this->status["200"] = "OK";
 	this->status["201"] = "Created";
 	this->status["202"] = "Accepted";
-	this->status["203"] = "Non-Authoritative Information";
-	this->status["204"] = "No Content";
-	this->status["205"] = "Reset Content";
+	this->status["204"] = "No Content";//delete
 	this->status["206"] = "Partial Content";//
 
 	this->status["300"] = "Multiple Choices";
