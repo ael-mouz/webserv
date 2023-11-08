@@ -383,8 +383,8 @@ void Response::genrateRederiction()
 		this->responseDone = true;
 		return;
 	}
-	if (this->fullpath.back() == '/')
-		this->fullpath.pop_back();
+	if (this->fullpath[this->fullpath.length()-1] == '/')
+		this->fullpath.erase(this->fullpath.end()-1);
 	else if (this->extension.empty() && isDirectory(this->fullpath.c_str()) == 1)
 	{
 		std::stringstream Headers__;
@@ -515,7 +515,7 @@ void Response::handleCGIScript(Client &client)
 			execve(this->Config->phpCgi.c_str(), args, envp); // must change
 		}
 		// perror("execve failed");
-		for (int i = 0; envp[i] != nullptr; i++)
+		for (int i = 0; envp[i] != NULL; i++)
 			delete[] envp[i];
 		delete[] envp;
 		exit(EXIT_FAILURE);
@@ -791,7 +791,7 @@ void Response::generateAutoIndex(void)
 		std::string icon = (entry->d_type == DT_DIR) ? "/images/folder.svg" : "/images/file.png";
 		autoIndex << "<tr>";
 		autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << "'>";
-		if (!this->entryPath.empty() && this->entryPath != "/" && this->entryPath.back() != '/')
+		if (!this->entryPath.empty() && this->entryPath != "/" && this->entryPath[this->entryPath.length()-1] != '/')
 			autoIndex << "<img src='" << icon << "' class='icon'><a href='" << this->entryPath + "/" + entry->d_name << "' class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << "'>" << entry->d_name << "</a></td>\n";
 		else if (!this->entryPath.empty() && this->entryPath != "/")
 			autoIndex << "<img src='" << icon << "' class='icon'><a href='" << this->entryPath + entry->d_name << "' class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << "'>" << entry->d_name << "</a></td>\n";
@@ -800,7 +800,7 @@ void Response::generateAutoIndex(void)
 		autoIndex << "<td class='" << ((entry->d_type == DT_DIR) ? "directory" : "file") << " col'>" << ((entry->d_type == DT_DIR) ? "Directory" : "File") << "</td>\n";
 		struct stat fileStat;
 		std::string path;
-		if (this->fullpath.back() != '/')
+		if (this->fullpath[this->fullpath.length()-1] != '/')
 			path = this->fullpath + "/" + entry->d_name;
 		else
 			path = this->fullpath + entry->d_name;

@@ -1,2 +1,5 @@
 Big.mp4
 .clang-format
+*.o
+obj
+webserv

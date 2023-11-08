@@ -115,7 +115,9 @@ int Headers::checkrequest(Client &client)
 	}
     int returnValue = ContentLenChecker(client);
     if (returnValue != 0)
+	{
         return returnValue;
+	}
 	it = client.request.mapHeaders.find("Content-Type"); // Content-Type: multipart/form-data; boundary=- ???
     if (it == client.request.mapHeaders.end())
     {
@@ -142,8 +144,10 @@ int Headers::ContentLenChecker(Client &client)
 		printf("error Headers::checkrequest no shuncked no Content-Length \n");
 		return 411;
 	}
-    else if (client.request.decodeFlag == true && it == client.request.mapHeaders.end())
-        return 0;
+	else if (client.request.decodeFlag == true && it == client.request.mapHeaders.end())
+   	{
+		return 0;
+	}
 	stream << it->second;
 	stream >> client.request.ContentLength;
 	if (!isDigit(it->second) || stream.fail())

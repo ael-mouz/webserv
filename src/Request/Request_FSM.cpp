@@ -5,7 +5,7 @@
 
 void Request_Fsm::read(Client &client, string &buffer, ssize_t &size)
 {
-	switch (mainState) {
+	switch (mainState) { // re make it with linux mode
 		case REQUEST_LINE:
 			ReqstDone = requestLine.read(client, buffer, size);
 			if (buffer.empty() || ReqstDone != 0)

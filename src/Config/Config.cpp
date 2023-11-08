@@ -19,7 +19,7 @@ std::vector<ServerConf> &Config::getServerConfig()
 
 void Config::parser(std::string filename)
 {
-	std::ifstream infile(filename);
+	std::ifstream infile(&filename[0]);
 	if (!infile.is_open())
 		std::cerr << "Error opening file: " << filename << std::endl, exit(1);
 	ServerConfig serverConfig;
