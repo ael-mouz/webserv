@@ -104,21 +104,10 @@ int RequestLine::read(Client &client, string &buffer, ssize_t &size)
 
 int RequestLine::checker(Client &client)
 {
-	client.response.getConfig(client);
-	client.response.parseUri(client.request.URI);
-	client.response.getRoute();
-	client.response.genrateRederiction();
-	if (client.response.responseDone)
-		return 200;
-	client.response.getFULLpath();
-	if (client.response.responseDone)
-		return 200;
-	client.response.regenerateExtonsion();
-	if (client.response.responseDone)
-		return 200;
-    if(client.response.isCgi)
-        client.request.isCGI = true;
-    return 0;
+	client.response.startResponse(client);
+	if (client.response.isCgi)
+		client.request.isCGI = true;
+	return 0;
 }
 
 void RequestLine::reset()
