@@ -54,9 +54,12 @@ void RunServers::runing()
 							logMessage(SCLOSE, it->clientHost, it->socketClient, "Close conection from " + it->clientIP);
 							close(it->socketClient);
 							it->response.clear();
+							// it->request.clear();//
 							clients.erase(it);
 							continue;
 						}
+						// std::cout << it->response.fptr << std::endl;
+						// fclose(it->response.fptr);
 						it->response.clear();
 						it->request.clear();
 						it->read = true;

@@ -58,4 +58,7 @@ fclean: clean
 re: fclean all
 
 exec: all
-	@./webserv ./config/config.conf
+	@ ./webserv ./config/config.conf
+
+fds:
+	@ while true; do pgrep -o -x webserv | xargs -I{} lsof -p {} ; sleep 4 ;clear; done

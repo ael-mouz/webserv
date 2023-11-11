@@ -10,6 +10,15 @@ class Response
 {
 private:
 public:
+	bool CgiRunning;
+	int pipefd[2];
+	bool headerCgiReady;
+	std::string resCgi;
+	int tempFD;
+	int FDCGIBody;
+	std::string tempFileName;
+	std::multimap<std::string, std::string> MAPhederscgi;
+	pid_t pid;
 	std::string responseStatus;
 	std::string responseString;
 	std::string HeaderResponse;
@@ -59,6 +68,6 @@ public:
 	void ft_printroute();
 	void ft_printconfig();
 	std::multimap<std::string, std::string> parseResponseHeader(std::string header);
-	std::string generateResponseHeaderCGI(std::multimap<std::string, std::string> &headers, std::string &body);
+	std::string generateResponseHeaderCGI(std::multimap<std::string, std::string> &headers,size_t body_lenght);
 	// std::string buffer);
 };

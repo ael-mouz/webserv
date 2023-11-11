@@ -20,6 +20,9 @@ Response::Response()
 	isHeaderSent = false;
 	responseDone = false;
 	responseSent = false;
+	CgiRunning = false;
+	headerCgiReady = false;
+	tempFD = -1;
 	fileSize = 0;
 	offset = 0;
 	match = 0;
@@ -48,6 +51,8 @@ void Response::clear()
 	isHeaderSent = false;
 	responseDone = false;
 	responseSent = false;
+	CgiRunning = false;
+	headerCgiReady = false;
 	fileSize = 0;
 	offset = 0;
 	match = 0;
@@ -146,8 +151,20 @@ void Response::sendResponse(Client &client)
 		else
 			responseSent = isBodySent = true;
 		if (responseString.length() > 0)
+		{
 			if (send(client.socketClient, responseString.c_str(), responseString.length(), 0) <= 0)
+			{
 				closeClient = responseSent = true;
+				// std::stringstream ss;
+				// time_t currentTime = time(NULL);
+				// ss << "file" << currentTime;
+				// std::ofstream file(ss.str().c_str());
+				// file << "--------------------------------------------------" << std::endl;
+				// file << convertText(responseString.c_str()) << std::endl;
+				// file << "--------------------------------------------------" << std::endl;
+				// file.close();
+			}
+		}
 	}
 }
 
@@ -230,8 +247,8 @@ void Response::checkErrorsRequest(Client &client)
 
 void Response::CGI(Client &client)
 {
-	if (this->responseDone)
-		return;
+	// if (this->responseDone && !this->CgiRunning)
+	// 	return;
 	mergeHeadersValuesCGI(client);
 	generateEnvCGI(client);
 	handleScriptCGI(client);
@@ -373,7 +390,7 @@ void Response::genrateRederiction()
 }
 void Response::checkerPath()
 {
-	if(this->responseDone)
+	if (this->responseDone)
 		return;
 	int dirr = isDirectory(this->fullpath.c_str());
 	if (dirr == 1)
@@ -418,114 +435,105 @@ void Response::getFULLpath()
 void Response::handleScriptCGI(Client &client)
 {
 	// std::cout << "▻Run Cgi◅ --------------------------------------------------------" << std::endl;
-	int tempFD = -1;
-	if (client.request.Method == "POST")
+	if (!CgiRunning && !responseDone)
 	{
-		// std::cout << "FILE : " << client.request.files[0].fileName << std::endl;
-		tempFD = open(client.request.files[0].fileName.c_str(), O_RDONLY);
-		if (tempFD == -1)
+		CgiRunning = true;
+		if (client.request.Method == "POST")
+		{
+			// std::cout << "FILE : " << client.request.files[0].fileName << std::endl;
+			tempFD = open(client.request.files[0].fileName.c_str(), O_RDONLY);
+			if (tempFD == -1)
+			{
+				generateResponse("500");
+				responseDone = true;
+				return;
+			}
+		}
+		std::cout << "pipe   --------" << std::endl;
+		if (pipe(pipefd) == -1)
 		{
 			generateResponse("500");
 			responseDone = true;
 			return;
 		}
-	}
-	int pipefd[2];
-	if (pipe(pipefd) == -1)
-	{
-		generateResponse("500");
-		responseDone = true;
-		return;
-	}
-	pid_t pid = fork();
-	if (pid == -1)
-	{
-		generateResponse("500");
-		responseDone = true;
-		return;
-	}
-	if (pid == 0)
-	{
-		close(pipefd[0]);
-		char **envp = new char *[env.size() + 1];
-		int i = 0;
-		for (std::multimap<std::string, std::string>::iterator it = env.begin(); it != env.end(); it++)
+		pid = fork();
+		// pid_t pid = fork();
+		if (pid == -1)
 		{
-			std::string env_entry = it->first + "=" + it->second;
-			envp[i] = new char[env_entry.size() + 1];
-			std::strcpy(envp[i], env_entry.c_str());
-			i++;
-		}
-		envp[i] = NULL;
-		dup2(pipefd[1], STDOUT_FILENO);
-		close(pipefd[1]);
-		alarm(50);
-		if (tempFD != -1 && client.request.Method == "POST")
-			dup2(tempFD, STDIN_FILENO), close(tempFD);
-		if (this->route.CgiExec != "default")
-		{
-			char *const args[] = {(char *)this->route.CgiExec.c_str(), (char *)this->fullpath.c_str(), NULL};
-			execve(this->route.CgiExec.c_str(), args, envp);
-		}
-		else if (this->extension == "py")
-		{
-			char *const args[] = {(char *)this->Config->pythonCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
-			execve(this->Config->pythonCgi.c_str(), args, envp);
-		}
-		else if (this->extension == "pl")
-		{
-			char *const args[] = {(char *)this->Config->perlCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
-			execve(this->Config->perlCgi.c_str(), args, envp);
-		}
-		else if (this->extension == "rb")
-		{
-			char *const args[] = {(char *)this->Config->rubyCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
-			execve(this->Config->rubyCgi.c_str(), args, envp);
-		}
-		else if (this->extension == "php")
-		{
-			char *const args[] = {(char *)this->Config->phpCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
-			execve(this->Config->phpCgi.c_str(), args, envp); // must change
-		}
-		// perror("execve failed");
-		for (int i = 0; envp[i] != NULL; i++)
-			delete[] envp[i];
-		delete[] envp;
-		exit(EXIT_FAILURE);
-	}
-	else
-	{
-		close(pipefd[1]);
-		int status;
-		waitpid(pid, &status, 0);
-		if (WIFSIGNALED(status) && WTERMSIG(status) == SIGALRM)
-		{
-			generateResponse("504");
-			this->responseDone = true;
+			generateResponse("500");
+			responseDone = true;
 			return;
 		}
-		if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+		if (pid == 0)
 		{
-			std::string resCgi;
-			char buffer[4096];
-			ssize_t bytesRead;
-			while ((bytesRead = read(pipefd[0], buffer, 4096)) > 0)
-				resCgi.append(buffer, bytesRead);
-			// std::cout << convertText(resCgi) << std::endl;
-			/*****************************************/
+			close(pipefd[0]);
+			dup2(pipefd[1], STDOUT_FILENO);
+			close(pipefd[1]);
+			alarm(50);
+			if (tempFD != -1 && client.request.Method == "POST")
+				dup2(tempFD, STDIN_FILENO);
+			close(tempFD);
+			char **envp = new char *[env.size() + 1];
+			int i = 0;
+			for (std::multimap<std::string, std::string>::iterator it = env.begin(); it != env.end(); it++)
+			{
+				std::string env_entry = it->first + "=" + it->second;
+				envp[i] = new char[env_entry.size() + 1];
+				std::strcpy(envp[i], env_entry.c_str());
+				i++;
+			}
+			envp[i] = NULL;
+			if (this->route.CgiExec != "default")
+			{
+				char *const args[] = {(char *)this->route.CgiExec.c_str(), (char *)this->fullpath.c_str(), NULL};
+				execve(this->route.CgiExec.c_str(), args, envp);
+			}
+			else if (this->extension == "py")
+			{
+				char *const args[] = {(char *)this->Config->pythonCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
+				execve(this->Config->pythonCgi.c_str(), args, envp);
+			}
+			else if (this->extension == "pl")
+			{
+				char *const args[] = {(char *)this->Config->perlCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
+				execve(this->Config->perlCgi.c_str(), args, envp);
+			}
+			else if (this->extension == "rb")
+			{
+				char *const args[] = {(char *)this->Config->rubyCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
+				execve(this->Config->rubyCgi.c_str(), args, envp);
+			}
+			else if (this->extension == "php")
+			{
+				char *const args[] = {(char *)this->Config->phpCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
+				execve(this->Config->phpCgi.c_str(), args, envp); // must change
+			}
+			// perror("execve failed");
+			for (int i = 0; envp[i] != NULL; i++)
+				delete[] envp[i];
+			delete[] envp;
+			exit(EXIT_FAILURE);
+		}
+		close(pipefd[1]);
+		if (fcntl(pipefd[0], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1)
+		{
+			perror("fcntl");
+		}
+		char tempFile[] = "/tmp/exampleXXXXXX";
+		FDCGIBody = mkstemp(tempFile);
+		tempFileName = tempFile;
+	}
+	char buffer[4096];
+	ssize_t bytesRead;
+	while ((bytesRead = read(pipefd[0], buffer, 4096)) > 0)
+		resCgi.append(buffer, bytesRead);
+	if (!this->headerCgiReady)
+	{
+		size_t pos = resCgi.find("\r\n\r\n");
+		if (pos != std::string::npos)
+		{
 			std::istringstream responseStream(resCgi);
 			std::string resHeaders__, resBody__;
-			// std::string responseLine,reshttpVersion, resStatus, resStatusString,;
-			// std::getline(responseStream, responseLine);
-			// std::vector<std::string> responseParts = splitString(responseLine, " ");
-			// if (responseParts.size() >= 3)
-			// {
-			// 	reshttpVersion = responseParts[0];
-			// 	resStatus = responseParts[1];
-			// 	resStatusString = responseParts[2];
-			// }
-			// else
-			// 	responseStream.seekg(0, std::ios::beg); /// TODO:: maybe i should do this ???
 			std::string line;
 			while (std::getline(responseStream, line))
 			{
@@ -533,33 +541,70 @@ void Response::handleScriptCGI(Client &client)
 					break;
 				resHeaders__ += line + "\n";
 			}
-			std::multimap<std::string, std::string> MAPheders = parseResponseHeader(resHeaders__);
+			MAPhederscgi = parseResponseHeader(resHeaders__);
 			if (this->responseDone)
+			{
+				close(pipefd[0]);
+				close(FDCGIBody);
 				return;
-			size_t pos = resCgi.find("\r\n\r\n");
-			if (pos != std::string::npos)
-				resBody__ = resCgi.substr(pos + 4, resCgi.length() - pos + 4);
-			resHeaders__ = generateResponseHeaderCGI(MAPheders, resBody__);
-			// std::cout << "HEDERS: \n"
-			// 		  << convertText(resHeaders__) << std::endl;
-			// std::cout << "BODY: \n"
-			// 		  << convertText(resBody__) << std::endl;
-			/*****************************************/
-			// this->HeaderResponse = resCgi;//TODO:: ereas it;
-			this->HeaderResponse = resHeaders__;
-			this->BodyResponse = resBody__;
-			this->responseDone = true;
+			}
+			resBody__ = resCgi.substr(pos + 4, resCgi.length() - pos + 4);
+			write(FDCGIBody, resBody__.c_str(), resBody__.length());
+			this->headerCgiReady = true;
+			resCgi.clear();
 		}
-		else
-		{
-			generateResponse("502");
-			this->responseDone = true;
-			return;
-		}
-		close(pipefd[0]);
 	}
-	close(tempFD);
-	// unlink(client.request.files[0].fileName.c_str());// TODO check if there a file
+	else
+	{
+		write(FDCGIBody, resCgi.c_str(), resCgi.length());
+	}
+	if (bytesRead <= 0)
+	{
+		int status;
+		pid_t result = waitpid(pid, &status, WNOHANG);
+		if (result != 0 && result != -1)
+		{
+			this->responseDone = true;
+			CgiRunning = false;
+			close(FDCGIBody);
+			close(pipefd[0]);
+			if (tempFD != -1 && client.request.Method == "POST")
+			{
+				close(tempFD);
+				unlink(client.request.files[0].fileName.c_str());
+			}
+			if (WIFSIGNALED(status) && WTERMSIG(status) == SIGALRM)
+			{
+				generateResponse("504");
+				this->responseDone = true;
+				return;
+			}
+			if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+			{
+				this->fptr = fopen(this->tempFileName.c_str(), "rb");
+				if (!this->fptr)
+				{
+					generateResponse("500");
+					this->responseDone = true;
+					return;
+				}
+				fseek(this->fptr, 0, SEEK_END);
+				this->fileSize = ftell(this->fptr);
+				fseek(this->fptr, 0, SEEK_SET);
+				std::string resHeaders__;
+				resHeaders__ = generateResponseHeaderCGI(MAPhederscgi, this->fileSize);
+				this->HeaderResponse = resHeaders__;
+				this->responseDone = true;
+				return;
+			}
+			else
+			{
+				generateResponse("502");
+				this->responseDone = true;
+				return;
+			}
+		}
+	}
 }
 
 void Response::generateResponse(std::string status)
@@ -768,15 +813,16 @@ std::multimap<std::string, std::string> Response::parseResponseHeader(std::strin
 	return headers;
 }
 
-std::string Response::generateResponseHeaderCGI(std::multimap<std::string, std::string> &headers, std::string &body)
+std::string Response::generateResponseHeaderCGI(std::multimap<std::string, std::string> &headers, size_t body_lenght)
 {
 	std::stringstream header_;
 	this->responseStatus = "200";
 	header_ << "HTTP/1.1 200 OK\r\n";
+	// header_ << "Accept-Ranges: bytes\r\n";
 	for (std::multimap<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
 		header_ << it->first + ": " + it->second + "\r\n";
-	if (headers.find("Content-length") == headers.end())
-		header_ << "Content-length: " << body.length() << "\r\n";
+	if (headers.find("content-length") == headers.end())
+		header_ << "Content-Length: " << body_lenght << "\r\n";
 	header_ << "\r\n";
 	return header_.str();
 }
