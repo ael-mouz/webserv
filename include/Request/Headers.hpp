@@ -26,7 +26,7 @@ public:
     int MimeTypeChecker(Client &client, string& value);
 	void reset();
 
-    int deleteMthod(Client &client); // make it in response
+    // int deleteMthod(Client &client); // make it in response
 	Headers();
 	~Headers();
 };

@@ -209,10 +209,10 @@ void Headers::reset()
 	count = 0;
 }
 
-int Headers::deleteMthod(Client &client)
-{
+// int Headers::deleteMthod(Client &client)
+// {
 
-}
+// }
 
 Headers::Headers() : count(0) {}
 
