@@ -7,6 +7,7 @@
     * countent len
     * storag a ayman d .....
     * this->status["408"] = "Request Timeout"; //
+    * if file already existe dont do nothing
 
 -manage Server
     * keep alive /cloes socket
@@ -18,6 +19,8 @@
 
 check with docker inginix //a ayman
     * client.request.ContentLength == 0;
+    * Content-Disposition without filename;
+    * if post request hase a body with an existing name file in our server
 
 -Utils
     -to string with templated function //a ayman
@@ -32,3 +35,11 @@ check with docker inginix //a ayman
 - handel close client in case of errors
 
 - leaks file discriptor request and response
+
+- check if there no spaceleft in device
+
+- change to c_str
+
+- ChunkedEncoding
+    * ckeck the 0\r\n in decode
+    * ckeck the max body

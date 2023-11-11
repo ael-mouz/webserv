@@ -28,6 +28,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 
+class Client;
 using namespace std;
 
 #define MAX_URI 4096
@@ -120,3 +121,5 @@ bool ValidURI(const int &c);
 bool ValidKey(const int &c);
 size_t HexaToDicimal(const std::string &hexStr);
 string strToLower(const string& str);
+string getUploadPath(const Client& client);
+// string getExtensionMimeType(const Client& client);

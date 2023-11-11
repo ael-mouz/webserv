@@ -1,4 +1,5 @@
 #include "../../include/Server/Utils.hpp"
+#include "../../include/Server/Client.hpp"
 
 std::string trim(const std::string &str, const std::string &charactersToTrim)
 {
@@ -212,4 +213,13 @@ string strToLower(const string& str)
     for (string::const_iterator it = str.begin(); it != str.end(); it++)
         lower += std::tolower(*it);
     return lower;
+}
+
+string getUploadPath(const Client& client)
+{
+    std::string path = client.response.route.UploadPath;
+    std::string defaultPath = client.response.Config->GlobalUpload;
+    if (path == "default")
+        return defaultPath;
+    return path;
 }

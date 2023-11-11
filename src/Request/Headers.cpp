@@ -77,11 +77,9 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 				buffer.erase(0, it - buffer.begin() + 1);
 				size -= it - buffer.begin() + 1;
 				client.request.hold.clear();
-				// checkrequest(client);
-				client.request.subState = FIRST_BOUNDARY;
-				client.request.mainState = BODY;
-				// client.request.decode.reset();
-				return checkrequest(client);
+                if (client.request.isCGI == true)
+                    return (client.request.mainState = CGI, 0); // remove the checker from request line
+				return requestChecker(client);
 			}
 			else
 			{
@@ -97,13 +95,19 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
     return 0;
 }
 
-int Headers::checkrequest(Client &client)
+int Headers::requestChecker(Client &client)
 {
 	if (client.request.Method == "GET" || client.request.Method == "DELETE")
+    {
+        if (client.request.Method == "DELETE")
+        {
+
+        }
 		return 200;
+    }
 	multimap<string, string>::iterator it;
 
-	it = client.request.mapHeaders.find("transfer-encoding");
+	it = client.request.mapHeaders.find("transfer-encoding"); // in function
 	if (it != client.request.mapHeaders.end())
 	{
 		if (it->second != "chunked")
@@ -118,14 +122,14 @@ int Headers::checkrequest(Client &client)
 	{
         return returnValue;
 	}
-	it = client.request.mapHeaders.find("content-type"); // Content-Type: multipart/form-data; boundary=- ???
+	it = client.request.mapHeaders.find("content-type"); // Content-Type: Body/form-data; boundary=- ???
     if (it == client.request.mapHeaders.end())
     {
         printf("Error: Headers::checkrequest there is no Content-Type\n");
         return 400;
     }
     if (it ->second.find("multipart/form-data") != string::npos) {
-        if ((returnValue = MultiPartChecker(client, it->second)) != 0)// if multipart/form-data || multipart/mixed || multipart/related || multipart/alternative
+        if ((returnValue = MultiPartChecker(client, it->second)) != 0)// if Body/form-data || Body/mixed || Body/related || Body/alternative
             return returnValue;
     }
     else if ((returnValue = MimeTypeChecker(client, it->second)) != 0)
@@ -176,26 +180,38 @@ int Headers::MultiPartChecker(Client &client, string& value)
     size_t posBoundary = value.find("boundary="); //if boudry vid or not in correct form ??
 	if (posBoundary == string::npos)
 	{
-		cout << "error Headers::checkrequest Content-Type\n";
+		printf("error Headers::checkrequest Content-Type\n");
 		return 400;
 	}
 	client.request.boundary = "\r\n--" + value.substr(posBoundary + sizeof("boundary"));
 	client.request.sizeBoundary = client.request.boundary.size();
+    client.request.mainState = MultiPart;
+    client.request.subState = FIRST_BOUNDARY;
     return 0;
 }
 
 int Headers::MimeTypeChecker(Client &client, string& value)
 {
-    (void)client;
-    (void)value;
-    printf("Headers::MimeTypeChecker\n");
-    return 200;
-}
+    string extension = client.serverConf.DefaultServerConfig.mime.getExtensionMimeType(value);
 
+    if (client.request.openBodyFile(getUploadPath(client), "." + extension) == false)
+    {
+        printf("error Headers::MimeTypeChecker openBodyFile\n");
+		return 500;
+    }
+    client.request.mainState = MIMETYPES;
+    // printf("Headers::MimeTypeChecker\n");
+    return 0;
+}
 
 void Headers::reset()
 {
 	count = 0;
+}
+
+int Headers::deleteMthod(Client &client)
+{
+
 }
 
 Headers::Headers() : count(0) {}

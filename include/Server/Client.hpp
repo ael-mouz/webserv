@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../include/Config/ServerConf.hpp"
-#include "../Request/Request_FSM.hpp"
+#include "../Request/Request.hpp"
 #include "../Response/Response.hpp"
 #include "Utils.hpp"
 
@@ -13,7 +13,7 @@ public:
 	int socketClient;
 	ServerConf &serverConf;
 	Response response;
-	Request_Fsm request;
+	Request request;
 	bool read;
 	bool write;
 	Client(ServerConf &serverConf, int socketClient, std::string clientIP);

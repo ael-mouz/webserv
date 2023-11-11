@@ -6,7 +6,7 @@
 # export HTTP_ACCEPT='*/*'
 # export HTTP_HOST='localhost:8080'
 # export HTTP_ACCEPT_ENCODING='gzip, deflate, br'
-# export CONTENT_TYPE='multipart/form-data; boundary=--------------------------562098051048631152017871'
+# export CONTENT_TYPE='Body/form-data; boundary=--------------------------562098051048631152017871'
 # export HTTP_COOKIE='name=ayman; token=pQB5xyNZnVCWUE6g'
 # export CONTENT_LENGTH=357
 # export QUERY_STRING=''
@@ -31,7 +31,7 @@
 # export REDIRECT_STATUS="CGI"
 # export REQUEST_METHOD="POST"
 # export SCRIPT_FILENAME="/Users/ael-mouz/Desktop/webserv/config/cgi_test_file/index.php"
-# export CONTENT_TYPE="multipart/form-data; boundary=--------------------------988117623717476695378343"
+# export CONTENT_TYPE="Body/form-data; boundary=--------------------------988117623717476695378343"
 # export CONTENT_LENGTH="219"
 
 # php
@@ -40,7 +40,7 @@
 # export PATH_INFO="/about"
 # export REQUEST_METHOD="POST"
 # export SCRIPT_FILENAME="/Users/ael-mouz/Desktop/webserv/config/cgi_test_file/upload5.py"
-# export CONTENT_TYPE="multipart/form-data; boundary=--------------------------163772461237889740355993"
+# export CONTENT_TYPE="Body/form-data; boundary=--------------------------163772461237889740355993"
 # export CONTENT_LENGTH="1454"
 # export QUERY_STRING="name=John&email=john@example.com"
 # export REMOTE_ADDR="127.0.0.1"
@@ -54,7 +54,7 @@
 # export HTTP_COOKIE="name=ayman; token=pQB5xyNZnVCWUE6g; user=John"
 
 export CONTENT_LENGTH="831"
-export CONTENT_TYPE="multipart/form-data; boundary=--------------------------357468257017785337490422"
+export CONTENT_TYPE="Body/form-data; boundary=--------------------------357468257017785337490422"
 export GATEWAY_INTERFACE="CGI/1.1"
 export HTTP_ACCEPT="*/*"
 export HTTP_ACCEPT_ENCODING="gzip, deflate, br"

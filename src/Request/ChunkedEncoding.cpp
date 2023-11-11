@@ -1,10 +1,10 @@
 #include "../../include/Request/ChunkedEncoding.hpp"
-#include "../../include/Request/Request_FSM.hpp"
+#include "../../include/Request/Request.hpp"
 
-void ChunkedEncoding::read(Request_Fsm &Request, string &buffer, ssize_t &size)
+void ChunkedEncoding::read(Request &Request, string &buffer, ssize_t &size)
 {
 	unsigned char character;
-
+    // check for the last hexa 0
 	for (string::iterator it = buffer.begin(); it != buffer.end();)
 	{
 		character = *it;

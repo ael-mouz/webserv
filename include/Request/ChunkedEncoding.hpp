@@ -2,7 +2,7 @@
 
 #include "../Server/Utils.hpp"
 
-class Request_Fsm;
+class Request;
 
 enum chunkedEncoding
 {
@@ -22,7 +22,7 @@ private:
 	size_t countLength;
 
 public:
-	void read(Request_Fsm &Request, string &buffer, ssize_t &size);
+	void read(Request &Request, string &buffer, ssize_t &size);
 	void reset();
 	ChunkedEncoding();
 	~ChunkedEncoding();

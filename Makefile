@@ -5,9 +5,9 @@ BIN = obj/
 
 SRC =	src/Request/ChunkedEncoding.cpp \
 		src/Request/Headers.cpp \
-		src/Request/Multipart.cpp \
+		src/Request/Body.cpp \
 		src/Request/RequestLine.cpp \
-		src/Request/Request_FSM.cpp \
+		src/Request/Request.cpp \
 		src/Server/Client.cpp \
 		src/Server/Utils.cpp \
 		src/Response/Response.cpp \
@@ -22,9 +22,9 @@ SRC =	src/Request/ChunkedEncoding.cpp \
 
 HEADERS =	include/Request/ChunkedEncoding.hpp \
 			include/Request/Headers.hpp \
-			include/Request/Multipart.hpp \
+			include/Request/Body.hpp \
 			include/Request/RequestLine.hpp \
-			include/Request/Request_FSM.hpp \
+			include/Request/Request.hpp \
 			include/Server/Client.hpp \
 			include/Server/Utils.hpp \
 			include/Response/Response.hpp\

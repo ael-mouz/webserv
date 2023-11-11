@@ -27,9 +27,9 @@ void RunServers::runing()
 					if (size <= 0)
 					{
 						std::string host = "http://" + it->serverConf.DefaultServerConfig.Host + ":" + it->serverConf.DefaultServerConfig.Port;
-						logMessage(SCLOSE, host, it->socketClient, "Close conection from " + it->clientIP);
+						logMessage(SCLOSE, host, it->socketClient, " req Close conection from " + it->clientIP);
 						close(it->socketClient);
-                        // it->request.clear();//
+                        it->request.reset();//
 						clients.erase(it);
 						continue;
 					}
@@ -60,7 +60,7 @@ void RunServers::runing()
 						it->response.clear();
 						it->read = true;
 						it->write = false;
-						it->request.clear();
+						it->request.reset();
 					}
 				}
 				it++;
@@ -184,6 +184,7 @@ RunServers::RunServers(char **av) : numberOfEvents(0)
     #endif
 	vector<ServerConf> &serverConf = config.getServerConfig();
 	maxFdstmp = -1;
+    printf("size client = %ld\n", sizeof(Client));
 	for (vector<ServerConf>::iterator it = serverConf.begin();
 		 it != serverConf.end(); it++)
 	{

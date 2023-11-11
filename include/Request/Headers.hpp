@@ -20,11 +20,13 @@ private:
 
 public:
 	int read(Client &client, string &buffer, ssize_t &size);
-	int checkrequest(Client &client);
+	int requestChecker(Client &client);
     int ContentLenChecker(Client &client);
     int MultiPartChecker(Client &client, string& value);
     int MimeTypeChecker(Client &client, string& value);
 	void reset();
+
+    int deleteMthod(Client &client); // make it in response
 	Headers();
 	~Headers();
 };
