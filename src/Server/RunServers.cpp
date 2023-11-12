@@ -145,10 +145,8 @@ int RunServers::bindSockets(Server &server)
 	// Define and configure the server address
 	struct sockaddr_in serverAddr;
 	std::memset(&serverAddr, 0, sizeof(serverAddr));
-	serverAddr.sin_family =
-		AF_INET; // Set the address family to AF_INET (for IPv4)
-	serverAddr.sin_port =
-		htons(std::atoi(server.serverConf.DefaultServerConfig.Port.c_str()));
+    serverAddr.sin_family = AF_INET; // Set the address family to AF_INET (for IPv4)
+	serverAddr.sin_port = htons(std::atoi(server.serverConf.DefaultServerConfig.Port.c_str()));
 	inet_pton(AF_INET, server.serverConf.DefaultServerConfig.Host.c_str(),
 			  &serverAddr.sin_addr);
 	// Bind the socket to the server address

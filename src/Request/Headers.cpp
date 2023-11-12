@@ -100,9 +100,7 @@ int Headers::requestChecker(Client &client)
 	if (client.request.Method == "GET" || client.request.Method == "DELETE")
     {
         if (client.request.Method == "DELETE")
-        {
-
-        }
+            return deleteMthod(client);
 		return 200;
     }
 	multimap<string, string>::iterator it;
@@ -209,10 +207,19 @@ void Headers::reset()
 	count = 0;
 }
 
-// int Headers::deleteMthod(Client &client)
-// {
-
-// }
+int Headers::deleteMthod(Client &client)
+{
+    (void)client;
+    try {
+        isCanBeRemoved("/Users/yettabaa/Desktop/webserv/z");
+        // removeDirfolder("/Users/yettabaa/Desktop/webserv/z");
+    }
+    catch(int returnValue)
+    {
+        return returnValue;
+    }
+    return 0;
+}
 
 Headers::Headers() : count(0) {}
 

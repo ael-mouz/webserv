@@ -223,3 +223,85 @@ string getUploadPath(const Client& client)
         return defaultPath;
     return path;
 }
+
+bool isRegularFile(const std::string& path)
+{
+    struct stat fileStat;
+    if (stat(path.c_str(), &fileStat) == 0)
+        return S_ISREG(fileStat.st_mode);
+    return false;
+}
+
+bool isDirectory(const std::string& path)
+{
+    struct stat fileStat;
+    if (stat(path.c_str(), &fileStat) == 0)
+        return S_ISDIR(fileStat.st_mode);
+    return false;
+}
+
+bool checkPermission(const std::string path, mode_t permission)
+{
+    struct stat fileStat;
+    if (stat(path.c_str(), &fileStat) == 0)
+    {
+        return (fileStat.st_mode & permission) != 0;
+    }
+    return false;
+}
+
+void isCanBeRemoved(const std::string& path)
+{
+    if (isRegularFile(path))
+        return;
+    DIR* directory = opendir(path.c_str());
+    if ((!checkPermission(path, S_IRUSR) && !checkPermission(path, S_IWUSR)
+        && !checkPermission(path, S_IXUSR))|| directory == NULL) {
+        std::cerr << path << std::endl;
+        throw 400;
+    }
+    dirent* entry;
+    std::string fileName, fullPath;
+    while ((entry = readdir(directory)) != NULL) {
+        fileName = entry->d_name;
+        if (fileName == "." || fileName == "..") {
+            continue;
+        }
+        // struct stat fileStat;
+        fullPath = path + "/" + fileName;
+         if (isDirectory(fullPath))
+            isCanBeRemoved(fullPath);
+    }
+    closedir(directory);
+}
+
+void removeDirfolder(const std::string& path)
+{
+    if (isRegularFile(path))
+    {
+        std::remove(path.c_str());
+        return;
+    }
+    DIR* directory = opendir(path.c_str());
+    if ( directory == NULL) {
+        throw 400;
+    }
+    dirent* entry;
+    std::string fileName, fullPath;
+    while ((entry = readdir(directory)) != NULL) {
+        fileName = entry->d_name;
+        if (fileName == "." || fileName == "..") {
+            continue;
+        }
+        // struct stat fileStat;
+        fullPath = path + "/" + fileName;
+        if (isRegularFile(fullPath)) {
+            std::remove(fullPath.c_str());
+        }
+        else if (isDirectory(fullPath)) {
+            removeDirfolder(fullPath);
+        }
+    }
+    std::remove(path.c_str());
+    closedir(directory);
+}

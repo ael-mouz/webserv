@@ -7,7 +7,7 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 
 	countLength += size;
     // printf("parsheadelen = %ld countLength = %ld\n",client.request.ContentLength, countLength);
-    if (countLength > client.request.ContentLength)
+    if (client.request.decodeFlag == false && countLength > client.request.ContentLength)
     {
         printf("Error: Body::read size > client.request.ContentLength\n");
 		client.request.ReqstDone = 400;
@@ -237,7 +237,7 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 			if (character == '\n')
 			{
                 // printf("parsheadelen = %ld countLength = %ld\n",client.request.ContentLength, countLength);
-                if (countLength != client.request.ContentLength)
+                if (client.request.decodeFlag == false && countLength != client.request.ContentLength)
                 {
                     printf("Error: Body::read LF_END countLength != client.request.ContentLength\n");
 	            	client.request.ReqstDone = 400;
@@ -268,7 +268,7 @@ void Body::mimeType(Client &client, string &buffer, ssize_t &size)
 	fwrite(&buffer[0], 1, size, fileF);
 	countLength += size;
 	// printf("counlen = %ld len = %ld\n", client.request.ContentLength, countLength);
-	if (countLength == client.request.ContentLength)
+	if (client.request.decodeFlag == false && countLength == client.request.ContentLength)
 	{
 		writeToFile = 0;
 		client.request.ReqstDone = 200;
@@ -286,7 +286,7 @@ void Body::mimeType(Client &client, string &buffer, ssize_t &size)
 
 void Body::CGI(Client &client, string &buffer, ssize_t &size)
 {
-	if (writeToFile == 0)
+	if (writeToFile == 0) // creat it in headers like mime type
 	{
 		if (RandomFile(client.request, "/tmp/.", "") == false)
 		{
@@ -299,7 +299,7 @@ void Body::CGI(Client &client, string &buffer, ssize_t &size)
 	fwrite(&buffer[0], 1, size, fileF);
 	countLength += size;
 	// printf("counlen = %ld len = %ld\n", client.request.ContentLength, countLength);
-	if (countLength == client.request.ContentLength)
+	if (client.request.decodeFlag == false && countLength == client.request.ContentLength)
 	{
 		writeToFile = 0;
 		client.request.ReqstDone = 200;

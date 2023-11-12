@@ -27,6 +27,7 @@ check with docker inginix //a ayman
     -
 
 - decode uri
+    * decod it in the reaquest line and chek it in the request line
 
 - handel mime type ==>default application/octet-stream
 
@@ -43,3 +44,8 @@ check with docker inginix //a ayman
 - ChunkedEncoding
     * ckeck the 0\r\n in decode
     * ckeck the max body
+
+- delete Method
+    * wath the write permession to delite files
+    * protect our server from delete
+    * first slash

@@ -16,8 +16,8 @@ void Request::read(Client &client, string &buffer, ssize_t &size)
 		if (buffer.empty() || ReqstDone != 0)
 			return;
     }
-	if (decodeFlag)
-		decode.read(*this, buffer, size);
+	if (decodeFlag == true && decode.read(*this, buffer, size) != 0)
+        return;
     if (mainState == MultiPart) {
 	    body.multiPart(client, buffer, size);
     } else if (mainState == CGI) {
