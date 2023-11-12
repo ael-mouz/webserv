@@ -4,3 +4,5 @@ bp.mp4
 *.o
 obj
 webserv
+.DS_Store
+.vscode

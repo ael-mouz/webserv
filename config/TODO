@@ -17,10 +17,11 @@
 -handle delete rederect files
     *
 
-check with docker inginix //a ayman
+check with docker nginx //a ayman
     * client.request.ContentLength == 0;
     * Content-Disposition without filename;
     * if post request hase a body with an existing name file in our server
+    * Multipart empty body
 
 -Utils
     -to string with templated function //a ayman

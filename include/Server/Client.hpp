@@ -9,14 +9,15 @@ class Client
 {
 
 public:
-	std::string clientIP;
 	int socketClient;
+	std::string clientHost;
+	std::string clientIP;
 	ServerConf &serverConf;
 	Response response;
 	Request request;
 	bool read;
 	bool write;
-	Client(ServerConf &serverConf, int socketClient, std::string clientIP);
+	Client(ServerConf &serverConf, int socketClient, std::string clientIP,std::string host);
 	Client &operator=(const Client &overl);
 	Client(const Client &copy);
 	~Client();

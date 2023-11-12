@@ -26,10 +26,9 @@ void RunServers::runing()
 					ssize_t size = recv(it->socketClient, recvbuffer, 4096 * 4, 0);
 					if (size <= 0)
 					{
-						std::string host = "http://" + it->serverConf.DefaultServerConfig.Host + ":" + it->serverConf.DefaultServerConfig.Port;
-						logMessage(SCLOSE, host, it->socketClient, " req Close conection from " + it->clientIP);
+						logMessage(SCLOSE, it->clientHost, it->socketClient, "Close conection from " + it->clientIP);
 						close(it->socketClient);
-                        it->request.reset();//
+						it->request.reset();
 						clients.erase(it);
 						continue;
 					}
@@ -40,27 +39,31 @@ void RunServers::runing()
 				}
 				else if (FD_ISSET(it->socketClient, &writeFds))
 				{
-					it->response.response(*it);
+					if (!it->response.Config)
+						it->response.startResponse(*it);
+					it->response.checkErrorsRequest(*it);
+					if (it->response.isCgi)
+						it->response.CGI(*it);
+					else
+						it->response.handleNormalFiles(*it);
 					it->response.sendResponse(*it);
 					if (it->response.responseSent)
 					{
 						if (it->response.closeClient)
 						{
-							std::string host = "http://" + it->serverConf.DefaultServerConfig.Host + ":" + it->serverConf.DefaultServerConfig.Port;
-							logMessage(SCLOSE, host, it->socketClient, "Close conection from " + it->clientIP);
+							logMessage(SCLOSE, it->clientHost, it->socketClient, "Close conection from " + it->clientIP);
 							close(it->socketClient);
-                            it->response.clear();
+							it->response.clear();
+							it->request.reset();
 							clients.erase(it);
 							continue;
 						}
-                        	// close(it->socketClient);
-                            // it->response.clear();
-							// clients.erase(it);
-							// continue;
+						// std::cout << it->response.fptr << std::endl;
+						// fclose(it->response.fptr);
 						it->response.clear();
+						it->request.reset();
 						it->read = true;
 						it->write = false;
-						it->request.reset();
 					}
 				}
 				it++;
@@ -77,9 +80,8 @@ void RunServers::receiveData(vector<Client>::iterator &it, ssize_t &size)
 	it->request.read(*it, buffer, size);
 	if (it->request.ReqstDone)
 	{
-		std::string host = "http://" + it->serverConf.DefaultServerConfig.Host + ":" + it->serverConf.DefaultServerConfig.Port;
 		std::string method_ = FG_YELLOW + it->request.Method + FG_WHITE;
-		logMessage(SREQ, host, it->socketClient, "[" + method_ + "]" + RESET_ALL + " Received Data from " + it->clientIP);
+		logMessage(SREQ, it->clientHost, it->socketClient, "[" + method_ + "]" + RESET_ALL + " Received Data from " + it->clientIP);
 		it->read = false;
 		it->write = true;
 	}
@@ -125,7 +127,7 @@ void RunServers::acceptClients()
 			{
 				std::string clientIP = inet_ntoa(clientAddr.sin_addr);
 				logMessage(SACCEPT, host, newSocket, "Accept connection from " + clientIP);
-				Client client(it->serverConf, newSocket, clientIP);
+				Client client(it->serverConf, newSocket, clientIP, host);
 				clients.push_back(client);
 			}
 		}
@@ -177,9 +179,9 @@ RunServers::RunServers(char **av) : numberOfEvents(0)
 	config.parser(av[1]);
 	config.checkServerConfig(av[1]);
 	config.filterServerConfig();
-    #ifdef DEBUG_C
-        config.printServers();
-    #endif
+#ifdef DEBUG_C
+	config.printServers();
+#endif
 	vector<ServerConf> &serverConf = config.getServerConfig();
 	maxFdstmp = -1;
     printf("size client = %ld\n", sizeof(Client));

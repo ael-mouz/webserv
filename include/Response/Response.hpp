@@ -10,6 +10,16 @@ class Response
 {
 private:
 public:
+	bool CgiRunning;
+	int pipefd[2];
+	bool headerCgiReady;
+	std::string resCgi;
+	int tempFD;
+	int FDCGIBody;
+	std::string tempFileName;
+	std::multimap<std::string, std::string> MAPhederscgi;
+	pid_t pid;
+	std::string responseStatus;
 	std::string responseString;
 	std::string HeaderResponse;
 	std::string BodyResponse;
@@ -36,23 +46,28 @@ public:
 
 	Response(void);
 	~Response(void);
-	void getRoute(void);
-	void response(Client &client);
-	void clear(void);
-	void genrateRederiction();
-	void mergeHeadersValues(Client &client);
+	void startResponse(Client &client);
+	void checkErrorsRequest(Client &client);
+	void CGI(Client &client);
+	void checkerPath();
 	void getConfig(Client &client);
 	void parseUri(std::string uri);
 	void getFULLpath(void);
+	void getRoute(void);
+	void genrateRederiction();
 	void regenerateExtonsion();
-	void handleCGIScript(Client &client);
+	void clear(void);
 	void handleNormalFiles(Client &client);
-	void handleRange(stringstream &header,const std::string &range);
-	void generateCGIEnv(Client &client);
+	void handleRange(stringstream &header, const std::string &range);
+	void handleScriptCGI(Client &client);
+	void mergeHeadersValuesCGI(Client &client);
+	void generateEnvCGI(Client &client);
 	void generateResponse(std::string status);
 	void generateAutoIndex(void);
 	void sendResponse(Client &client);
+	void ft_printroute();
+	void ft_printconfig();
 	std::multimap<std::string, std::string> parseResponseHeader(std::string header);
-	std::string generateResponseHeaderCGI(std::multimap<std::string, std::string> &headers, std::string &body);
+	std::string generateResponseHeaderCGI(std::multimap<std::string, std::string> &headers,size_t body_lenght);
 	// std::string buffer);
 };
