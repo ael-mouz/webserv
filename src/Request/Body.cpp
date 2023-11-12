@@ -82,7 +82,7 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 				client.request.hold.clear(); // store key
                 continue;
 			}
-			else if (!ValidKey(character))
+			else if (!isValidKey(character))
 			{
 				printf("Error: Body::read state HANDLER_KEY i = %ld c = %c\n", it - buffer.begin(), character);
 				client.request.ReqstDone = 400;
@@ -145,7 +145,7 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 				client.request.subState = START_DATA;
                 continue;
 			}
-			else if (ValidKey(character))
+			else if (isValidKey(character))
 			{
 				client.request.subState = HANDLER_KEY;
 			}

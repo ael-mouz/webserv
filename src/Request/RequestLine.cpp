@@ -5,7 +5,7 @@
 // break add
 // !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~
 
-int RequestLine::read(Client &client, string &buffer, ssize_t &size)
+int RequestLine::read(Client &client, string &buffer, ssize_t &size) //change client to request
 {
 	unsigned char character;
 	// std::cout <<buffer << std::endl;
@@ -45,7 +45,7 @@ int RequestLine::read(Client &client, string &buffer, ssize_t &size)
 				client.request.hold.clear();
 				continue;
 			}
-			else if (!ValidURI(character))
+			else if (!isValidURI(character))
 			{
 				printf("Error: RequestLine::read subState URI ValidURI i = %ld c = %c\n", it - buffer.begin(), character);
 				return 400;
@@ -94,20 +94,12 @@ int RequestLine::read(Client &client, string &buffer, ssize_t &size)
 
 			client.request.subState = CHECK;
 			client.request.mainState = HEADERS;
-			return checker(client);
+			return 0;
 		}
 		client.request.hold += character;
 		// cout << "hold = "<< hold <<"\n";
 	}
     return 0;
-}
-
-int RequestLine::checker(Client &client)
-{
-	client.response.startResponse(client);
-	if (client.response.isCgi)
-		client.request.isCGI = true;
-	return 0;
 }
 
 void RequestLine::reset()

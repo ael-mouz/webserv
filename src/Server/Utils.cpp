@@ -173,21 +173,21 @@ bool isDigit(const std::string &str)
 	return true;
 }
 
-bool ValidURI(const int &c)
+bool isValidURI(const int &c)
 {
 
 	if (!isalnum(c) && c != '-' && c != '.' && c != '_' && c != '~' && c != ':' &&
 		c != '/' && c != '?' && c != '#' && c != '[' && c != ']' &&
 		c != '@' && c != '!' && c != '$' && c != '&' && c != '\'' &&
 		c != '(' && c != ')' && c != '*' && c != '+' && c != ',' &&
-		c != ';' && c != '=')
+		c != ';' && c != '=' && c != '%')
 	{
 		return false;
 	}
 	return true;
 }
 
-bool ValidKey(const int &c) //! #$%&'*+-.^_`|~
+bool isValidKey(const int &c) //! #$%&'*+-.^_`|~
 {
 	if (isalnum(c) || c == '!' || c == '#' || c == '$' || c == '%' ||
 		c == '&' || c == '\'' || c == '*' || c == '+' ||

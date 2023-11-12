@@ -7,7 +7,7 @@
   </head>
   <body>
     <h1>Upload a File</h1>
-    <form method="POST" enctype="multipart/form-data">
+    <form action="/cgi-bin/python/upload_multi_files.py" method="POST" enctype="multipart/form-data">
       <label for="file">Choose a file:</label>
       <input type="file" name="file" id="file" multiple />
       <input type="submit" value="Upload" />

@@ -29,6 +29,7 @@ public:
 	std::string fullpath;
 	std::string extension;
 	std::string entryPath;
+    bool method_allowd;
 	bool closeClient;
 	bool isBodySent;
 	bool isHeaderSent;

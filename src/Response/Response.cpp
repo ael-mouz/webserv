@@ -22,6 +22,7 @@ Response::Response()
 	responseSent = false;
 	CgiRunning = false;
 	headerCgiReady = false;
+    method_allowd = false;
 	tempFD = -1;
 	fileSize = 0;
 	offset = 0;
@@ -53,6 +54,7 @@ void Response::clear()
 	responseSent = false;
 	CgiRunning = false;
 	headerCgiReady = false;
+    method_allowd = false;
 	fileSize = 0;
 	offset = 0;
 	match = 0;
@@ -177,6 +179,13 @@ void Response::startResponse(Client &client)
 	genrateRederiction();
 	checkerPath();
 	regenerateExtonsion();
+    if(this->route.Accepted_Methods == "on")
+    {
+        if(client.request.Method == this->route.Accepted_Methods_ ||
+         client.request.Method == this->route.Accepted_Methods__ ||
+         client.request.Method == this->route.Accepted_Methods___ )
+            method_allowd = true;
+    }
 }
 
 void Response::checkErrorsRequest(Client &client)
@@ -612,7 +621,7 @@ void Response::generateResponse(std::string status)
 	std::string extension_;
 	this->responseStatus = FG_RED + status;
 	// 400 403 406 407 411 413 416 500 502 504 505;
-	if (status == "400" || status == "403" || status == "406" || status == "407" ||
+	if (status == "400" || status == "403" || status == "406" || status == "405" || status == "407" ||
 		status == "411" || status == "413" || status == "416" || status == "500" ||
 		status == "502" || status == "504" || status == "505")
 		this->closeClient = true;

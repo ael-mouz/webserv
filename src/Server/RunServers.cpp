@@ -4,6 +4,9 @@
 
 void RunServers::runing()
 {
+    // struct timeval timeout;
+    // timeout.tv_sec = 3;
+    // timeout.tv_usec = 0;
 	recvbuffer = new char[4096 * 4]; // delete it
 	forever
 	{
@@ -39,13 +42,17 @@ void RunServers::runing()
 				}
 				else if (FD_ISSET(it->socketClient, &writeFds))
 				{
+                    // printf("req done = %d\n", it->request.ReqstDone);
 					if (!it->response.Config)
 						it->response.startResponse(*it);
 					it->response.checkErrorsRequest(*it);
-					if (it->response.isCgi)
-						it->response.CGI(*it);
-					else
-						it->response.handleNormalFiles(*it);
+                    if(!it->response.responseDone)
+                    {
+					    if (it->response.isCgi)
+					    	it->response.CGI(*it);
+					    else
+					    	it->response.handleNormalFiles(*it);
+                    }
 					it->response.sendResponse(*it);
 					if (it->response.responseSent)
 					{
@@ -159,9 +166,8 @@ int RunServers::bindSockets(Server &server)
 	if (listen(server.socketServer, FD_SETSIZE) < 0)
 		throw std::runtime_error("Error: Failed to listen on socket");
 	// Set the socket to non-blocking mode
-	if (fcntl(server.socketServer, F_SETFL, O_NONBLOCK | FD_CLOEXEC) < 0)
-		throw std::runtime_error(
-			"Error: Failed to set socket to non-blocking mode");
+	if (fcntl(server.socketServer, F_SETFL, O_NONBLOCK , FD_CLOEXEC) < 0)
+		throw std::runtime_error("Error: Failed to set socket to non-blocking mode");
 	// Disable SIGPIPE to prevent the program from being terminated when writing
 	// to a closed socket.
 	int noSigpipe = 1;

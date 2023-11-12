@@ -8,6 +8,7 @@
     * storag a ayman d .....
     * this->status["408"] = "Request Timeout"; //
     * if file already existe dont do nothing
+    * add max headers 100
 
 -manage Server
     * keep alive /cloes socket

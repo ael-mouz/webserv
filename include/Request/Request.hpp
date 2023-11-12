@@ -40,7 +40,7 @@ public:
 	string key;
 	string boundary; // put it is header classe and make a geter
 	int sizeBoundary; // put it is header classe and make a geter
-    bool isCGI;
+    // bool isCGI;
 	bool decodeFlag;
 	size_t ContentLength;
 	int ReqstDone;

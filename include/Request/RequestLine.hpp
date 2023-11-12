@@ -21,7 +21,7 @@ private:
 
 public:
 	int read(Client &client, string &buffer, ssize_t &size);
-    int checker(Client &client);
+    // int checker(Client &client);
 	void reset();
 	RequestLine();
 	~RequestLine();

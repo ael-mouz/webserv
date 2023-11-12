@@ -14,7 +14,9 @@ void Request::read(Client &client, string &buffer, ssize_t &size)
 
 		ReqstDone = headers.read(client, buffer, size);
 		if (buffer.empty() || ReqstDone != 0)
+        {
 			return;
+        }
     }
 	if (decodeFlag == true && decode.read(*this, buffer, size) != 0)
         return;
@@ -57,7 +59,7 @@ void Request::reset(void) // im smart
 	sizeBoundary = 0;
 	ContentLength = 0;
 	decodeFlag = false;
-	isCGI = false;
+	// isCGI = false;
     deleteFiles = true;
 	requestLine.reset();
 	headers.reset();
@@ -72,7 +74,7 @@ Request::Request()
 	ReqstDone = 0;
 	subState = 0;
 	decodeFlag = false;
-	isCGI = false;
+	// isCGI = false;
 	sizeBoundary = 0;
 	ContentLength = 0;
     deleteFiles = true;

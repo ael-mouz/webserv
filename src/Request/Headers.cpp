@@ -13,7 +13,7 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 		case CHECK:
 			if (character == '\r')
 				client.request.subState = END_HEADERS;
-			else if (ValidKey(character))
+			else if (isValidKey(character))
 				client.request.subState = KEY;
 			else
 			{
@@ -30,7 +30,7 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 				count = 0;
 				continue;
 			}
-			else if (!ValidKey(character))
+			else if (!isValidKey(character))
 			{
 				printf("Error: Headers::read state KEY i = %ld c = %c\n", it - buffer.begin(), character);
 				return 400;
@@ -77,8 +77,8 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 				buffer.erase(0, it - buffer.begin() + 1);
 				size -= it - buffer.begin() + 1;
 				client.request.hold.clear();
-                if (client.request.isCGI == true)
-                    return (client.request.mainState = CGI, 0); // remove the checker from request line
+                // if (client.request.isCGI == true)
+                //     return (client.request.mainState = CGI, 0); // remove the checker from request line
 				return requestChecker(client);
 			}
 			else
@@ -97,6 +97,9 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 
 int Headers::requestChecker(Client &client)
 {
+    client.response.startResponse(client);
+    if(!client.response.method_allowd)
+        return 405;
 	if (client.request.Method == "GET" || client.request.Method == "DELETE")
     {
         if (client.request.Method == "DELETE")
@@ -120,6 +123,8 @@ int Headers::requestChecker(Client &client)
 	{
         return returnValue;
 	}
+    if (client.response.isCgi)
+		return (client.request.mainState = CGI, 0);
 	it = client.request.mapHeaders.find("content-type"); // Content-Type: Body/form-data; boundary=- ???
     if (it == client.request.mapHeaders.end())
     {
