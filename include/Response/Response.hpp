@@ -50,7 +50,7 @@ public:
 	void startResponse(Client &client);
 	void checkErrorsRequest(Client &client);
 	void CGI(Client &client);
-	void checkerPath();
+	void checkerPath(Client &clinet);
 	void getConfig(Client &client);
 	void parseUri(std::string uri);
 	void getFULLpath(void);

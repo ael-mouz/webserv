@@ -126,5 +126,5 @@ bool isRegularFile(const std::string& path);
 bool isDirectory(const std::string& path);
 bool checkPermission(const std::string path, mode_t permission);
 void isCanBeRemoved(const std::string& path);
-void removeDirfolder(const std::string& path);
+void removeDirfolder(const std::string& path, const std::string& root);
 // string getExtensionMimeType(const Client& client);

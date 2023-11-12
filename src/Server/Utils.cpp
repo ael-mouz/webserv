@@ -257,8 +257,8 @@ void isCanBeRemoved(const std::string& path)
     DIR* directory = opendir(path.c_str());
     if ((!checkPermission(path, S_IRUSR) && !checkPermission(path, S_IWUSR)
         && !checkPermission(path, S_IXUSR))|| directory == NULL) {
-        std::cerr << path << std::endl;
-        throw 400;
+        // std::cerr << path << std::endl;
+        throw 403;
     }
     dirent* entry;
     std::string fileName, fullPath;
@@ -275,7 +275,7 @@ void isCanBeRemoved(const std::string& path)
     closedir(directory);
 }
 
-void removeDirfolder(const std::string& path)
+void removeDirfolder(const std::string& path, const std::string& root) //add rout in prototype to not delete it
 {
     if (isRegularFile(path))
     {
@@ -284,7 +284,7 @@ void removeDirfolder(const std::string& path)
     }
     DIR* directory = opendir(path.c_str());
     if ( directory == NULL) {
-        throw 400;
+        throw 403;
     }
     dirent* entry;
     std::string fileName, fullPath;
@@ -299,9 +299,10 @@ void removeDirfolder(const std::string& path)
             std::remove(fullPath.c_str());
         }
         else if (isDirectory(fullPath)) {
-            removeDirfolder(fullPath);
+            removeDirfolder(fullPath, root);
         }
     }
-    std::remove(path.c_str());
+    if (path != root)
+        std::remove(path.c_str());
     closedir(directory);
 }

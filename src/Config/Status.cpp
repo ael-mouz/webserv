@@ -20,7 +20,7 @@ Status::Status()
 	this->status["307"] = "Temporary Redirect";
 
 	this->status["400"] = "Bad Request";//+
-	this->status["403"] = "Forbidden";// to search
+	this->status["403"] = "Forbidden";//+
 	this->status["404"] = "Not Found"; //+
 	this->status["405"] = "Method Not Allowed"; //+
 	this->status["406"] = "Not Acceptable"; // to search

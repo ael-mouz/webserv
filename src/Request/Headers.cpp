@@ -214,16 +214,17 @@ void Headers::reset()
 
 int Headers::deleteMthod(Client &client)
 {
-    (void)client;
     try {
-        isCanBeRemoved("/Users/yettabaa/Desktop/webserv/z");
-        // removeDirfolder("/Users/yettabaa/Desktop/webserv/z");
+        std::string root = client.response.fullpath;
+        std::cout << "route : " << client.response.fullpath << std::endl;
+        isCanBeRemoved(client.response.fullpath);
+        // removeDirfolder(client.response.fullpath, root);
     }
     catch(int returnValue)
     {
         return returnValue;
     }
-    return 0;
+    return 200;
 }
 
 Headers::Headers() : count(0) {}

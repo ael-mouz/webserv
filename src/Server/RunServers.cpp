@@ -84,6 +84,8 @@ void RunServers::runing()
 void RunServers::receiveData(vector<Client>::iterator &it, ssize_t &size)
 {
 	string buffer(recvbuffer, size);
+    // std::ofstream outf("/Users/yettabaa/Desktop/webservemerge/www/DebugFile.txt", std::ios::out | std::ios::app | std::ios::binary);
+    //                     outf << buffer;
 	it->request.read(*it, buffer, size);
 	if (it->request.ReqstDone)
 	{

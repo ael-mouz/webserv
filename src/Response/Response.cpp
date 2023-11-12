@@ -177,7 +177,7 @@ void Response::startResponse(Client &client)
 	getRoute();
 	getFULLpath();
 	genrateRederiction();
-	checkerPath();
+	checkerPath(client);
 	regenerateExtonsion();
     if(this->route.Accepted_Methods == "on")
     {
@@ -190,6 +190,59 @@ void Response::startResponse(Client &client)
 
 void Response::checkErrorsRequest(Client &client)
 {
+    if(client.request.ReqstDone == 200 && client.request.Method == "DELETE")
+    {
+        std::stringstream headers;
+		this->responseStatus = "200";
+		std::stringstream body_;
+		body_ << "<!DOCTYPE html>";
+		body_ << "<html lang=\"en\">";
+		body_ << "<head>";
+		body_ << "<title>DELETE</title>";
+		body_ << "<style>";
+		body_ << "body {";
+		body_ << "font-family: Arial, sans-serif;";
+		body_ << "margin: 0;";
+		body_ << "padding: 0;";
+		body_ << "background-image: url(\"/images/site42-bg.png\");";
+		body_ << "background-size: cover;";
+		body_ << "background-position: center;";
+		body_ << "}";
+		body_ << ".delete-status {";
+		body_ << "max-width: 600px;";
+		body_ << "margin: 20px auto;";
+		body_ << "padding: 20px;";
+		body_ << "background-color: #fff;";
+		body_ << "box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);";
+		body_ << "text-align: center;";
+		body_ << "}";
+		body_ << "ul {";
+		body_ << "list-style-type: none;";
+		body_ << "padding: 0;";
+		body_ << "}";
+		body_ << "li {";
+		body_ << "margin-bottom: 8px;";
+		body_ << "}";
+		body_ << "</style>";
+		body_ << "</head>";
+		body_ << "<body>";
+		body_ << "<section class=\"delete-status\">";
+		body_ << "<h2>The following files were deleted:</h2>";
+		body_ << "<ul>";
+		body_ << "<li>" + this->fullpath + "</li>\n ";
+		body_ << "</ul>";
+		body_ << "</section>";
+		body_ << "</body>";
+		body_ << "</html>";
+		headers << "HTTP/1.1 200 " + this->Config->status.getStatus("200") + "\r\n";
+		headers << "Content-Type: " << this->Config->mime.getMimeType("html") << "\r\n";
+		headers << "Content-Length: " << body_.str().length() << "\r\n";
+		headers << "\r\n";
+		this->HeaderResponse = headers.str();
+		this->BodyResponse = body_.str();
+		this->responseDone = true;
+        return;
+    }
 	if (client.request.ReqstDone == 201)
 	{
 		std::stringstream headers;
@@ -245,6 +298,7 @@ void Response::checkErrorsRequest(Client &client)
 		this->HeaderResponse = headers.str();
 		this->BodyResponse = body_.str();
 		this->responseDone = true;
+        return;
 	}
 	else if (client.request.ReqstDone != 200)
 	{
@@ -397,13 +451,18 @@ void Response::genrateRederiction()
 		return;
 	}
 }
-void Response::checkerPath()
+void Response::checkerPath(Client &clinet)
 {
 	if (this->responseDone)
 		return;
 	int dirr = isDirectory(this->fullpath.c_str());
 	if (dirr == 1)
 	{
+        if(clinet.request.Method == "DELETE")
+        {
+            this->responseDone = true;
+            return;
+        }
 		if (this->route.Autoindex == "on")
 		{
 			generateAutoIndex();
@@ -458,7 +517,6 @@ void Response::handleScriptCGI(Client &client)
 				return;
 			}
 		}
-		std::cout << "pipe   --------" << std::endl;
 		if (pipe(pipefd) == -1)
 		{
 			generateResponse("500");
@@ -528,7 +586,7 @@ void Response::handleScriptCGI(Client &client)
 		{
 			perror("fcntl");
 		}
-		char tempFile[] = "/tmp/exampleXXXXXX";
+		char tempFile[] = "/tmp/.cgi_body_XXXXXXXXXXX";
 		FDCGIBody = mkstemp(tempFile);
 		tempFileName = tempFile;
 	}
