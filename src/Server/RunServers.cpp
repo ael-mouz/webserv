@@ -202,9 +202,10 @@ int RunServers::bindSockets(Server &server)
 		throw std::runtime_error("Error: Failed to set socket to non-blocking mode");
 	// Disable SIGPIPE to prevent the program from being terminated when writing
 	// to a closed socket.
-	int noSigpipe = 1;
-	if (setsockopt(server.socketServer, SOL_SOCKET, SO_NOSIGPIPE, &noSigpipe, sizeof(noSigpipe)) < 0)
-		throw std::runtime_error("Error: Failed to disable SIGPIPE");
+    signal(SIGPIPE, SIG_IGN);
+	// int noSigpipe = 1;
+	// if (setsockopt(server.socketServer, SOL_SOCKET, SO_NOSIGPIPE, &noSigpipe, sizeof(noSigpipe)) < 0)
+	// 	throw std::runtime_error("Error: Failed to disable SIGPIPE");
 	// Print the socket descriptor for debugging purposes
 	std::string host = "http://" + server.serverConf.DefaultServerConfig.Host + ":" + server.serverConf.DefaultServerConfig.Port;
 	logMessage(SINFO, host, server.socketServer, "Server start listening");

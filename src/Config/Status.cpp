@@ -2,9 +2,6 @@
 
 Status::Status()
 {
-	this->status["100"] = "Continue";
-	this->status["101"] = "Switching Protocols";
-
 	this->status["200"] = "OK";
 	this->status["201"] = "Created";
 	this->status["202"] = "Accepted";
