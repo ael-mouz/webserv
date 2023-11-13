@@ -47,7 +47,6 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 			{
 				client.request.subState = LF_BOUNDARY;
 				client.request.hold.clear();
-				// writeToFile = 0;
                 continue;
 			}
 			else
@@ -268,17 +267,17 @@ void Body::mimeType(Client &client, string &buffer, ssize_t &size)
 	fwrite(&buffer[0], 1, size, fileF);
 	countLength += size;
 	// printf("counlen = %ld len = %ld\n", client.request.ContentLength, countLength);
-	if (client.request.decodeFlag == false && countLength == client.request.ContentLength)
+	if ((!isEncodChunk(client) && countLength == client.request.ContentLength)
+    || (isEncodChunk(client) && client.request.getEncodChunkState() == LF_END_CHUNKED))
 	{
-		writeToFile = 0;
 		client.request.ReqstDone = 200;
 		fclose(fileF);
         fileF = NULL;
         client.request.deleteFiles = false;
 	}
-	if (countLength > client.request.ContentLength)
+	if (!isEncodChunk(client) && countLength > client.request.ContentLength)
 	{
-		// printf("countLength > client.request.ContentLength\n"); client.request.mainState =// 0;
+		printf("countLength > client.request.ContentLength\n"); client.request.mainState =// 0;
         client.request.ReqstDone = 400;
 		return;
 	}
@@ -286,22 +285,22 @@ void Body::mimeType(Client &client, string &buffer, ssize_t &size)
 
 void Body::CGI(Client &client, string &buffer, ssize_t &size)
 {
-	if (writeToFile == 0) // creat it in headers like mime type
-	{
-		if (RandomFile(client.request, "/tmp/.", "") == false)
-		{
-			client.request.ReqstDone = 500;
-			return;
-		}
-	}
+	// if (writeToFile == 0) // creat it in headers like mime type
+	// {
+	// 	if (RandomFile(client.request, "/tmp/.", "") == false)
+	// 	{
+	// 		client.request.ReqstDone = 500;
+	// 		return;
+	// 	}
+	// }
 	// printf("%s\nsize = %ld suzwMeth = %ld\n", &buffer[0], size,
 	// buffer.size());
 	fwrite(&buffer[0], 1, size, fileF);
 	countLength += size;
 	// printf("counlen = %ld len = %ld\n", client.request.ContentLength, countLength);
-	if (client.request.decodeFlag == false && countLength == client.request.ContentLength)
+	if (!isEncodChunk(client) && countLength == client.request.ContentLength)
 	{
-		writeToFile = 0;
+		// writeToFile = 0;
 		client.request.ReqstDone = 200;
 		fclose(fileF);
         fileF = NULL;
@@ -322,10 +321,8 @@ bool Body::createFile(Client &client, const string &value, string &fileName)
 		return false;
 	fileName = trim(value.substr(fileNamePos + sizeof("filename")), " \"");
     fileName = getUploadPath(client) + fileName;
-    // std::string path = client.response.route.UploadPath; //function
-    // (path != "default") ? fileName = path + fileName : fileName = client.response.Config->GlobalUpload + fileName;
     // printf("fileName = %s\n", &fileName[0]);//////
-	fileF = fopen(&fileName[0], "w");
+	fileF = fopen(fileName.c_str(), "w");
 	if (!fileF)
 		return false;
 	return true;
@@ -333,20 +330,17 @@ bool Body::createFile(Client &client, const string &value, string &fileName)
 
 bool Body::RandomFile(Request &Request, const string& path, const string& extension)
 {
-	// string randomName = "/tmp/.file-XXXXXXXXXXXXXXXXX";
 	string randomName = "file-" + intToString(time(NULL));
 
     randomName = path + randomName + extension;
 
 	ifstream inf(randomName.c_str());
-    printf("randomName = %s\n", &randomName[0]);
     if (inf.is_open())
 	{
 		printf("error mktemp\n");
 		return false;
 	}
-    // inf.close();
-    // close(fd);
+    printf("randomName = %s\n", &randomName[0]);
 	fileF = fopen(randomName.c_str(), "w");
 	if (!fileF)
 	{
@@ -356,15 +350,18 @@ bool Body::RandomFile(Request &Request, const string& path, const string& extens
 	File file;
 	file.fileName = randomName;
 	Request.files.push_back(file);
-	writeToFile = 1;
 	return true;
+}
+
+bool Body::isEncodChunk(Client &client)
+{
+    return client.request.decodeFlag;
 }
 
 void Body::reset()
 {
 	count = 2;
 	countLength = 0;
-	writeToFile = 0;
     if (fileF != NULL) {
         fclose(fileF);
     }
@@ -375,9 +372,7 @@ Body::Body()
 {
 	count = 2;
 	countLength = 0;
-	writeToFile = 0;
 	fileF = NULL;
-	// out = NULL;
 }
 
 Body::~Body() {}

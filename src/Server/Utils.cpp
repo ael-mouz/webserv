@@ -180,7 +180,7 @@ bool isValidURI(const int &c)
 		c != '/' && c != '?' && c != '#' && c != '[' && c != ']' &&
 		c != '@' && c != '!' && c != '$' && c != '&' && c != '\'' &&
 		c != '(' && c != ')' && c != '*' && c != '+' && c != ',' &&
-		c != ';' && c != '=' && c != '%')
+		c != ';' && c != '=')
 	{
 		return false;
 	}
@@ -305,4 +305,12 @@ void removeDirfolder(const std::string& path, const std::string& root) //add rou
     if (path != root)
         std::remove(path.c_str());
     closedir(directory);
+}
+
+long long	timeofday(void)
+{
+	struct timeval	time;
+
+	gettimeofday(&time, NULL);
+	return (((time.tv_sec * 1000) + (time.tv_usec / 1000)));
 }

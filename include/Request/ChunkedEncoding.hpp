@@ -19,11 +19,11 @@ class ChunkedEncoding
 {
 private:
 	size_t count;
-	int decodeState;
 	string hold;
 	size_t countLength;
 
 public:
+	int decodeState;
 	int read(Request &Request, string &buffer, ssize_t &size);
 	void reset();
 	ChunkedEncoding();

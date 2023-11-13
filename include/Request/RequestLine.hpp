@@ -2,7 +2,7 @@
 
 #include "../Server/Utils.hpp"
 
-class Client;
+class Request;
 
 enum requestState
 {
@@ -10,18 +10,16 @@ enum requestState
 	_URI,
 	URI_SPACE,
 	VERSION,
-	CR,
-	LF,
+    DECODE_URI,
 };
 
 class RequestLine
 {
 private:
 	int count;
-
+    int count_hexa;
 public:
-	int read(Client &client, string &buffer, ssize_t &size);
-    // int checker(Client &client);
+	int read(Request &request, string &buffer, ssize_t &size);
 	void reset();
 	RequestLine();
 	~RequestLine();

@@ -5,15 +5,9 @@ int ChunkedEncoding::read(Request &Request, string &buffer, ssize_t &size)
 {
 	unsigned char character;
     (void)Request;
-    // check for the last hexa 0
-    // puts("Ffsgfdfg");
 	for (string::iterator it = buffer.begin(); it != buffer.end();)
 	{
 		character = *it;
-        // if (Request.decodeFlag == false && !buffer.empty())
-        // {
-
-        // }
 		switch (decodeState)
 		{
 		case HEXA: // remove hexa
@@ -40,7 +34,7 @@ int ChunkedEncoding::read(Request &Request, string &buffer, ssize_t &size)
 			countLength = HexaToDicimal(hold);
 			hold.clear();
 			buffer.erase(it);
-            // printf("countLength = %ld\n", countLength);q
+            // printf("countLength = %ld\n", countLength);
             decodeState = countLength != 0 ? SKIP_BODY : CR_END_CHUNKED;
 			continue;
 		case SKIP_BODY:
@@ -62,7 +56,7 @@ int ChunkedEncoding::read(Request &Request, string &buffer, ssize_t &size)
 		case CR_BEFOR_HEXA:
 			if (character != '\r')
 			{
-				printf("Error: ChunkedEncoding::read state CR_BEFOR_HEXA i = %ld c = %d\n", it - buffer.begin(), character);
+				printf("Error: ChunkedEncoding::read state CR_BEFOR_HEXA i = %ld c = %c\n", it - buffer.begin(), character);
 				return 400;
 			}
 			decodeState = LF_BEFOR_HEXA;
@@ -84,13 +78,16 @@ int ChunkedEncoding::read(Request &Request, string &buffer, ssize_t &size)
 				return 400;
             }
             decodeState = LF_END_CHUNKED;
-            break;
+			buffer.erase(it);
+			continue;
         case LF_END_CHUNKED:
             if (character != '\n')
             {
 				printf("Error: ChunkedEncoding::read state LF_END_CHUNKED i = %ld c = %d\n", it - buffer.begin(), character);
 				return 400;
             }
+			buffer.erase(it);
+			continue;
 		}
 		it++;
 	}

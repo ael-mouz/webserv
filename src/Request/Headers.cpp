@@ -48,6 +48,11 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 				client.request.mapHeaders.insert(make_pair(client.request.key, trim(client.request.hold, " \t")));
 				client.request.hold.clear();
 				client.request.key.clear();
+                if (client.request.mapHeaders.size() > MAX_HEADERS)
+                {
+                    printf("Error: Headers::read state VALUE MAX_HEADERS i = %d c = %c\n", count, character);
+				    return 400;
+                }
 				client.request.subState = END_VALUE;
 				count = 0;
 				continue;
@@ -99,32 +104,23 @@ int Headers::requestChecker(Client &client)
 {
     client.response.startResponse(client);
     if(!client.response.method_allowd)
-        return 405;
-	if (client.request.Method == "GET" || client.request.Method == "DELETE")
     {
-        if (client.request.Method == "DELETE")
-            return deleteMthod(client);
-		return 200;
+        printf("Error: Headers::checkrequest client.response.method_allowd\n");
+        return 405;
     }
-	multimap<string, string>::iterator it;
+	if (client.request.Method == "GET")
+		return 200;
+    if (client.request.Method == "DELETE")
+        return deleteMthod(client);
+    int returnValue;
 
-	it = client.request.mapHeaders.find("transfer-encoding"); // in function
-	if (it != client.request.mapHeaders.end())
-	{
-		if (it->second != "chunked")
-		{
-			printf("error request not implemnted\n");
-			return 501;
-		}
-		client.request.decodeFlag = true;
-	}
-    int returnValue = ContentLenChecker(client);
-    if (returnValue != 0)
-	{
+    if ((returnValue = transEncodChecker(client)) != 0)
         return returnValue;
-	}
+    if ((returnValue = contentLenChecker(client)) != 0)
+        return returnValue;
     if (client.response.isCgi)
-		return (client.request.mainState = CGI, 0);
+		return (cgiChecker(client));
+	multimap<string, string>::iterator it;
 	it = client.request.mapHeaders.find("content-type"); // Content-Type: Body/form-data; boundary=- ???
     if (it == client.request.mapHeaders.end())
     {
@@ -132,15 +128,32 @@ int Headers::requestChecker(Client &client)
         return 400;
     }
     if (it ->second.find("multipart/form-data") != string::npos) {
-        if ((returnValue = MultiPartChecker(client, it->second)) != 0)// if Body/form-data || Body/mixed || Body/related || Body/alternative
+        if ((returnValue = multiPartChecker(client, it->second)) != 0)
             return returnValue;
     }
-    else if ((returnValue = MimeTypeChecker(client, it->second)) != 0)
+    else if ((returnValue = mimeTypeChecker(client, it->second)) != 0)
         return returnValue;
     return 0;
 }
 
-int Headers::ContentLenChecker(Client &client)
+int Headers::transEncodChecker(Client &client)
+{
+    multimap<string, string>::iterator it;
+
+    it = client.request.mapHeaders.find("transfer-encoding");
+	if (it != client.request.mapHeaders.end())
+	{
+		if (it->second != "chunked")
+		{
+			printf("Error: Headers::checkrequest it->second != \"chunked\"\n");
+			return 501;
+		}
+		client.request.decodeFlag = true;
+	}
+    return 0;
+}
+
+int Headers::contentLenChecker(Client &client)
 {
     stringstream stream;
     multimap<string, string>::iterator it;
@@ -178,7 +191,18 @@ int Headers::ContentLenChecker(Client &client)
     return 0;
 }
 
-int Headers::MultiPartChecker(Client &client, string& value)
+int Headers::cgiChecker(Client &client)
+{
+    if (client.request.openBodyFile("/tmp/.", "") == false)
+	{
+		printf("error Headers::MimeTypeChecker cgiChecker\n");
+		return 500;
+	}
+    client.request.mainState = CGI;
+    return 0;
+}
+
+int Headers::multiPartChecker(Client &client, string& value)
 {
     size_t posBoundary = value.find("boundary="); //if boudry vid or not in correct form ??
 	if (posBoundary == string::npos)
@@ -193,7 +217,7 @@ int Headers::MultiPartChecker(Client &client, string& value)
     return 0;
 }
 
-int Headers::MimeTypeChecker(Client &client, string& value)
+int Headers::mimeTypeChecker(Client &client, string& value)
 {
     string extension = client.serverConf.DefaultServerConfig.mime.getExtensionMimeType(value);
 
@@ -218,7 +242,7 @@ int Headers::deleteMthod(Client &client)
         std::string root = client.response.fullpath;
         std::cout << "route : " << client.response.fullpath << std::endl;
         isCanBeRemoved(client.response.fullpath);
-        // removeDirfolder(client.response.fullpath, root);
+        removeDirfolder(client.response.fullpath, root);
     }
     catch(int returnValue)
     {

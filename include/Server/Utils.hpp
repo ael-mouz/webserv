@@ -27,6 +27,7 @@
 #include <dirent.h>
 #include <netdb.h>
 #include <netinet/in.h>
+# include <sys/time.h>
 
 class Client;
 using namespace std;
@@ -34,6 +35,7 @@ using namespace std;
 #define MAX_URI 4096
 #define MAX_KEY 200
 #define MAX_VALUE 400
+#define MAX_HEADERS 100
 
 #define BOLD "\e[1m"
 #define DIM "\e[2m"
@@ -127,4 +129,5 @@ bool isDirectory(const std::string& path);
 bool checkPermission(const std::string path, mode_t permission);
 void isCanBeRemoved(const std::string& path);
 void removeDirfolder(const std::string& path, const std::string& root);
+long long	timeofday(void);
 // string getExtensionMimeType(const Client& client);

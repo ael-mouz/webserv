@@ -133,8 +133,19 @@ void Response::sendResponse(Client &client)
 		{
 			responseString = HeaderResponse;
 			isHeaderSent = true;
-			std::string status = "[" FG_GREEN + responseStatus + RESET_ALL + "]";
-			logMessage(SRES, client.clientHost, client.socketClient, status + " Response sent to " + client.clientIP);
+            std::string status;
+            std::string StringStatus;
+            if(responseStatus >= "400")
+            {
+			    status = "[" FG_RED + responseStatus + RESET_ALL + "]";
+			    StringStatus = "[" FG_RED + this->Config->status.getStatus(responseStatus)  + RESET_ALL + "]";
+            }
+            else
+            {
+			    status = "[" FG_GREEN + responseStatus + RESET_ALL + "]";
+			    StringStatus = "[" FG_GREEN + this->Config->status.getStatus(responseStatus)  + RESET_ALL + "]";
+            }
+			logMessage(SRES, client.clientHost, client.socketClient, status + " " + StringStatus + " Response sent to " + client.clientIP);
 		}
 		if (!BodyResponse.empty())
 		{
@@ -677,7 +688,7 @@ void Response::handleScriptCGI(Client &client)
 void Response::generateResponse(std::string status)
 {
 	std::string extension_;
-	this->responseStatus = FG_RED + status;
+	this->responseStatus = status;
 	// 400 403 406 407 411 413 416 500 502 504 505;
 	if (status == "400" || status == "403" || status == "406" || status == "405" || status == "407" ||
 		status == "411" || status == "413" || status == "416" || status == "500" ||

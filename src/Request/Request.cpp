@@ -6,7 +6,7 @@
 void Request::read(Client &client, string &buffer, ssize_t &size)
 {
 	if (mainState == REQUEST_LINE) {
-		ReqstDone = requestLine.read(client, buffer, size);
+		ReqstDone = requestLine.read(*this, buffer, size);
 		if (buffer.empty() || ReqstDone != 0)
 			return;
     }
@@ -18,7 +18,7 @@ void Request::read(Client &client, string &buffer, ssize_t &size)
 			return;
         }
     }
-	if (decodeFlag == true && decode.read(*this, buffer, size) != 0)
+	if (decodeFlag == true && (ReqstDone = decode.read(*this, buffer, size)) != 0)
         return;
     if (mainState == MultiPart) {
 	    body.multiPart(client, buffer, size);
@@ -32,6 +32,11 @@ void Request::read(Client &client, string &buffer, ssize_t &size)
 bool Request::openBodyFile(const string &path, const string &extension)
 {
     return(body.RandomFile(*this, path, extension));
+}
+
+int Request::getEncodChunkState()
+{
+    return decode.decodeState;
 }
 
 void Request::reset(void) // im smart
@@ -59,8 +64,8 @@ void Request::reset(void) // im smart
 	sizeBoundary = 0;
 	ContentLength = 0;
 	decodeFlag = false;
-	// isCGI = false;
     deleteFiles = true;
+    timeLastData = 0;
 	requestLine.reset();
 	headers.reset();
 	body.reset();
@@ -74,10 +79,10 @@ Request::Request()
 	ReqstDone = 0;
 	subState = 0;
 	decodeFlag = false;
-	// isCGI = false;
 	sizeBoundary = 0;
 	ContentLength = 0;
     deleteFiles = true;
+    timeLastData = 0;
 }
 
 Request::~Request() {}

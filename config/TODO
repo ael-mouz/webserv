@@ -1,21 +1,18 @@
 -errors parsing request
     * do more tests for parse body syntax error
-    * delete files
-    *handel checker in headers class
+    * handel checker in headers class
         /mulpart form data
         /transfer chunked
     * countent len
-    * storag a ayman d .....
     * this->status["408"] = "Request Timeout"; //
     * if file already existe dont do nothing
-    * add max headers 100
 
 -manage Server
     * keep alive /cloes socket
-    * remove client with a safe way
 
-
--handle delete rederect files
+-handle deleting files
+    * delete files request
+    * CGI tmp file
     *
 
 check with docker nginx //a ayman
@@ -23,31 +20,23 @@ check with docker nginx //a ayman
     * Content-Disposition without filename;
     * if post request hase a body with an existing name file in our server
     * Multipart empty body
+    * check config
 
--Utils
-    -to string with templated function //a ayman
-    -
-
-- decode uri
-    * decod it in the reaquest line and chek it in the request line
-
-- handel mime type ==>default application/octet-stream
-
-- CGI aaaaaa ayman / probleme send video
-
-- handel close client in case of errors
 
 - leaks file discriptor request and response
 
 - check if there no spaceleft in device
-
-- change to c_str
 
 - ChunkedEncoding
     * ckeck the 0\r\n in decode
     * ckeck the max body
 
 - delete Method
-    * wath the write permession to delite files
+    * what the write permession to delite files
     * protect our server from delete
-    * first slash
+
+- response
+    - 501 close client
+
+- CGI
+    with shunked

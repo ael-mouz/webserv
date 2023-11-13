@@ -44,6 +44,7 @@ public:
 	bool decodeFlag;
 	size_t ContentLength;
 	int ReqstDone;
+    long long timeLastData;
 	string Method;
 	string URI;
 	multimap<string, string> mapHeaders;
@@ -52,6 +53,7 @@ public:
 	void read(Client &client, string &buffer, ssize_t &size);
 	void reset(void);
     bool openBodyFile(const string &path, const string &extension);
+    int getEncodChunkState();
 	Request();
 	~Request();
 };

@@ -1,27 +1,28 @@
 #include "../../include/Request/RequestLine.hpp"
 #include "../../include/Server/Client.hpp"
+#include "../../include/Request/Request.hpp"
 // return done || error
 // continue skip witout adding
 // break add
 // !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~
 
-int RequestLine::read(Client &client, string &buffer, ssize_t &size) //change client to request
+int RequestLine::read(Request &request, string &buffer, ssize_t &size) //change client to request
 {
 	unsigned char character;
 	// std::cout <<buffer << std::endl;
 	for (string::iterator it = buffer.begin(); it != buffer.end(); it++)
 	{
 		character = *it;
-		switch (client.request.subState)
+		switch (request.subState)
 		{
 		case METHOD:
-            if ((client.request.hold == "GET" || client.request.hold == "POST" || client.request.hold == "DELETE")
+            if ((request.hold == "GET" || request.hold == "POST" || request.hold == "DELETE")
                 && character == ' ')
             {
                 count = 0;
-                client.request.Method = client.request.hold;
-                client.request.hold.clear();
-                client.request.subState = _URI;
+                request.Method = request.hold;
+                request.hold.clear();
+                request.subState = _URI;
                 continue;
             }
             if (count < 3 && character == "GET"[count])
@@ -39,12 +40,17 @@ int RequestLine::read(Client &client, string &buffer, ssize_t &size) //change cl
 		case _URI:
 			if (character == ' ')
 			{
-				client.request.subState = VERSION;
-				client.request.URI = client.request.hold;
+				request.subState = VERSION;
+				request.URI = request.hold;
+                // std::printf("URI %s\n", request.URI.c_str());
 				count = 0;
-				client.request.hold.clear();
+				request.hold.clear();
 				continue;
-			}
+			} else if (character == '%')
+            {
+				request.subState = DECODE_URI;
+                continue;
+            }
 			else if (!isValidURI(character))
 			{
 				printf("Error: RequestLine::read subState URI ValidURI i = %ld c = %c\n", it - buffer.begin(), character);
@@ -57,46 +63,50 @@ int RequestLine::read(Client &client, string &buffer, ssize_t &size) //change cl
 			}
 			count++;
 			break;
+		case DECODE_URI:
+            if (std::isxdigit(character) && count_hexa < 2)
+            {
+                request.hold += character;
+                count_hexa++;
+                if (count_hexa == 2)
+                {
+                    char c = HexaToDicimal(request.hold.substr(request.hold.size() - 2));
+                    // std::cout << HexaToDicimal(request.hold.substr(request.hold.size() - 2)) << std::endl;
+                    request.hold.erase(request.hold.end() -2, request.hold.end());
+                    request.hold += c;
+                    count_hexa = 0;
+                    request.subState = _URI;
+                }
+                continue;
+            }
+            else
+            {
+                printf("Error: RequestLine::read subState DECODE_URI i = %ld c = %c\n", it - buffer.begin(), character);
+				return 414;
+            }
 		case VERSION:
-			if (character == "HTTP/1.1"[count])
+			if (count < 10 && character == "HTTP/1.1\r\n"[count])
+            {
 				count++;
+			    if (count == 10)
+			    {
+			    	count = 0;
+			    	request.hold.clear();
+                    buffer.erase(0, it - buffer.begin() + 1);
+			        size -= it - buffer.begin() + 1;
+			        request.subState = CHECK;
+			        request.mainState = HEADERS;
+			    	return 0;
+			    }
+            }
 			else
 			{
 				printf("Error: RequestLine::read subState VERSION i = %ld count = %d c = %c\n", it - buffer.begin(), count, character);
 				return 505;
 			}
-			if (count == 8)
-			{
-				client.request.subState = CR;
-				count = 0;
-				client.request.hold.clear();
-				continue;
-			}
 			break;
-		case CR:
-			if (character != '\r')
-			{
-				printf("Error: RequestLine::read CR i = %ld c = %d\n", it - buffer.begin(), character);
-				return 505;
-			}
-			client.request.subState = LF;
-			continue;
-		case LF:
-			if (character != '\n')
-			{
-				printf("Error: RequestLine::read NL i = %ld c = %d\n", it - buffer.begin(), character);
-				return 505;
-			}
-			// printf("main = %d sub = %d\n", client.request.mainState, client.request.subState);
-			buffer.erase(0, it - buffer.begin() + 1);
-			size -= it - buffer.begin() + 1;
-			client.request.hold.clear();
-
-			client.request.subState = CHECK;
-			client.request.mainState = HEADERS;
-			return 0;
 		}
-		client.request.hold += character;
+		request.hold += character;
 		// cout << "hold = "<< hold <<"\n";
 	}
     return 0;
@@ -107,6 +117,6 @@ void RequestLine::reset()
 	count = 0;
 }
 
-RequestLine::RequestLine() : count(0) {}
+RequestLine::RequestLine() : count(0), count_hexa(0) {}
 
 RequestLine::~RequestLine() {}
