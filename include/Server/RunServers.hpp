@@ -5,6 +5,8 @@
 #include "../../include/Server/Client.hpp"
 #include "../../include/Server/Utils.hpp"
 
+#define CLIENT_BODY_TIMEOUT 60000
+
 struct Server
 {
 	ServerConf serverConf;
@@ -20,16 +22,18 @@ class RunServers
 	int maxFdstmp;
 	int newSocket;
 	int numberOfEvents;
+    struct timeval timeout;
 	char *recvbuffer;
 	vector<Server> servers;
 	vector<Client> clients;
-
-public:
 	int bindSockets(Server &server);
 	void resetFds();
 	void acceptClients();
-	void receiveData(vector<Client>::iterator &it, ssize_t &size);
+	int receiveData(vector<Client>::iterator &it);
     void timeoutChecker();
+    void timeoutClientChecker(Client &client);
+
+public:
 	void runing();
 	RunServers(char **av);
 	~RunServers();

@@ -5,8 +5,8 @@ Client::Client(ServerConf &serverConf, int socketClient, std::string clientIP,st
 {
 	this->clientHost = host;
 	this->clientIP = clientIP;
-	read = true;
-	write = false;
+	readEvent = true;
+	writeEvent = false;
 }
 
 Client &Client::operator=(const Client &overl)
@@ -16,8 +16,8 @@ Client &Client::operator=(const Client &overl)
 	socketClient = overl.socketClient;
 	request = overl.request;
 	response = overl.response;
-	read = overl.read;
-	write = overl.write;
+	readEvent = overl.readEvent;
+	writeEvent = overl.writeEvent;
 	return (*this);
 }
 

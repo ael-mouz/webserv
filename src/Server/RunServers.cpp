@@ -4,9 +4,6 @@
 
 void RunServers::runing()
 {
-    struct timeval timeout;
-    timeout.tv_sec = 3;
-    timeout.tv_usec = 0;
 	recvbuffer = new char[4096 * 4]; // delete it
 	forever
 	{
@@ -17,29 +14,16 @@ void RunServers::runing()
 			std::cout << "Error in select function\n"; ///!!
 		}
 		else if (numberOfEvents == 0)
-		{
-			std::cout << "Timeout\n"; //!!
             timeoutChecker();
-		}
 		else
 		{
 			for (vector<Client>::iterator it = clients.begin(); it != clients.end();)
 			{
+                timeoutClientChecker(*it);
 				if (FD_ISSET(it->socketClient, &readFds))
 				{
-					ssize_t size = recv(it->socketClient, recvbuffer, 4096 * 4, 0);
-					if (size <= 0)
-					{
-						logMessage(SCLOSE, it->clientHost, it->socketClient, "Close conection from " + it->clientIP);
-						close(it->socketClient);
-						it->request.reset();
-						clients.erase(it);
-						continue;
-					}
-					else
-					{
-						receiveData(it, size);
-					}
+					if (receiveData(it) <= 0)
+                        continue;
 				}
 				else if (FD_ISSET(it->socketClient, &writeFds))
 				{
@@ -59,7 +43,7 @@ void RunServers::runing()
 					{
 						if (it->response.closeClient)
 						{
-							logMessage(SCLOSE, it->clientHost, it->socketClient, "Close conection from " + it->clientIP);
+							logMessage(SCLOSE, it->clientHost, it->socketClient, "Response: Close conection from " + it->clientIP);
 							close(it->socketClient);
 							it->response.clear();
 							it->request.reset();
@@ -70,8 +54,8 @@ void RunServers::runing()
 						// fclose(it->response.fptr);
 						it->response.clear();
 						it->request.reset();
-						it->read = true;
-						it->write = false;
+						it->readEvent = true;
+						it->writeEvent = false;
 					}
 				}
 				it++;
@@ -82,31 +66,37 @@ void RunServers::runing()
 	delete[] recvbuffer;
 }
 
-void RunServers::receiveData(vector<Client>::iterator &it, ssize_t &size)
+int RunServers::receiveData(vector<Client>::iterator &it)
 {
-	string buffer(recvbuffer, size);
-    // std::ofstream outf("/Users/yettabaa/Desktop/webservemerge/www/DebugFile.txt", std::ios::out | std::ios::app | std::ios::binary);
-    //                     outf << buffer;
-    // printf("client_body_timeout = %lld\n",(timeofday() - it->request.client_body_timeout ));
-    if (it->request.timeLastData != 0 && (timeofday() - it->request.timeLastData) > 60)
-    {
-        printf("client_body_timeout = %lld\n",(timeofday() - it->request.timeLastData ));
-        it->request.ReqstDone = 408;
-    }
-    else {
+    ssize_t size = recv(it->socketClient, recvbuffer, 4096 * 4, 0);
+	if (size <= 0)
+	{
+		logMessage(SCLOSE, it->clientHost, it->socketClient, "Request: Close conection from " + it->clientIP);
+		close(it->socketClient);
+		it->request.reset();
+		clients.erase(it);
+        return size;
+	}
+	else
+	{
+	    string buffer(recvbuffer, size);
+        // std::ofstream outf("/Users/yettabaa/Desktop/webservemerge/www/DebugFile.txt", std::ios::out | std::ios::app | std::ios::binary);
+        //                     outf << buffer;
         it->request.timeLastData = timeofday();
 	    it->request.read(*it, buffer, size);
-    }
-	if (it->request.ReqstDone)
-	{
-		std::string method_ = "[" FG_YELLOW + it->request.Method + RESET_ALL + "]";
-		std::string URI = "[" FG_YELLOW + it->request.URI + RESET_ALL + "]";
-		logMessage(SREQ, it->clientHost, it->socketClient, method_ + " Received Data from " + it->clientIP);
-		logMessage(SINFO, it->clientHost, it->socketClient," URI : " + URI);
-		it->read = false;
-		it->write = true;
+	    if (it->request.ReqstDone)
+	    {
+	    	std::string method_ = "[" FG_YELLOW + it->request.Method + RESET_ALL + "]";
+	    	std::string URI = "[" FG_YELLOW + it->request.URI + RESET_ALL + "]";
+	    	logMessage(SREQ, it->clientHost, it->socketClient, method_ + " Received Data from " + it->clientIP);
+	    	logMessage(SINFO, it->clientHost, it->socketClient," URI : " + URI);
+	    	it->readEvent = false;
+	    	it->writeEvent = true;
+            it->request.timeLastData = 0;
+	    }
+	    buffer.clear();
+        return 1;
 	}
-	buffer.clear();
 }
 
 void RunServers::resetFds()
@@ -118,9 +108,9 @@ void RunServers::resetFds()
 	for (vector<Client>::iterator it = clients.begin(); it != clients.end();
 		 it++)
 	{
-		if (it->read)
+		if (it->readEvent)
 			FD_SET(it->socketClient, &readFds);
-		else if (it->write)
+		else if (it->writeEvent)
 			FD_SET(it->socketClient, &writeFds);
 		if (it->socketClient > maxFds)
 			maxFds = it->socketClient;
@@ -141,7 +131,6 @@ void RunServers::acceptClients()
 			newSocket = accept(it->socketServer, (struct sockaddr *)&clientAddr, &clientAddrLen);
 			if (newSocket == -1)
 			{
-				//////!!!!!
 				logMessage(SERROR, host, newSocket, "Accept failed");
 			}
 			else
@@ -155,25 +144,31 @@ void RunServers::acceptClients()
 	}
 }
 
+void RunServers::timeoutClientChecker(Client &client)
+{
+    if (client.readEvent == true && client.request.timeLastData != 0
+    && (timeofday() - client.request.timeLastData) >= CLIENT_BODY_TIMEOUT)
+    {
+        // printf("client_body_timeout = %lld\n",(timeofday() - client.request.timeLastData ));
+        client.request.ReqstDone = 408;
+        client.readEvent = false;
+        client.writeEvent = true;
+    }
+}
+
 void RunServers::timeoutChecker()
 {
+    std::cout << "Timeout\n"; //!!
     for (vector<Client>::iterator it = clients.begin(); it != clients.end(); it++)
     {
-        if (it->read)
+        // printf("client_body_timeout = %lld fd ==> %d\n",(timeofday() - it->request.timeLastData), it->socketClient);
+        if (it->readEvent == true && it->request.timeLastData != 0
+        && (timeofday() - it->request.timeLastData) >= CLIENT_BODY_TIMEOUT)
         {
-            printf("client_body_timeout = %lld\n",(timeofday() - it->request.timeLastData ));
-            if (it->request.timeLastData != 0 && (timeofday() - it->request.timeLastData) > 60)
-            {
-                    printf("408\n");
-                    it->request.ReqstDone = 408;
-                    it->read = false;
-                    it->write = true;
-                // if (FD_ISSET(it->socketClient, &writeFds))
-                // {
-                //     printf("data to write 408 in %d\n", it->socketClient);
-
-                // }
-            }
+            // printf("408\n");
+            it->request.ReqstDone = 408;
+            it->readEvent = false;
+            it->writeEvent = true;
         }
     }
 }
@@ -226,8 +221,10 @@ RunServers::RunServers(char **av) : numberOfEvents(0)
 	config.printServers();
 #endif
 	vector<ServerConf> &serverConf = config.getServerConfig();
+    timeout.tv_sec = CLIENT_BODY_TIMEOUT / 1000;
+    timeout.tv_usec = 0;
 	maxFdstmp = -1;
-    printf("size client = %ld\n", sizeof(Client));
+    // printf("size client = %ld\n", sizeof(Client));
 	for (vector<ServerConf>::iterator it = serverConf.begin();
 		 it != serverConf.end(); it++)
 	{

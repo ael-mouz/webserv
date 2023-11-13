@@ -15,8 +15,8 @@ public:
 	ServerConf &serverConf;
 	Response response;
 	Request request;
-	bool read;
-	bool write;
+	bool readEvent;
+	bool writeEvent;
 	Client(ServerConf &serverConf, int socketClient, std::string clientIP,std::string host);
 	Client &operator=(const Client &overl);
 	Client(const Client &copy);

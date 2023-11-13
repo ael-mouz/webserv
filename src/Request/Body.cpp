@@ -285,22 +285,12 @@ void Body::mimeType(Client &client, string &buffer, ssize_t &size)
 
 void Body::CGI(Client &client, string &buffer, ssize_t &size)
 {
-	// if (writeToFile == 0) // creat it in headers like mime type
-	// {
-	// 	if (RandomFile(client.request, "/tmp/.", "") == false)
-	// 	{
-	// 		client.request.ReqstDone = 500;
-	// 		return;
-	// 	}
-	// }
 	// printf("%s\nsize = %ld suzwMeth = %ld\n", &buffer[0], size,
-	// buffer.size());
 	fwrite(&buffer[0], 1, size, fileF);
 	countLength += size;
 	// printf("counlen = %ld len = %ld\n", client.request.ContentLength, countLength);
 	if (!isEncodChunk(client) && countLength == client.request.ContentLength)
 	{
-		// writeToFile = 0;
 		client.request.ReqstDone = 200;
 		fclose(fileF);
         fileF = NULL;
@@ -322,6 +312,7 @@ bool Body::createFile(Client &client, const string &value, string &fileName)
 	fileName = trim(value.substr(fileNamePos + sizeof("filename")), " \"");
     fileName = getUploadPath(client) + fileName;
     // printf("fileName = %s\n", &fileName[0]);//////
+    
 	fileF = fopen(fileName.c_str(), "w");
 	if (!fileF)
 		return false;
