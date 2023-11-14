@@ -12,7 +12,6 @@ enum _mainState
 {
 	REQUEST_LINE,
 	HEADERS,
-	// BODY,
     MultiPart,
     CGI,
     MIMETYPES,
@@ -22,7 +21,6 @@ struct File
 {
 	string fileName;
 	multimap<string, string> Content;
-    // bool toDelete;
 };
 
 class Request
@@ -40,7 +38,6 @@ public:
 	string key;
 	string boundary; // put it is header classe and make a geter
 	int sizeBoundary; // put it is header classe and make a geter
-    // bool isCGI;
 	bool decodeFlag;
 	size_t ContentLength;
 	int ReqstDone;

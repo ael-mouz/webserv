@@ -22,10 +22,8 @@ void Request::read(Client &client, string &buffer, ssize_t &size)
         return;
     if (mainState == MultiPart) {
 	    body.multiPart(client, buffer, size);
-    } else if (mainState == CGI) {
-		body.CGI(client, buffer, size);
-    } else if (mainState == MIMETYPES) {
-        body.mimeType(client, buffer, size);
+    } else if (mainState == MIMETYPES || mainState == CGI) {
+		body.writeBody(client, buffer, size);
     }
 }
 

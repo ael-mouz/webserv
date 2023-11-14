@@ -13,7 +13,7 @@
 -handle deleting files
     * delete files request
     * CGI tmp file
-    *
+    * check delete file in multi/part and chunked + multi part
 
 check with docker nginx //a ayman
     * client.request.ContentLength == 0;
@@ -39,4 +39,10 @@ check with docker nginx //a ayman
     - 501 close client
 
 - CGI
-    with shunked
+    *with shunked
+    * mimtype + CGI in the same functions
+
+
+- understand
+    * way we set socket to non blocking mode
+    * test nonblocking mode

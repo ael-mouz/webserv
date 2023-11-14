@@ -87,6 +87,8 @@ int ChunkedEncoding::read(Request &Request, string &buffer, ssize_t &size)
 				return 400;
             }
 			buffer.erase(it);
+            /*if you exite here with return 0 the program can't check if there is
+                other data after the end uf chunked \r\n0\r\n*/
 			continue;
 		}
 		it++;

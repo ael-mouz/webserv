@@ -183,7 +183,7 @@ int Headers::contentLenChecker(Client &client)
     stringstream stream1(client.response.Config->LimitClientBodySize);
     size_t limitClientBodySize;
     stream1 >> limitClientBodySize;
-    if (client.request.ContentLength > limitClientBodySize)
+    if (client.request.ContentLength > limitClientBodySize) // add left space here
     {
         printf("error Headers::checkContentLen client.request.ContentLength > limitClientBodySize client body size\n");
         return 413;

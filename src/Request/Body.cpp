@@ -101,10 +101,11 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 				File file;
 				if (client.request.key == "Content-Disposition")
 				{
-					if (createFile(client ,client.request.hold, file.fileName) == false)
+                    int returnValue = createFile(client ,client.request.hold, file.fileName);
+					if (returnValue != 0)
 					{
 						printf("Error: Body::read state HANDLER_VALUE ""fdFile i = %ld ""c = %c\n",it - buffer.begin(), character);
-						client.request.ReqstDone = 500;
+						client.request.ReqstDone = returnValue;
 						return;
 					}
                     // file.toDelete = true;
@@ -236,17 +237,21 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 			if (character == '\n')
 			{
                 // printf("parsheadelen = %ld countLength = %ld\n",client.request.ContentLength, countLength);
-                if (client.request.decodeFlag == false && countLength != client.request.ContentLength)
+                if ((isEncodChunk(client) == false && countLength == client.request.ContentLength)
+                || (isEncodChunk(client) == true && client.request.getEncodChunkState() == LF_END_CHUNKED))
+                {
+                    if (fileF != NULL) {
+                        fclose(fileF);
+                        fileF = NULL;
+                    }
+                    client.request.deleteFiles = false;
+				    client.request.ReqstDone = 201;
+                }
+                else
                 {
                     printf("Error: Body::read LF_END countLength != client.request.ContentLength\n");
 	            	client.request.ReqstDone = 400;
-	            	return;
                 }
-                if (fileF != NULL) {
-                    fclose(fileF);
-                }
-                client.request.deleteFiles = false;
-				client.request.ReqstDone = 201;
 				client.request.hold.clear();
 				return;
 			}
@@ -262,20 +267,20 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 	}
 }
 
-void Body::mimeType(Client &client, string &buffer, ssize_t &size)
+void Body::writeBody(Client &client, string &buffer, ssize_t &size)
 {
 	fwrite(&buffer[0], 1, size, fileF);
 	countLength += size;
 	// printf("counlen = %ld len = %ld\n", client.request.ContentLength, countLength);
-	if ((!isEncodChunk(client) && countLength == client.request.ContentLength)
-    || (isEncodChunk(client) && client.request.getEncodChunkState() == LF_END_CHUNKED))
+	if ((isEncodChunk(client) == false && countLength == client.request.ContentLength)
+    || (isEncodChunk(client) == true && client.request.getEncodChunkState() == LF_END_CHUNKED))
 	{
 		client.request.ReqstDone = 200;
 		fclose(fileF);
         fileF = NULL;
         client.request.deleteFiles = false;
 	}
-	if (!isEncodChunk(client) && countLength > client.request.ContentLength)
+	if (isEncodChunk(client) == false && countLength > client.request.ContentLength)
 	{
 		printf("countLength > client.request.ContentLength\n"); client.request.mainState =// 0;
         client.request.ReqstDone = 400;
@@ -283,40 +288,34 @@ void Body::mimeType(Client &client, string &buffer, ssize_t &size)
 	}
 }
 
-void Body::CGI(Client &client, string &buffer, ssize_t &size)
-{
-	// printf("%s\nsize = %ld suzwMeth = %ld\n", &buffer[0], size,
-	fwrite(&buffer[0], 1, size, fileF);
-	countLength += size;
-	// printf("counlen = %ld len = %ld\n", client.request.ContentLength, countLength);
-	if (!isEncodChunk(client) && countLength == client.request.ContentLength)
-	{
-		client.request.ReqstDone = 200;
-		fclose(fileF);
-        fileF = NULL;
-        client.request.deleteFiles = false;
-	}
-	if (countLength > client.request.ContentLength)
-	{
-		// printf("countLength > client.request.ContentLength\n"); client.request.mainState =// 0;
-        client.request.ReqstDone = 400;
-		return;
-	}
-}
-bool Body::createFile(Client &client, const string &value, string &fileName)
+int Body::createFile(Client &client, const string &value, string &fileName)
 {
 	size_t fileNamePos = value.find("filename=");
 
 	if (fileNamePos == string::npos)
-		return false;
+    {
+        printf("Body::createFile filename= \n");
+		return 400;
+    }
+    // handel
 	fileName = trim(value.substr(fileNamePos + sizeof("filename")), " \"");
     fileName = getUploadPath(client) + fileName;
     // printf("fileName = %s\n", &fileName[0]);//////
-    
+
+
+    /*
+    struct stat stats;
+    if (stat(fileName.c_str(), &stats) == 0)
+    {
+        printf("Body::createFile file alredy exist= \n");
+        return 400;
+    }
+    */
+
 	fileF = fopen(fileName.c_str(), "w");
 	if (!fileF)
-		return false;
-	return true;
+		return 500;
+	return 0;
 }
 
 bool Body::RandomFile(Request &Request, const string& path, const string& extension)

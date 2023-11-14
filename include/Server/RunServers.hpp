@@ -29,7 +29,7 @@ class RunServers
 	int bindSockets(Server &server);
 	void resetFds();
 	void acceptClients();
-	int receiveData(vector<Client>::iterator &it);
+	bool receiveData(vector<Client>::iterator &it);
     void timeoutChecker();
     void timeoutClientChecker(Client &client);
 

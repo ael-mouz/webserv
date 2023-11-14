@@ -60,7 +60,8 @@ void Response::clear()
 	match = 0;
 	Config = NULL;
 	env.clear();
-	fclose(fptr);
+    if (fptr)
+	    fclose(fptr);
 	fptr = NULL;
 }
 

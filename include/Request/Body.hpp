@@ -26,14 +26,12 @@ class Body
 private:
 	FILE *fileF;
 	int count;
-	// int writeToFile;
 
 public:
 	size_t countLength;
 	void multiPart(Client &client, string &buffer, ssize_t &size);
-	void mimeType(Client &client, string &buffer, ssize_t &size);
-	void CGI(Client &client, string &buffer, ssize_t &size);
-	bool createFile(Client &client,const string &value, std::string &fileName);
+	void writeBody(Client &client, string &buffer, ssize_t &size);
+	int createFile(Client &client,const string &value, std::string &fileName);
 	bool RandomFile(Request &Request, const string& path, const string& extension);
     bool isEncodChunk(Client &client);
 	void reset();

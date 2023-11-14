@@ -22,7 +22,7 @@ void RunServers::runing()
                 timeoutClientChecker(*it);
 				if (FD_ISSET(it->socketClient, &readFds))
 				{
-					if (receiveData(it) <= 0)
+					if (receiveData(it) == false)
                         continue;
 				}
 				else if (FD_ISSET(it->socketClient, &writeFds))
@@ -66,7 +66,7 @@ void RunServers::runing()
 	delete[] recvbuffer;
 }
 
-int RunServers::receiveData(vector<Client>::iterator &it)
+bool RunServers::receiveData(vector<Client>::iterator &it)
 {
     ssize_t size = recv(it->socketClient, recvbuffer, 4096 * 4, 0);
 	if (size <= 0)
@@ -75,7 +75,7 @@ int RunServers::receiveData(vector<Client>::iterator &it)
 		close(it->socketClient);
 		it->request.reset();
 		clients.erase(it);
-        return size;
+        return false;
 	}
 	else
 	{
@@ -95,7 +95,7 @@ int RunServers::receiveData(vector<Client>::iterator &it)
             it->request.timeLastData = 0;
 	    }
 	    buffer.clear();
-        return 1;
+        return true;
 	}
 }
 
