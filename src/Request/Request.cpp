@@ -39,7 +39,7 @@ int Request::getEncodChunkState()
 
 void Request::reset(void) // im smart
 {
-	// Request clear();
+	// Request   clear();
 	hold.clear();
 	key.clear();
 	boundary.clear();
