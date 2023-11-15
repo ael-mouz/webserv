@@ -15,6 +15,7 @@ struct Server
 
 class RunServers
 {
+private:
 	fd_set readFds;
 	fd_set writeFds;
 	fd_set serverFds;

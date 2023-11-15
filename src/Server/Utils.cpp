@@ -314,3 +314,14 @@ long long	timeofday(void)
 	gettimeofday(&time, NULL);
 	return (((time.tv_sec * 1000) + (time.tv_usec / 1000)));
 }
+
+bool getDiskSpace(const string& path, size_t& freeSpace)
+{
+    struct statvfs stat;
+    if (statvfs(path.c_str(), &stat) == 0)
+    {
+        freeSpace = stat.f_bavail * stat.f_frsize;
+        return true;
+    }
+    return false;
+}

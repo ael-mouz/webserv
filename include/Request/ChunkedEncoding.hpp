@@ -21,10 +21,12 @@ private:
 	size_t count;
 	string hold;
 	size_t countLength;
+    size_t totalSize;
+    int totalSizeChecker(Client &client, size_t totalSize);
 
 public:
 	int decodeState;
-	int read(Request &Request, string &buffer, ssize_t &size);
+	int read(Client &client, string &buffer, ssize_t &size);
 	void reset();
 	ChunkedEncoding();
 	~ChunkedEncoding();

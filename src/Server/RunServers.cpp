@@ -225,7 +225,7 @@ RunServers::RunServers(char **av) : numberOfEvents(0)
     timeout.tv_sec = CLIENT_BODY_TIMEOUT / 1000;
     timeout.tv_usec = 0;
 	maxFdstmp = -1;
-    // printf("size client = %ld\n", sizeof(Client));
+    printf("size client = %ld\n", sizeof(Client));
 	for (vector<ServerConf>::iterator it = serverConf.begin();
 		 it != serverConf.end(); it++)
 	{

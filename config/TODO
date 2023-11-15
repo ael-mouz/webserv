@@ -1,4 +1,5 @@
 -errors parsing request
+    *** don't forget to check file if already existe
     * do more tests for parse body syntax error
     * handel checker in headers class
         /mulpart form data

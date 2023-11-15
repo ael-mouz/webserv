@@ -130,4 +130,5 @@ bool checkPermission(const std::string path, mode_t permission);
 void isCanBeRemoved(const std::string& path);
 void removeDirfolder(const std::string& path, const std::string& root);
 long long	timeofday(void);
+bool getDiskSpace(const string& path, size_t& freeSpace);
 // string getExtensionMimeType(const Client& client);

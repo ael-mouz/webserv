@@ -24,11 +24,13 @@ enum multiPartState
 class Body
 {
 private:
-	FILE *fileF;
 	int count;
+	string key;
+    string hold;
+	FILE *fileF;
+	size_t countLength;
 
 public:
-	size_t countLength;
 	void multiPart(Client &client, string &buffer, ssize_t &size);
 	void writeBody(Client &client, string &buffer, ssize_t &size);
 	int createFile(Client &client,const string &value, std::string &fileName);

@@ -17,18 +17,19 @@ class Headers
 {
 private:
 	int count;
-
-public:
-	int read(Client &client, string &buffer, ssize_t &size);
+	string key;
+    string hold;
 	int requestChecker(Client &client);
     int contentLenChecker(Client &client);
     int multiPartChecker(Client &client, string& value);
     int mimeTypeChecker(Client &client, string& value);
     int cgiChecker(Client &client);
     int transEncodChecker(Client &client);
-	void reset();
+    int deleteMthod(Client &client);
 
-    int deleteMthod(Client &client); // make it in response
+public:
+	int read(Client &client, string &buffer, ssize_t &size);
+	void reset();
 	Headers();
 	~Headers();
 };

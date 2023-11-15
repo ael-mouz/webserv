@@ -1,10 +1,10 @@
 #include "../../include/Request/ChunkedEncoding.hpp"
-#include "../../include/Request/Request.hpp"
+#include "../../include/Server/Client.hpp"
 
-int ChunkedEncoding::read(Request &Request, string &buffer, ssize_t &size)
+int ChunkedEncoding::read(Client &client, string &buffer, ssize_t &size)
 {
 	unsigned char character;
-    (void)Request;
+
 	for (string::iterator it = buffer.begin(); it != buffer.end();)
 	{
 		character = *it;
@@ -94,6 +94,26 @@ int ChunkedEncoding::read(Request &Request, string &buffer, ssize_t &size)
 		it++;
 	}
 	size = buffer.size();
+    totalSize += size;
+    return totalSizeChecker(client, totalSize);
+}
+
+int ChunkedEncoding::totalSizeChecker(Client &client, size_t totalSize)
+{
+    stringstream stream1(client.response.Config->LimitClientBodySize);
+    size_t limitClientBodySize, diskSpace;
+    stream1 >> limitClientBodySize;
+    if (limitClientBodySize < totalSize) // add left space here
+    {
+        printf("error ChunkedEncoding::totalSizeChecker totalSize > limitClientBodySize client body size\n");
+        return 413;
+    }
+    if (getDiskSpace(getUploadPath(client), diskSpace) == false
+    || diskSpace <= totalSize)
+    {
+        printf("error ChunkedEncoding::totalSizeChecker diskSpace \n");
+        return 400;
+    }
     return 0;
 }
 
@@ -102,6 +122,7 @@ void ChunkedEncoding::reset()
 	decodeState = HEXA;
 	countLength = 0;
 	count = 0;
+    totalSize = 0;
 	hold.clear();
 }
 
@@ -110,6 +131,7 @@ ChunkedEncoding::ChunkedEncoding()
 	decodeState = HEXA;
 	countLength = 0;
 	count = 0;
+    totalSize = 0;
 }
 
 ChunkedEncoding::~ChunkedEncoding() {}

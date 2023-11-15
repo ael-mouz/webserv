@@ -24,8 +24,8 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 		case KEY: // set max
 			if (character == ':')
 			{
-				client.request.key = strToLower(client.request.hold);
-				client.request.hold.clear(); // store key
+				key = strToLower(hold);
+				hold.clear(); // store key
 				client.request.subState = VALUE;
 				count = 0;
 				continue;
@@ -45,9 +45,9 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 		case VALUE: // set max
 			if (character == '\r')
 			{
-				client.request.mapHeaders.insert(make_pair(client.request.key, trim(client.request.hold, " \t")));
-				client.request.hold.clear();
-				client.request.key.clear();
+				client.request.mapHeaders.insert(make_pair(key, trim(hold, " \t")));
+				hold.clear();
+				key.clear();
                 if (client.request.mapHeaders.size() > MAX_HEADERS)
                 {
                     printf("Error: Headers::read state VALUE MAX_HEADERS i = %d c = %c\n", count, character);
@@ -81,9 +81,7 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 			{
 				buffer.erase(0, it - buffer.begin() + 1);
 				size -= it - buffer.begin() + 1;
-				client.request.hold.clear();
-                // if (client.request.isCGI == true)
-                //     return (client.request.mainState = CGI, 0); // remove the checker from request line
+				hold.clear();
 				return requestChecker(client);
 			}
 			else
@@ -93,7 +91,7 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 			}
 			break;
 		}
-		client.request.hold += character;
+		hold += character;
 		// printf(" i = %ld count = %d  char = |%c| hold = |%s|\n",i,count,c, hold.c_str());
 		// std::cout << "hold = "<< hold <<"\n";
 	}
@@ -116,7 +114,8 @@ int Headers::requestChecker(Client &client)
 
     if ((returnValue = transEncodChecker(client)) != 0)
         return returnValue;
-    if ((returnValue = contentLenChecker(client)) != 0)
+    if (client.request.decodeFlag == false
+    && (returnValue = contentLenChecker(client)) != 0)
         return returnValue;
     if (client.response.isCgi)
 		return (cgiChecker(client));
@@ -181,12 +180,18 @@ int Headers::contentLenChecker(Client &client)
         return 200;
     }
     stringstream stream1(client.response.Config->LimitClientBodySize);
-    size_t limitClientBodySize;
+    size_t limitClientBodySize, diskSpace;
     stream1 >> limitClientBodySize;
-    if (client.request.ContentLength > limitClientBodySize) // add left space here
+    if (limitClientBodySize < client.request.ContentLength) // add left space here
     {
         printf("error Headers::checkContentLen client.request.ContentLength > limitClientBodySize client body size\n");
         return 413;
+    }
+    if (getDiskSpace(getUploadPath(client), diskSpace) == false
+    || diskSpace <= client.request.ContentLength)
+    {
+        printf("error Headers::checkContentLen diskSpace \n");
+        return 400;
     }
     return 0;
 }
@@ -231,11 +236,6 @@ int Headers::mimeTypeChecker(Client &client, string& value)
     return 0;
 }
 
-void Headers::reset()
-{
-	count = 0;
-}
-
 int Headers::deleteMthod(Client &client)
 {
     try {
@@ -249,6 +249,13 @@ int Headers::deleteMthod(Client &client)
         return returnValue;
     }
     return 200;
+}
+
+void Headers::reset()
+{
+	count = 0;
+    key.clear();
+    hold.clear();
 }
 
 Headers::Headers() : count(0) {}

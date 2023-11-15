@@ -18,6 +18,9 @@ class RequestLine
 private:
 	int count;
     int count_hexa;
+    string hold;
+	// string key;
+
 public:
 	int read(Request &request, string &buffer, ssize_t &size);
 	void reset();

@@ -16,12 +16,12 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size) //change 
 		switch (request.subState)
 		{
 		case METHOD:
-            if ((request.hold == "GET" || request.hold == "POST" || request.hold == "DELETE")
+            if ((hold == "GET" || hold == "POST" || hold == "DELETE")
                 && character == ' ')
             {
                 count = 0;
-                request.Method = request.hold;
-                request.hold.clear();
+                request.Method = hold;
+                hold.clear();
                 request.subState = _URI;
                 continue;
             }
@@ -41,10 +41,10 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size) //change 
 			if (character == ' ')
 			{
 				request.subState = VERSION;
-				request.URI = request.hold;
+				request.URI = hold;
                 // std::printf("URI %s\n", request.URI.c_str());
 				count = 0;
-				request.hold.clear();
+				hold.clear();
 				continue;
 			} else if (character == '%')
             {
@@ -66,14 +66,14 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size) //change 
 		case DECODE_URI:
             if (std::isxdigit(character) && count_hexa < 2)
             {
-                request.hold += character;
+                hold += character;
                 count_hexa++;
                 if (count_hexa == 2)
                 {
-                    char c = HexaToDicimal(request.hold.substr(request.hold.size() - 2));
-                    // std::cout << HexaToDicimal(request.hold.substr(request.hold.size() - 2)) << std::endl;
-                    request.hold.erase(request.hold.end() -2, request.hold.end());
-                    request.hold += c;
+                    char c = HexaToDicimal(hold.substr(hold.size() - 2));
+                    // std::cout << HexaToDicimal(hold.substr(hold.size() - 2)) << std::endl;
+                    hold.erase(hold.end() -2, hold.end());
+                    hold += c;
                     count_hexa = 0;
                     request.subState = _URI;
                 }
@@ -91,7 +91,7 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size) //change 
 			    if (count == 10)
 			    {
 			    	count = 0;
-			    	request.hold.clear();
+			    	hold.clear();
                     buffer.erase(0, it - buffer.begin() + 1);
 			        size -= it - buffer.begin() + 1;
 			        request.subState = CHECK;
@@ -106,7 +106,7 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size) //change 
 			}
 			break;
 		}
-		request.hold += character;
+		hold += character;
 		// cout << "hold = "<< hold <<"\n";
 	}
     return 0;
@@ -115,6 +115,8 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size) //change 
 void RequestLine::reset()
 {
 	count = 0;
+    count_hexa = 0;
+    hold.clear();
 }
 
 RequestLine::RequestLine() : count(0), count_hexa(0) {}

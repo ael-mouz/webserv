@@ -11,14 +11,11 @@ void Request::read(Client &client, string &buffer, ssize_t &size)
 			return;
     }
 	if (mainState == HEADERS) {
-
 		ReqstDone = headers.read(client, buffer, size);
 		if (buffer.empty() || ReqstDone != 0)
-        {
 			return;
-        }
     }
-	if (decodeFlag == true && (ReqstDone = decode.read(*this, buffer, size)) != 0)
+	if (decodeFlag == true && (ReqstDone = decode.read(client, buffer, size)) != 0)
         return;
     if (mainState == MultiPart) {
 	    body.multiPart(client, buffer, size);
@@ -40,8 +37,8 @@ int Request::getEncodChunkState()
 void Request::reset(void) // im smart
 {
 	// Request   clear();
-	hold.clear();
-	key.clear();
+	// hold.clear();
+	// key.clear();
 	boundary.clear();
 	Method.clear();
 	URI.clear();
