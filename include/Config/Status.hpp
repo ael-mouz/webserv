@@ -11,4 +11,5 @@ public:
 	Status();
 	~Status();
 	std::string getStatus(const std::string &status) const;
+	bool CheckStatus(const std::string &status);
 };

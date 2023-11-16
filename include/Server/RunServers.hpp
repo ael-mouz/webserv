@@ -15,6 +15,7 @@ struct Server
 
 class RunServers
 {
+private:
 	fd_set readFds;
 	fd_set writeFds;
 	fd_set serverFds;
@@ -22,16 +23,19 @@ class RunServers
 	int maxFdstmp;
 	int newSocket;
 	int numberOfEvents;
-    struct timeval timeout;
+	struct timeval timeout;
 	char *recvbuffer;
 	vector<Server> servers;
 	vector<Client> clients;
+
+private:
 	int bindSockets(Server &server);
 	void resetFds();
 	void acceptClients();
 	bool receiveData(vector<Client>::iterator &it);
-    void timeoutChecker();
-    void timeoutClientChecker(Client &client);
+	bool sendData(vector<Client>::iterator &it);
+	void timeoutChecker();
+	void timeoutClientChecker(Client &client);
 
 public:
 	void runing();

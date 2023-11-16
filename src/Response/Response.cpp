@@ -4,6 +4,25 @@
 
 Response::Response()
 {
+	// CGI
+	CgiRunning = false;
+	headerCgiReady = false;
+	tempFD = -1;
+	FDCGIBody = -1;
+	resCgi.clear();
+	tempFileName.clear();
+	MAPhederscgi.clear();
+	// RESPONSE
+	isCgi = false;
+	isBodySent = false;
+	closeClient = false;
+	isHeaderSent = false;
+	responseDone = false;
+	responseSent = false;
+	method_allowd = false;
+	match = 0;
+	offset = 0;
+	fileSize = 0;
 	responseStatus.clear();
 	responseString.clear();
 	HeaderResponse.clear();
@@ -14,28 +33,34 @@ Response::Response()
 	fullpath.clear();
 	extension.clear();
 	entryPath.clear();
-	isCgi = false;
-	isBodySent = false;
-	closeClient = false;
-	isHeaderSent = false;
-	responseDone = false;
-	responseSent = false;
-	CgiRunning = false;
-	headerCgiReady = false;
-    method_allowd = false;
-	tempFD = -1;
-	fileSize = 0;
-	offset = 0;
-	match = 0;
-	Config = NULL;
 	env.clear();
 	fptr = NULL;
+	Config = NULL;
 }
 
 Response::~Response() {}
 
 void Response::clear()
 {
+	// CGI
+	CgiRunning = false;
+	headerCgiReady = false;
+	tempFD = -1;
+	FDCGIBody = -1;
+	resCgi.clear();
+	tempFileName.clear();
+	MAPhederscgi.clear();
+	// RESPONSE
+	isCgi = false;
+	isBodySent = false;
+	closeClient = false;
+	isHeaderSent = false;
+	responseDone = false;
+	responseSent = false;
+	method_allowd = false;
+	match = 0;
+	offset = 0;
+	fileSize = 0;
 	responseStatus.clear();
 	responseString.clear();
 	HeaderResponse.clear();
@@ -46,23 +71,11 @@ void Response::clear()
 	fullpath.clear();
 	extension.clear();
 	entryPath.clear();
-	isCgi = false;
-	isBodySent = false;
-	closeClient = false;
-	isHeaderSent = false;
-	responseDone = false;
-	responseSent = false;
-	CgiRunning = false;
-	headerCgiReady = false;
-    method_allowd = false;
-	fileSize = 0;
-	offset = 0;
-	match = 0;
-	Config = NULL;
 	env.clear();
-    if (fptr)
-	    fclose(fptr);
+	if (fptr)
+		fclose(fptr);
 	fptr = NULL;
+	Config = NULL;
 }
 
 void Response::handleRange(stringstream &header, const std::string &range)
@@ -101,6 +114,7 @@ void Response::handleNormalFiles(Client &client)
 	this->fptr = fopen(this->fullpath.c_str(), "rb");
 	if (!this->fptr)
 	{
+		std::cout << "here" << std::endl;
 		generateResponse("500");
 		this->responseDone = true;
 		return;
@@ -134,19 +148,22 @@ void Response::sendResponse(Client &client)
 		{
 			responseString = HeaderResponse;
 			isHeaderSent = true;
-            std::string status;
-            std::string StringStatus;
-            if(responseStatus >= "400")
-            {
-			    status = "[" FG_RED + responseStatus + RESET_ALL + "]";
-			    StringStatus = "[" FG_RED + this->Config->status.getStatus(responseStatus)  + RESET_ALL + "]";
-            }
-            else
-            {
-			    status = "[" FG_GREEN + responseStatus + RESET_ALL + "]";
-			    StringStatus = "[" FG_GREEN + this->Config->status.getStatus(responseStatus)  + RESET_ALL + "]";
-            }
+			std::string status;
+			std::string StringStatus;
+			if (responseStatus >= "400")
+			{
+				status = "[" FG_RED + responseStatus + RESET_ALL + "]";
+				StringStatus = "[" FG_RED + this->Config->status.getStatus(responseStatus) + RESET_ALL + "]";
+			}
+			else
+			{
+				status = "[" FG_GREEN + responseStatus + RESET_ALL + "]";
+				StringStatus = "[" FG_GREEN + this->Config->status.getStatus(responseStatus) + RESET_ALL + "]";
+			}
+			std::string URI = "[" FG_YELLOW + this->fullpath + RESET_ALL + "]";
+			logMessage(SINFO, client.clientHost, client.socketClient, " URI : " + URI);
 			logMessage(SRES, client.clientHost, client.socketClient, status + " " + StringStatus + " Response sent to " + client.clientIP);
+			// std::cout << convertText(HeaderResponse) << std::endl;
 		}
 		if (!BodyResponse.empty())
 		{
@@ -166,20 +183,22 @@ void Response::sendResponse(Client &client)
 			responseSent = isBodySent = true;
 		if (responseString.length() > 0)
 		{
-			if (send(client.socketClient, responseString.c_str(), responseString.length(), 0) <= 0)
-			{
+			if (send(client.socketClient, responseString.c_str(), responseString.length(), 0) < 0)
 				closeClient = responseSent = true;
-				// std::stringstream ss;
-				// time_t currentTime = time(NULL);
-				// ss << "file" << currentTime;
-				// std::ofstream file(ss.str().c_str());
-				// file << "--------------------------------------------------" << std::endl;
-				// file << convertText(responseString.c_str()) << std::endl;
-				// file << "--------------------------------------------------" << std::endl;
-				// file.close();
-			}
+			// std::stringstream ss;
+			// time_t currentTime = time(NULL);
+			// ss << "file" << currentTime;
+			// std::ofstream file(ss.str().c_str());
+			// file << "--------------------------------------------------" << std::endl;
+			// file << convertText(responseString.c_str()) << std::endl;
+			// file << "--------------------------------------------------" << std::endl;
+			// file.close();
 		}
 	}
+	if (responseSent)
+		if (client.request.mapHeaders.find("connection") != client.request.mapHeaders.end())
+			if (client.request.mapHeaders.find("connection")->second == "close")
+				closeClient = true;
 }
 
 void Response::startResponse(Client &client)
@@ -188,73 +207,44 @@ void Response::startResponse(Client &client)
 	parseUri(client.request.URI);
 	getRoute();
 	getFULLpath();
-	genrateRederiction();
+	genrateRederiction(client);
 	checkerPath(client);
 	regenerateExtonsion();
-    if(this->route.Accepted_Methods == "on")
-    {
-        if(client.request.Method == this->route.Accepted_Methods_ ||
-         client.request.Method == this->route.Accepted_Methods__ ||
-         client.request.Method == this->route.Accepted_Methods___ )
-            method_allowd = true;
-    }
+	checkAcceptedMethod(client);
+	// if (this->route.Accepted_Methods == "on")
+	// {
+	// 	if (client.request.Method == this->route.Accepted_Methods_ ||
+	// 		client.request.Method == this->route.Accepted_Methods__ ||
+	// 		client.request.Method == this->route.Accepted_Methods___)
+	// 		method_allowd = true;
+	// }
+}
+
+void Response::checkAcceptedMethod(Client &client)
+{
+	if (this->route.Accepted_Methods == "on")
+	{
+		if (client.request.Method == this->route.Accepted_Methods_ ||
+			client.request.Method == this->route.Accepted_Methods__ ||
+			client.request.Method == this->route.Accepted_Methods___)
+			method_allowd = true;
+	}
 }
 
 void Response::checkErrorsRequest(Client &client)
 {
-    if(client.request.ReqstDone == 200 && client.request.Method == "DELETE")
-    {
-        std::stringstream headers;
-		this->responseStatus = "200";
-		std::stringstream body_;
-		body_ << "<!DOCTYPE html>";
-		body_ << "<html lang=\"en\">";
-		body_ << "<head>";
-		body_ << "<title>DELETE</title>";
-		body_ << "<style>";
-		body_ << "body {";
-		body_ << "font-family: Arial, sans-serif;";
-		body_ << "margin: 0;";
-		body_ << "padding: 0;";
-		body_ << "background-image: url(\"/images/site42-bg.png\");";
-		body_ << "background-size: cover;";
-		body_ << "background-position: center;";
-		body_ << "}";
-		body_ << ".delete-status {";
-		body_ << "max-width: 600px;";
-		body_ << "margin: 20px auto;";
-		body_ << "padding: 20px;";
-		body_ << "background-color: #fff;";
-		body_ << "box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);";
-		body_ << "text-align: center;";
-		body_ << "}";
-		body_ << "ul {";
-		body_ << "list-style-type: none;";
-		body_ << "padding: 0;";
-		body_ << "}";
-		body_ << "li {";
-		body_ << "margin-bottom: 8px;";
-		body_ << "}";
-		body_ << "</style>";
-		body_ << "</head>";
-		body_ << "<body>";
-		body_ << "<section class=\"delete-status\">";
-		body_ << "<h2>The following files were deleted:</h2>";
-		body_ << "<ul>";
-		body_ << "<li>" + this->fullpath + "</li>\n ";
-		body_ << "</ul>";
-		body_ << "</section>";
-		body_ << "</body>";
-		body_ << "</html>";
-		headers << "HTTP/1.1 200 " + this->Config->status.getStatus("200") + "\r\n";
+	if (client.request.ReqstDone == 200 && client.request.Method == "DELETE")
+	{
+		std::stringstream headers;
+		this->responseStatus = "204";
+		headers << "HTTP/1.1 204 " + this->Config->status.getStatus("204") + "\r\n";
 		headers << "Content-Type: " << this->Config->mime.getMimeType("html") << "\r\n";
-		headers << "Content-Length: " << body_.str().length() << "\r\n";
+		headers << "Content-Length: " << 0 << "\r\n";
 		headers << "\r\n";
 		this->HeaderResponse = headers.str();
-		this->BodyResponse = body_.str();
 		this->responseDone = true;
-        return;
-    }
+		return;
+	}
 	if (client.request.ReqstDone == 201)
 	{
 		std::stringstream headers;
@@ -310,7 +300,7 @@ void Response::checkErrorsRequest(Client &client)
 		this->HeaderResponse = headers.str();
 		this->BodyResponse = body_.str();
 		this->responseDone = true;
-        return;
+		return;
 	}
 	else if (client.request.ReqstDone != 200)
 	{
@@ -322,8 +312,6 @@ void Response::checkErrorsRequest(Client &client)
 
 void Response::CGI(Client &client)
 {
-	// if (this->responseDone && !this->CgiRunning)
-	// 	return;
 	mergeHeadersValuesCGI(client);
 	generateEnvCGI(client);
 	handleScriptCGI(client);
@@ -368,6 +356,22 @@ void Response::parseUri(std::string uri) // TODO:: uri empty ?/?
 		this->query = uri.substr(posquery + 1, uri.length() - posquery);
 		uri = uri.substr(0, posquery);
 	}
+	std::vector<std::string> parts = splitString(uri, "/");
+	std::vector<std::string> resolvedPath;
+	for (std::vector<std::string>::const_iterator it = parts.begin(); it != parts.end(); it++)
+		if (*it != ".." && *it != "." && !it->empty())
+			resolvedPath.push_back(*it);
+		else if (!resolvedPath.empty() && *it != "." && !it->empty())
+			resolvedPath.pop_back();
+	std::string path;
+	for (std::vector<std::string>::const_iterator it2 = resolvedPath.begin(); it2 != resolvedPath.end(); it2++)
+		path += '/' + *it2;
+	if(uri[uri.length() - 1] == '/')
+		path += "/";
+	if (!path.empty())
+		uri = path;
+	else if (path.empty())
+		uri = "/";
 	size_t pos = uri.find_last_of(".");
 	if (pos != std::string::npos)
 	{
@@ -384,10 +388,9 @@ void Response::parseUri(std::string uri) // TODO:: uri empty ?/?
 		this->fullpath = uri;
 	if (this->path_info.empty())
 		this->path_info = "/";
-	pos = this->fullpath.find_last_of(".");
-	if (pos != std::string::npos)
-		this->extension =
-			this->fullpath.substr(pos + 1, this->fullpath.length() - pos + 1);
+	size_t pos1 = this->fullpath.find_last_of(".");
+	if (pos1 != std::string::npos)
+		this->extension = this->fullpath.substr(pos1 + 1, this->fullpath.length() - pos1 + 1);
 }
 
 void Response::getRoute()
@@ -411,7 +414,7 @@ void Response::getRoute()
 			{
 				this->route = this->Config->getRoute(dir);
 				match = 0;
-				// 	std::cout << "Default match     : " << this->route.RoutePath << std::endl;
+					// std::cout << "Default match     : " << this->route.RoutePath << std::endl;
 			}
 			else
 			{
@@ -431,7 +434,7 @@ void Response::getRoute()
 		// std::cout << "Full match        : " << this->route.RoutePath << std::endl;
 	}
 }
-void Response::genrateRederiction()
+void Response::genrateRederiction(Client &client)
 {
 	if (this->responseDone)
 		return;
@@ -450,7 +453,8 @@ void Response::genrateRederiction()
 	}
 	if (this->fullpath[this->fullpath.length() - 1] == '/')
 		this->fullpath.erase(this->fullpath.end() - 1);
-	else if (this->extension.empty() && isDirectory(this->fullpath.c_str()) == 1)
+	else if (this->extension.empty() && isDirectory(this->fullpath.c_str()) == 1 &&
+			 (client.request.Method == "GET" || client.request.Method == "POST" || client.request.Method == "DELETE"))
 	{
 		std::stringstream Headers__;
 		this->responseStatus = "302";
@@ -470,11 +474,11 @@ void Response::checkerPath(Client &clinet)
 	int dirr = isDirectory(this->fullpath.c_str());
 	if (dirr == 1)
 	{
-        if(clinet.request.Method == "DELETE")
-        {
-            this->responseDone = true;
-            return;
-        }
+		if (clinet.request.Method == "DELETE")
+		{
+			this->responseDone = true;
+			return;
+		}
 		if (this->route.Autoindex == "on")
 		{
 			generateAutoIndex();
@@ -485,6 +489,13 @@ void Response::checkerPath(Client &clinet)
 			this->fullpath += "/index.html";
 		else
 			this->fullpath = this->fullpath + "/" + this->route.Index;
+		dirr = isDirectory(this->fullpath.c_str());
+		if (dirr == -1 || dirr == 1)
+		{
+			generateResponse("404");
+			this->responseDone = true;
+			return;
+		}
 	}
 	else if (dirr == -1)
 	{
@@ -493,6 +504,7 @@ void Response::checkerPath(Client &clinet)
 		return;
 	}
 }
+
 void Response::getFULLpath()
 {
 	if (this->responseDone)
@@ -515,6 +527,11 @@ void Response::getFULLpath()
 void Response::handleScriptCGI(Client &client)
 {
 	// std::cout << "▻Run Cgi◅ --------------------------------------------------------" << std::endl;
+	if (client.request.Method == "DELETE")
+	{
+		generateResponse("501");
+		return;
+	}
 	if (!CgiRunning && !responseDone)
 	{
 		CgiRunning = true;
@@ -658,7 +675,16 @@ void Response::handleScriptCGI(Client &client)
 				this->responseDone = true;
 				return;
 			}
-			if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+			std::multimap<std::string, std::string>::iterator it = MAPhederscgi.find("Status");
+			std::multimap<std::string, std::string>::iterator end = MAPhederscgi.end();
+			std::string Rstatus;
+			if (it != end)
+			{
+				std::vector<std::string> vec = splitString(it->second, " ");
+				if (vec.size() > 0)
+					Rstatus = vec[0];
+			}
+			if (WIFEXITED(status) && (WEXITSTATUS(status) == 0 || !Rstatus.empty()))
 			{
 				this->fptr = fopen(this->tempFileName.c_str(), "rb");
 				if (!this->fptr)
@@ -671,7 +697,7 @@ void Response::handleScriptCGI(Client &client)
 				this->fileSize = ftell(this->fptr);
 				fseek(this->fptr, 0, SEEK_SET);
 				std::string resHeaders__;
-				resHeaders__ = generateResponseHeaderCGI(MAPhederscgi, this->fileSize);
+				resHeaders__ = generateResponseHeaderCGI(MAPhederscgi, this->fileSize, Rstatus);
 				this->HeaderResponse = resHeaders__;
 				this->responseDone = true;
 				return;
@@ -688,6 +714,8 @@ void Response::handleScriptCGI(Client &client)
 
 void Response::generateResponse(std::string status)
 {
+	if (responseDone)
+		return;
 	std::string extension_;
 	this->responseStatus = status;
 	// 400 403 406 407 411 413 416 500 502 504 505;
@@ -698,8 +726,9 @@ void Response::generateResponse(std::string status)
 	size_t pos = this->Config->ErrorPage.find_last_of(".");
 	if (pos != std::string::npos)
 		extension_ = this->Config->ErrorPage.substr(pos + 1, this->Config->ErrorPage.length() - pos + 1);
-	std::ifstream infile(this->Config->ErrorPage.c_str());
-	if (!infile.is_open() || extension_.empty() || extension_ != "html")
+	// std::ifstream infile(this->Config->ErrorPage.c_str());
+	this->fptr = fopen(this->Config->ErrorPage.c_str(), "rb");
+	if (!this->fptr || (extension_ != "html" && extension_ != "txt"))
 	{
 		std::stringstream body;
 		body << "<!DOCTYPE html>\n";
@@ -745,38 +774,22 @@ void Response::generateResponse(std::string status)
 		header_ << "Content-Length: " + intToString(body.str().length()) + "\r\n\r\n";
 		this->HeaderResponse = header_.str();
 		this->responseDone = true;
-		if (infile.is_open())
-			infile.close();
 		return;
 	}
 	else
 	{
-		std::stringstream body;
-		body << infile.rdbuf();
-		this->BodyResponse = body.str();
+		fseek(this->fptr, 0, SEEK_END);
+		this->fileSize = ftell(this->fptr);
+		fseek(this->fptr, 0, SEEK_SET);
 		std::stringstream header_;
 		header_ << "HTTP/1.1 " + status + " " + this->Config->status.getStatus(status) + "\r\n";
-		header_ << "Content-Type: " + this->Config->mime.getMimeType("html") + "\r\n";
-		header_ << "Content-Length: " + intToString(body.str().length()) + "\r\n\r\n";
+		header_ << "Content-Type: " + this->Config->mime.getMimeType(extension_) + "\r\n";
+		header_ << "Content-Length: " + intToString(this->fileSize) + "\r\n\r\n";
 		this->HeaderResponse = header_.str();
 		this->responseDone = true;
 	}
-	infile.close();
+	// infile.close();
 	return;
-}
-
-std::string humanReadableSize(off_t size)
-{
-	std::ostringstream sizeStr;
-	if (size >= (1 << 30))
-		sizeStr << (size / (1 << 30)) << " GB";
-	else if (size >= (1 << 20))
-		sizeStr << (size / (1 << 20)) << " MB";
-	else if (size >= (1 << 10))
-		sizeStr << (size / (1 << 10)) << " KB";
-	else
-		sizeStr << size << " B";
-	return sizeStr.str();
 }
 
 void Response::generateAutoIndex(void)
@@ -797,7 +810,7 @@ void Response::generateAutoIndex(void)
 	autoIndex << "<meta charset=\"UTF-8\">\n";
 	autoIndex << "<title>Index of " << this->fullpath << "</title>\n";
 	autoIndex << "<style>\n";
-	autoIndex << "body { font-family: Arial, sans-serif; }\n";
+	autoIndex << "body { font-family: Arial, sans-serif;background-image: url(\"/images/site42-bg.gif\");background-size: cover;background-position: center; }\n";
 	autoIndex << "table { width: 100%; border-collapse: collapse; }\n";
 	autoIndex << "th, td { padding: 10px; text-align: left; border-bottom: 1px solid black;}\n";
 	autoIndex << ".icon { width: 20px; height: 20px; margin-right: 10px; }\n";
@@ -892,12 +905,25 @@ std::multimap<std::string, std::string> Response::parseResponseHeader(std::strin
 	return headers;
 }
 
-std::string Response::generateResponseHeaderCGI(std::multimap<std::string, std::string> &headers, size_t body_lenght)
+std::string Response::generateResponseHeaderCGI(std::multimap<std::string, std::string> &headers, size_t body_lenght, std::string Rstatus)
 {
 	std::stringstream header_;
-	this->responseStatus = "200";
-	header_ << "HTTP/1.1 200 OK\r\n";
-	// header_ << "Accept-Ranges: bytes\r\n";
+	if (Rstatus.empty())
+	{
+		this->responseStatus = "200";
+		header_ << "HTTP/1.1 " << 200 << " " << this->Config->status.getStatus("200") << "\r\n";
+	}
+	else if (!this->Config->status.CheckStatus(Rstatus))
+	{
+		generateResponse("502");
+		this->responseDone = true;
+		return this->HeaderResponse;
+	}
+	else
+	{
+		this->responseStatus = Rstatus;
+		header_ << "HTTP/1.1 " << Rstatus << " " << this->Config->status.getStatus(Rstatus) << "\r\n";
+	}
 	for (std::multimap<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
 		header_ << it->first + ": " + it->second + "\r\n";
 	if (headers.find("content-length") == headers.end())

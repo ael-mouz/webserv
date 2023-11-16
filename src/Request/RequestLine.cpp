@@ -82,7 +82,7 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size) //change 
             else
             {
                 printf("Error: RequestLine::read subState DECODE_URI i = %ld c = %c\n", it - buffer.begin(), character);
-				return 414;
+				return 400;
             }
 		case VERSION:
 			if (count < 10 && character == "HTTP/1.1\r\n"[count])

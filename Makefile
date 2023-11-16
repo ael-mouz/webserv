@@ -37,7 +37,11 @@ HEADERS =	include/Request/ChunkedEncoding.hpp \
 
 OBJS = $(addprefix $(BIN), $(SRC:.cpp=.o))
 
+IP_ADDRESS := $(shell ifconfig | grep inet | awk 'NR==5 {print $$2}')
+PORT := 8000
+
 all: $(TARGET)
+	@echo "http://$(IP_ADDRESS):$(PORT)"
 
 debug: CXXFLAGS += -DDEBUG_C
 debug: re

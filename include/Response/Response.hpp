@@ -8,17 +8,27 @@ class Client;
 
 class Response
 {
-private:
 public:
 	bool CgiRunning;
-	int pipefd[2];
 	bool headerCgiReady;
-	std::string resCgi;
+	pid_t pid;
 	int tempFD;
 	int FDCGIBody;
+	int pipefd[2];
+	std::string resCgi;
 	std::string tempFileName;
 	std::multimap<std::string, std::string> MAPhederscgi;
-	pid_t pid;
+public:
+	bool isCgi;
+	bool isBodySent;
+	bool closeClient;
+	bool isHeaderSent;
+	bool responseDone;
+	bool responseSent;
+	bool method_allowd;
+	int match;
+	size_t offset;
+	size_t fileSize;
 	std::string responseStatus;
 	std::string responseString;
 	std::string HeaderResponse;
@@ -29,21 +39,10 @@ public:
 	std::string fullpath;
 	std::string extension;
 	std::string entryPath;
-    bool method_allowd;
-	bool closeClient;
-	bool isBodySent;
-	bool isHeaderSent;
-	bool isCgi;
-	bool responseDone;
-	bool responseSent;
-	int fd;
-	FILE *fptr;
-	size_t fileSize;
-	size_t offset;
-	int match;
-	Route route;
-	ServerConfig *Config;
 	std::multimap<std::string, std::string> env;
+	Route route;
+	FILE *fptr;
+	ServerConfig *Config;
 
 	Response(void);
 	~Response(void);
@@ -55,7 +54,8 @@ public:
 	void parseUri(std::string uri);
 	void getFULLpath(void);
 	void getRoute(void);
-	void genrateRederiction();
+	void checkAcceptedMethod(Client &client);
+	void genrateRederiction(Client &client);
 	void regenerateExtonsion();
 	void clear(void);
 	void handleNormalFiles(Client &client);
@@ -69,6 +69,6 @@ public:
 	void ft_printroute();
 	void ft_printconfig();
 	std::multimap<std::string, std::string> parseResponseHeader(std::string header);
-	std::string generateResponseHeaderCGI(std::multimap<std::string, std::string> &headers,size_t body_lenght);
+	std::string generateResponseHeaderCGI(std::multimap<std::string, std::string> &headers,size_t body_lenght,std::string Rstatus);
 	// std::string buffer);
 };

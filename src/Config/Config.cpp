@@ -1,4 +1,5 @@
 #include "../../include/Config/Config.hpp"
+#include "../../include/Server/Utils.hpp"
 
 // === Constructors ===
 
@@ -65,6 +66,8 @@ void Config::parser(std::string filename)
 	if (infile.eof() && ServerScop == true)
 		std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD " server not closed" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	infile.close();
+	checkServerConfig(filename);
+	filterServerConfig();
 }
 
 void Config::parseServer(const std::string &data, ServerConfig &serverConfig, int start, const std::string &filename)
@@ -264,6 +267,9 @@ void Config::parseMethods(Route &route, int start, const std::string &line, cons
 	std::istringstream methods(route.Accepted_Methods);
 	std::string method;
 	int i = 0;
+	route.Accepted_Methods_ = "defualt";
+	route.Accepted_Methods__ = "defualt";
+	route.Accepted_Methods___ = "defualt";
 	while (std::getline(methods, method, ','))
 	{
 		std::string methodss = trim(method, " \t");
@@ -393,6 +399,9 @@ void Config::checkServerConfig(const std::string &filename)
 		if (!res.second)
 			std::cout << BOLD + filename + ":0:0: " FG_RED "error:" RESET_ALL " " BOLD "Duplicated server " RESET_ALL "\n\t " << it->Host + ":" + it->Port + "    ↦   " + it->ServerNames << std::endl, exit(1);
 	}
+	ServerConfig serverConfig;
+	if (this->Serverconfig.size() == 0)
+		Serverconfig.push_back(serverConfig);
 }
 
 void Config::filterServerConfig()
@@ -419,44 +428,18 @@ void Config::filterServerConfig()
 	}
 	this->NbServer = Servers_.size();
 }
+
 void Config::printConfig(void)
 {
 	std::vector<ServerConfig>::iterator it;
-	for (it = this->Serverconfig.begin(); it != this->Serverconfig.end(); ++it)
+	int i = 0;
+	for (it = this->Serverconfig.begin(); it != this->Serverconfig.end(); it++)
 	{
-		std::cout << "╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
-		std::cout << "║" BOLD " GLOBAL TABLE " RESET_ALL << std::setw(64) << "║" << std::endl;
-		std::cout << "╠═════════════════╦═════════════════════════════════════════════════════════╣" << std::endl;
-		std::cout << "║ Port            ║" << std::setw(58) << "▻" + it->Port << "◅║" << std::endl;
-		std::cout << "║ Host            ║" << std::setw(58) << "▻" + it->Host << "◅║" << std::endl;
-		std::cout << "║ ServerNames     ║" << std::setw(58) << "▻" + it->ServerNames << "◅║" << std::endl;
-		std::cout << "║ ErrorPage       ║" << std::setw(58) << "▻" + it->ErrorPage << "◅║" << std::endl;
-		std::cout << "║ LimitBodySize   ║" << std::setw(58) << "▻" + it->LimitClientBodySize << "◅║" << std::endl;
-		std::cout << "║ GlobalRoot      ║" << std::setw(58) << "▻" + it->GlobalRoot << "◅║" << std::endl;
-		std::cout << "╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
+		ft_print_config(++i, *it, 1);
 		std::vector<Route>::iterator it1;
 		int h = 0;
-		for (it1 = it->Routes.begin(); it1 != it->Routes.end(); ++it1)
-		{
-			h++;
-			std::cout << "↦  ╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
-			std::cout << "↦  ║" FG_BLUE BOLD " ROUTE " << h << RESET_ALL << std::setw(70) << "║" << std::endl;
-			std::cout << "↦  ╠═════════════════╦═════════════════════════════════════════════════════════╣\n";
-			std::cout << "↦  ║ RoutePath       ║" << std::setw(58) << "▻" + it1->RoutePath << "◅║" << std::endl;
-			std::cout << "↦  ║ UploadPath      ║" << std::setw(58) << "▻" + it1->UploadPath << "◅║" << std::endl;
-			std::cout << "↦  ║ Redirection     ║" << std::setw(58) << "▻" + it1->Redirection << "◅║" << std::endl;
-			std::cout << "↦  ║ RedirectStatus  ║" << std::setw(58) << "▻" + it1->RedirectionStatus << "◅║" << std::endl;
-			std::cout << "↦  ║ RedirectionURL  ║" << std::setw(58) << "▻" + it1->RedirectionURL << "◅║" << std::endl;
-			std::cout << "↦  ║ Root            ║" << std::setw(58) << "▻" + it1->Root << "◅║" << std::endl;
-			std::cout << "↦  ║ Autoindex       ║" << std::setw(58) << "▻" + it1->Autoindex << "◅║" << std::endl;
-			std::cout << "↦  ║ Index           ║" << std::setw(58) << "▻" + it1->Index << "◅║" << std::endl;
-			std::cout << "↦  ║ Cgi_Exec        ║" << std::setw(58) << "▻" + it1->CgiExec << "◅║" << std::endl;
-			std::cout << "↦  ║ Methods         ║" << std::setw(58) << "▻" + it1->Accepted_Methods << "◅║" << std::endl;
-			std::cout << "↦  ║ Methods1        ║" << std::setw(58) << "▻" + it1->Accepted_Methods_ << "◅║" << std::endl;
-			std::cout << "↦  ║ Methods2        ║" << std::setw(58) << "▻" + it1->Accepted_Methods__ << "◅║" << std::endl;
-			std::cout << "↦  ║ Methods3        ║" << std::setw(58) << "▻" + it1->Accepted_Methods___ << "◅║" << std::endl;
-			std::cout << "↦  ╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
-		}
+		for (it1 = it->Routes.begin(); it1 != it->Routes.end(); it1++)
+			ft_print_routes(++h, *it1, it->ServerNames);
 	}
 }
 
@@ -467,32 +450,20 @@ void Config::printServers(void)
 	int h = 0;
 	for (it = this->Servers_.begin(); it != this->Servers_.end(); ++it)
 	{
-		h++;
-		std::cout << "╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
-		std::cout << "║" FG_BLUE BOLD " DEFAULT CONFIG " RESET_ALL << h << std::setw(61) << "║" << std::endl;
-		std::cout << "╠═════════════════╦═════════════════════════════════════════════════════════╣" << std::endl;
-		std::cout << "║ Port            ║" << std::setw(58) << "▻" + it->DefaultServerConfig.Port << "◅║" << std::endl;
-		std::cout << "║ Host            ║" << std::setw(58) << "▻" + it->DefaultServerConfig.Host << "◅║" << std::endl;
-		std::cout << "║ ServerNames     ║" << std::setw(58) << "▻" + it->DefaultServerConfig.ServerNames << "◅║" << std::endl;
-		std::cout << "║ ErrorPage       ║" << std::setw(58) << "▻" + it->DefaultServerConfig.ErrorPage << "◅║" << std::endl;
-		std::cout << "║ LimitBodySize   ║" << std::setw(58) << "▻" + it->DefaultServerConfig.LimitClientBodySize << "◅║" << std::endl;
-		std::cout << "║ GlobalRoot      ║" << std::setw(58) << "▻" + it->DefaultServerConfig.GlobalRoot << "◅║" << std::endl;
-		std::cout << "╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
+		ft_print_config(++h, it->DefaultServerConfig,1);
+		std::vector<Route>::iterator it2;
+		int b = 0;
+		for (it2 = it->DefaultServerConfig.Routes.begin(); it2 != it->DefaultServerConfig.Routes.end(); it2++)
+			ft_print_routes(++b, *it2, it->DefaultServerConfig.ServerNames);
 		std::map<std::string, ServerConfig>::iterator it1;
-
+		int f = 0;
 		for (it1 = it->OtherServerConfig.begin(); it1 != it->OtherServerConfig.end(); ++it1)
 		{
-			std::cout << "↦     ▻" BOLD " " << it1->first << " " RESET_ALL "◅" << std::endl;
-			std::cout << "↦     ╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
-			std::cout << "↦     ║" BOLD " OTHER CONFIG " RESET_ALL << std::setw(64) << "║" << std::endl;
-			std::cout << "↦     ╠═════════════════╦═════════════════════════════════════════════════════════╣" << std::endl;
-			std::cout << "↦     ║ Port            ║" << std::setw(58) << "▻" + it1->second.Port << "◅║" << std::endl;
-			std::cout << "↦     ║ Host            ║" << std::setw(58) << "▻" + it1->second.Host << "◅║" << std::endl;
-			std::cout << "↦     ║ ServerNames     ║" << std::setw(58) << "▻" + it1->second.ServerNames << "◅║" << std::endl;
-			std::cout << "↦     ║ ErrorPage       ║" << std::setw(58) << "▻" + it1->second.ErrorPage << "◅║" << std::endl;
-			std::cout << "↦     ║ LimitBodySize   ║" << std::setw(58) << "▻" + it1->second.LimitClientBodySize << "◅║" << std::endl;
-			std::cout << "↦     ║ GlobalRoot      ║" << std::setw(58) << "▻" + it1->second.GlobalRoot << "◅║" << std::endl;
-			std::cout << "↦     ╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
+			ft_print_config(++f, it1->second,0);
+			std::vector<Route>::iterator it3;
+			int c = 0;
+			for (it3 = it->DefaultServerConfig.Routes.begin(); it3 != it->DefaultServerConfig.Routes.end(); it3++)
+				ft_print_routes(++c, *it3, it1->second.ServerNames);
 		}
 	}
 }

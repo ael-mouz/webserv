@@ -46,3 +46,6 @@ check with docker nginx //a ayman
 - understand
     * way we set socket to non blocking mode
     * test nonblocking mode
+
+- fixeit
+	* error Headers::checkContentLen len = 0
