@@ -22,10 +22,12 @@ private:
 	string hold;
 	size_t countLength;
     size_t totalSize;
+	int decodeState;
     int totalSizeChecker(Client &client, size_t totalSize);
 
 public:
-	int decodeState;
+    void setDecodeState(const int& decodeState);
+    int getDecodeState(void) const;
 	int read(Client &client, string &buffer, ssize_t &size);
 	void reset();
 	ChunkedEncoding();

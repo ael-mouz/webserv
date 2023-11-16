@@ -31,9 +31,10 @@ check with docker nginx //a ayman
 - ChunkedEncoding
     * ckeck the 0\r\n in decode
     * ckeck the max body
+    * check timeout CGI
 
 - delete Method
-    * what the write permession to delite files
+    * what the write permession to delite files read/write
     * protect our server from delete
 
 - response
@@ -43,7 +44,11 @@ check with docker nginx //a ayman
     *with shunked
     * mimtype + CGI in the same functions
 
+- add rset fds when slect fail
 
 - understand
     * way we set socket to non blocking mode
     * test nonblocking mode
+    * port vs ip
+
+-ser eror msg ??

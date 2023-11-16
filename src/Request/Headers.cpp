@@ -16,10 +16,7 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 			else if (isValidKey(character))
 				client.request.subState = KEY;
 			else
-			{
-				printf("Error: Headers::read state CHECK i = %ld c = %c\n", it - buffer.begin(), character);
-				return 400;
-			}
+				return client.request.setErrorMsg("Error: Headers::read state CHECK"), 400;
 			break;
 		case KEY: // set max
 			if (character == ':')
@@ -31,15 +28,9 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 				continue;
 			}
 			else if (!isValidKey(character))
-			{
-				printf("Error: Headers::read state KEY i = %ld c = %c\n", it - buffer.begin(), character);
-				return 400;
-			}
+				return client.request.setErrorMsg("Error: Headers::read state KEY"), 400;
 			else if (count >= MAX_KEY)
-			{
-				printf("Error: Headers::read state KEY MAX_KEY i = %d c = %c\n", count, character);
-				return 400;
-			}
+				return client.request.setErrorMsg("Error: Headers::read state KEY MAX_KEY"), 400;
 			count++;
 			break;
 		case VALUE: // set max
@@ -49,19 +40,13 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 				hold.clear();
 				key.clear();
                 if (client.request.mapHeaders.size() > MAX_HEADERS)
-                {
-                    printf("Error: Headers::read state VALUE MAX_HEADERS i = %d c = %c\n", count, character);
-				    return 400;
-                }
+				    return client.request.setErrorMsg("Error: Headers::read state VALUE MAX_HEADERS "), 400;
 				client.request.subState = END_VALUE;
 				count = 0;
 				continue;
 			}
 			if (count >= MAX_VALUE)
-			{
-				printf("Error: Headers::read state VALUE MAX_VALUE i = %d c = %c\n", count, character);
-				return 400;
-			}
+				return client.request.setErrorMsg("Error: Headers::read state VALUE MAX_VALUE"), 400;
 			count++;
 			break;
 		case END_VALUE:
@@ -70,12 +55,7 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 				client.request.subState = CHECK;
 				continue;
 			}
-			else
-			{
-				printf("Error: Headers::read state END_VALUE i = %ld c = %c\n", it - buffer.begin(), character);
-				return 400;
-			}
-			break;
+			return client.request.setErrorMsg("Error: Headers::read state END_VALUE"), 400;
 		case END_HEADERS:
 			if (character == '\n')
 			{
@@ -84,12 +64,7 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 				hold.clear();
 				return requestChecker(client);
 			}
-			else
-			{
-				printf("Error: Headers::read state END_HEADER i = %ld c = %c\n", it - buffer.begin(), character);
-				return 400;
-			}
-			break;
+			return client.request.setErrorMsg("Error: Headers::read state END_HEADER"), 400;
 		}
 		hold += character;
 		// printf(" i = %ld count = %d  char = |%c| hold = |%s|\n",i,count,c, hold.c_str());
@@ -104,7 +79,7 @@ int Headers::requestChecker(Client &client)
     if(!client.response.method_allowd)
     {
         printf("Error: Headers::checkrequest client.response.method_allowd\n");
-        return 405;
+        return client.request.setErrorMsg(""), 405;
     }
 	if (client.request.Method == "GET")
 		return 200;
@@ -114,17 +89,17 @@ int Headers::requestChecker(Client &client)
 
     if ((returnValue = transEncodChecker(client)) != 0)
         return returnValue;
-    if (client.request.decodeFlag == false
+    if (client.request.getDecodeFlag() == false
     && (returnValue = contentLenChecker(client)) != 0)
         return returnValue;
     if (client.response.isCgi)
-		return (cgiChecker(client));
+		return (client.request.setErrorMsg(""), cgiChecker(client));
 	multimap<string, string>::iterator it;
 	it = client.request.mapHeaders.find("content-type"); // Content-Type: Body/form-data; boundary=- ???
     if (it == client.request.mapHeaders.end())
     {
         printf("Error: Headers::checkrequest there is no Content-Type\n");
-        return 400;
+        return client.request.setErrorMsg(""), 415;
     }
     if (it ->second.find("multipart/form-data") != string::npos) {
         if ((returnValue = multiPartChecker(client, it->second)) != 0)
@@ -145,9 +120,9 @@ int Headers::transEncodChecker(Client &client)
 		if (it->second != "chunked")
 		{
 			printf("Error: Headers::checkrequest it->second != \"chunked\"\n");
-			return 501;
+			return client.request.setErrorMsg(""), 501;
 		}
-		client.request.decodeFlag = true;
+		client.request.setDecodeFlag(true);
 	}
     return 0;
 }
@@ -158,40 +133,40 @@ int Headers::contentLenChecker(Client &client)
     multimap<string, string>::iterator it;
 
     it = client.request.mapHeaders.find("content-length");
-	if (client.request.decodeFlag == false && it == client.request.mapHeaders.end())
+	if (client.request.getDecodeFlag() == false && it == client.request.mapHeaders.end())
 	{
 		printf("error Headers::checkrequest no shuncked no Content-Length \n");
-		return 411;
+		return client.request.setErrorMsg(""), 411;
 	}
-	else if (client.request.decodeFlag == true && it == client.request.mapHeaders.end())
+	else if (client.request.getDecodeFlag() == true && it == client.request.mapHeaders.end())
    	{
 		return 0;
 	}
 	stream << it->second;
-	stream >> client.request.ContentLength;
+	stream >> client.request.contentLength;
 	if (!isDigit(it->second) || stream.fail())
 	{
 		printf("error Headers::checkrequest ContentLength\n");
-		return 400;
+		return client.request.setErrorMsg(""), 400;
 	}
-    if (client.request.ContentLength == 0)
+    if (client.request.contentLength == 0)
     {
         printf("error Headers::checkContentLen len = 0\n");
-        return 200;
+        return client.request.setErrorMsg(""), 200;
     }
     stringstream stream1(client.response.Config->LimitClientBodySize);
     size_t limitClientBodySize, diskSpace;
     stream1 >> limitClientBodySize;
-    if (limitClientBodySize < client.request.ContentLength) // add left space here
+    if (limitClientBodySize < client.request.contentLength) // add left space here
     {
-        printf("error Headers::checkContentLen client.request.ContentLength > limitClientBodySize client body size\n");
-        return 413;
+        printf("error Headers::checkContentLen client.request.contentLength > limitClientBodySize client body size\n");
+        return client.request.setErrorMsg(""), 413;
     }
     if (getDiskSpace(getUploadPath(client), diskSpace) == false
-    || diskSpace <= client.request.ContentLength)
+    || diskSpace <= client.request.contentLength)
     {
         printf("error Headers::checkContentLen diskSpace \n");
-        return 400;
+        return client.request.setErrorMsg(""), 400;
     }
     return 0;
 }
@@ -201,7 +176,7 @@ int Headers::cgiChecker(Client &client)
     if (client.request.openBodyFile("/tmp/.", "") == false)
 	{
 		printf("error Headers::MimeTypeChecker cgiChecker\n");
-		return 500;
+		return client.request.setErrorMsg(""), 500;
 	}
     client.request.mainState = CGI;
     return 0;
@@ -213,10 +188,10 @@ int Headers::multiPartChecker(Client &client, string& value)
 	if (posBoundary == string::npos)
 	{
 		printf("error Headers::checkrequest Content-Type\n");
-		return 400;
+		return client.request.setErrorMsg(""), 400;
 	}
-	client.request.boundary = "\r\n--" + value.substr(posBoundary + sizeof("boundary"));
-	client.request.sizeBoundary = client.request.boundary.size();
+	client.request.setBoundary("\r\n--" + value.substr(posBoundary + sizeof("boundary")));
+	client.request.setSizeBoundary(client.request.getBoundary().size());
     client.request.mainState = MultiPart;
     client.request.subState = FIRST_BOUNDARY;
     return 0;
@@ -229,7 +204,7 @@ int Headers::mimeTypeChecker(Client &client, string& value)
     if (client.request.openBodyFile(getUploadPath(client), "." + extension) == false)
     {
         printf("error Headers::MimeTypeChecker openBodyFile\n");
-		return 500;
+		return client.request.setErrorMsg(""), 500;
     }
     client.request.mainState = MIMETYPES;
     // printf("Headers::MimeTypeChecker\n");
@@ -246,6 +221,7 @@ int Headers::deleteMthod(Client &client)
     }
     catch(int returnValue)
     {
+        client.request.setErrorMsg("");
         return returnValue;
     }
     return 200;

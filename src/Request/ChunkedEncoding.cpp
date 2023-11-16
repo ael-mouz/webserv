@@ -20,7 +20,7 @@ int ChunkedEncoding::read(Client &client, string &buffer, ssize_t &size)
 			else if (!isxdigit(character))
 			{
 				printf("Error: ChunkedEncoding::read state HEXA i = %ld c = %d\n", it - buffer.begin(), character);
-				return 400;
+				return client.request.setErrorMsg(""), 400;
 			}
 			hold += character;
 			buffer.erase(it);
@@ -29,7 +29,7 @@ int ChunkedEncoding::read(Client &client, string &buffer, ssize_t &size)
 			if (character != '\n')
 			{
 				printf("Error: ChunkedEncoding::read state LF_FIRST_HEXA i = %ld c = %d\n", it - buffer.begin(), character);
-				return 400;
+				return client.request.setErrorMsg(""), 400;
 			}
 			countLength = HexaToDicimal(hold);
 			hold.clear();
@@ -57,7 +57,7 @@ int ChunkedEncoding::read(Client &client, string &buffer, ssize_t &size)
 			if (character != '\r')
 			{
 				printf("Error: ChunkedEncoding::read state CR_BEFOR_HEXA i = %ld c = %c\n", it - buffer.begin(), character);
-				return 400;
+				return client.request.setErrorMsg(""), 400;
 			}
 			decodeState = LF_BEFOR_HEXA;
 			buffer.erase(it);
@@ -66,7 +66,7 @@ int ChunkedEncoding::read(Client &client, string &buffer, ssize_t &size)
 			if (character != '\n')
 			{
 				printf("Error: ChunkedEncoding::read state LF_BEFOR_HEXA i = %ld c = %d\n", it - buffer.begin(), character);
-				return 400;
+				return client.request.setErrorMsg(""), 400;
 			}
 			decodeState = HEXA;
 			buffer.erase(it);
@@ -75,7 +75,7 @@ int ChunkedEncoding::read(Client &client, string &buffer, ssize_t &size)
             if (character != '\r')
             {
 				printf("Error: ChunkedEncoding::read state CR_END_CHUNKED i = %ld c = %d\n", it - buffer.begin(), character);
-				return 400;
+				return client.request.setErrorMsg(""), 400;
             }
             decodeState = LF_END_CHUNKED;
 			buffer.erase(it);
@@ -84,7 +84,7 @@ int ChunkedEncoding::read(Client &client, string &buffer, ssize_t &size)
             if (character != '\n')
             {
 				printf("Error: ChunkedEncoding::read state LF_END_CHUNKED i = %ld c = %d\n", it - buffer.begin(), character);
-				return 400;
+				return client.request.setErrorMsg(""), 400;
             }
 			buffer.erase(it);
             /*if you exite here with return 0 the program can't check if there is
@@ -95,7 +95,7 @@ int ChunkedEncoding::read(Client &client, string &buffer, ssize_t &size)
 	}
 	size = buffer.size();
     totalSize += size;
-    return totalSizeChecker(client, totalSize);
+    return client.request.setErrorMsg(""), totalSizeChecker(client, totalSize);
 }
 
 int ChunkedEncoding::totalSizeChecker(Client &client, size_t totalSize)
@@ -106,16 +106,27 @@ int ChunkedEncoding::totalSizeChecker(Client &client, size_t totalSize)
     if (limitClientBodySize < totalSize) // add left space here
     {
         printf("error ChunkedEncoding::totalSizeChecker totalSize > limitClientBodySize client body size\n");
-        return 413;
+        return client.request.setErrorMsg(""), 413;
     }
     if (getDiskSpace(getUploadPath(client), diskSpace) == false
     || diskSpace <= totalSize)
     {
         printf("error ChunkedEncoding::totalSizeChecker diskSpace \n");
-        return 400;
+        return client.request.setErrorMsg(""), 400;
     }
     return 0;
 }
+
+void ChunkedEncoding::setDecodeState(const int& decodeState)
+{
+    this->decodeState = decodeState;
+}
+
+int ChunkedEncoding::getDecodeState(void) const
+{
+    return decodeState;
+}
+
 
 void ChunkedEncoding::reset()
 {

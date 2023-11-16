@@ -29,13 +29,20 @@ private:
     string hold;
 	FILE *fileF;
 	size_t countLength;
+    string boundary; // put it is header classe and make a geter
+	int sizeBoundary; // put it is header classe and make a geter
 
 public:
 	void multiPart(Client &client, string &buffer, ssize_t &size);
 	void writeBody(Client &client, string &buffer, ssize_t &size);
 	int createFile(Client &client,const string &value, std::string &fileName);
 	bool RandomFile(Request &Request, const string& path, const string& extension);
+    int setError(Client &client, const string& errorMsg, int statu);
     bool isEncodChunk(Client &client);
+    void setBoundary(const string& boundary);
+    string getBoundary(void) const;
+    void setSizeBoundary(const int& sizeBoundary);
+    int getSizeBoundary(void) const;
 	void reset();
 	Body();
 	~Body();

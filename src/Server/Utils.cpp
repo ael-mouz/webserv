@@ -253,11 +253,14 @@ bool checkPermission(const std::string path, mode_t permission)
 void isCanBeRemoved(const std::string& path)
 {
     if (isRegularFile(path))
+    {
+        if (!checkPermission(path, S_IWUSR))
+            throw 403;
         return;
+    }
     DIR* directory = opendir(path.c_str());
     if ((!checkPermission(path, S_IRUSR) && !checkPermission(path, S_IWUSR)
         && !checkPermission(path, S_IXUSR))|| directory == NULL) {
-        // std::cerr << path << std::endl;
         throw 403;
     }
     dirent* entry;
@@ -267,9 +270,10 @@ void isCanBeRemoved(const std::string& path)
         if (fileName == "." || fileName == "..") {
             continue;
         }
-        // struct stat fileStat;
         fullPath = path + "/" + fileName;
-         if (isDirectory(fullPath))
+        if (isRegularFile(fullPath) && !checkPermission(fullPath, S_IWUSR))
+            throw 403;
+        else if (isDirectory(fullPath))
             isCanBeRemoved(fullPath);
     }
     closedir(directory);
@@ -293,7 +297,6 @@ void removeDirfolder(const std::string& path, const std::string& root) //add rou
         if (fileName == "." || fileName == "..") {
             continue;
         }
-        // struct stat fileStat;
         fullPath = path + "/" + fileName;
         if (isRegularFile(fullPath)) {
             std::remove(fullPath.c_str());
@@ -307,12 +310,14 @@ void removeDirfolder(const std::string& path, const std::string& root) //add rou
     closedir(directory);
 }
 
-long long	timeofday(void)
+bool	timeofday(size_t& timeMilSec)
 {
 	struct timeval	time;
 
-	gettimeofday(&time, NULL);
-	return (((time.tv_sec * 1000) + (time.tv_usec / 1000)));
+	if (gettimeofday(&time, NULL) == -1)
+        return false;
+    timeMilSec = ((time.tv_sec * 1000) + (time.tv_usec / 1000));
+	return true;
 }
 
 bool getDiskSpace(const string& path, size_t& freeSpace)

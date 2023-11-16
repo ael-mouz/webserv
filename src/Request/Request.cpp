@@ -31,15 +31,95 @@ bool Request::openBodyFile(const string &path, const string &extension)
 
 int Request::getEncodChunkState()
 {
-    return decode.decodeState;
+    return decode.getDecodeState();
 }
+
+void Request::setBoundary(const string & boundary)
+{
+    this->body.setBoundary(boundary);
+}
+
+string Request::getBoundary(void) const
+{
+    return this->body.getBoundary();
+}
+
+void Request::setSizeBoundary(const int & sizeBoundary)
+{
+    this->body.setSizeBoundary(sizeBoundary);
+}
+
+int Request::getSizeBoundary(void) const
+{
+    return this->body.getSizeBoundary();
+}
+
+void Request::setDeleteFiles(const bool & deleteFiles)
+{
+    this->deleteFiles = deleteFiles;
+}
+
+bool Request::getDeleteFiles(void) const
+{
+    return deleteFiles;
+}
+
+void Request::setDecodeFlag(const bool & decodeFlag)
+{
+    this->decodeFlag = decodeFlag;
+}
+
+bool Request::getDecodeFlag(void) const
+{
+    return decodeFlag;
+}
+
+void Request::setTimeLastData(const size_t& timeLastData)
+{
+    this->timeLastData = timeLastData;
+}
+
+size_t Request::getTimeLastData(void) const
+{
+    return timeLastData;
+}
+// void Request::setContentLength(const size_t& contentLength)
+// {
+//     this->contentLength = contentLength;
+// }
+
+// size_t Request::getContentLength(void) const
+// {
+//     return contentLength;
+// }
+
+void Request::setReqstDone(const int& ReqstDone)
+{
+    this->ReqstDone = ReqstDone;
+}
+
+int Request::getReqstDone(void) const
+{
+    return ReqstDone;
+}
+
+void Request::setErrorMsg(const string& errorMsg)
+{
+    this->errorMsg = errorMsg;
+}
+
+string Request::getErrorMsg(void) const
+{
+    return errorMsg;
+}
+
 
 void Request::reset(void) // im smart
 {
 	// Request   clear();
 	// hold.clear();
 	// key.clear();
-	boundary.clear();
+	// boundary.clear();
 	Method.clear();
 	URI.clear();
 	mapHeaders.clear();
@@ -56,8 +136,8 @@ void Request::reset(void) // im smart
 	mainState = METHOD;
 	ReqstDone = 0;
 	subState = 0;
-	sizeBoundary = 0;
-	ContentLength = 0;
+	// sizeBoundary = 0;
+	contentLength = 0;
 	decodeFlag = false;
     deleteFiles = true;
     timeLastData = 0;
@@ -74,8 +154,8 @@ Request::Request()
 	ReqstDone = 0;
 	subState = 0;
 	decodeFlag = false;
-	sizeBoundary = 0;
-	ContentLength = 0;
+	// sizeBoundary = 0;
+	contentLength = 0;
     deleteFiles = true;
     timeLastData = 0;
 }

@@ -7,10 +7,9 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 
 	countLength += size;
     // printf("parsheadelen = %ld countLength = %ld\n",client.request.ContentLength, countLength);
-    if (isEncodChunk(client) == false && countLength > client.request.ContentLength)
+    if (isEncodChunk(client) == false && countLength > client.request.contentLength)
     {
-        printf("Error: Body::read size > client.request.ContentLength\n");
-		client.request.ReqstDone = 400;
+        setError(client, "Error: Body::read size > client.request.ContentLength", 400);
 		return;
     }
 	for (string::iterator it = buffer.begin(); it != buffer.end(); it++)
@@ -19,7 +18,7 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 		switch (client.request.subState)
 		{
 		case FIRST_BOUNDARY:
-			if (count == client.request.sizeBoundary +1 && ("\r\n" + hold) == client.request.boundary + "\r")
+			if (count == sizeBoundary +1 && ("\r\n" + hold) == boundary + "\r")
 			{
                 if (character == '\n')
                 {
@@ -29,10 +28,9 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
                     continue;
                 }
 			}
-			if (count > client.request.sizeBoundary +1)
+			if (count > sizeBoundary +1)
 			{
-				printf("Error: Body::read state START_BOUND i = %ld c = %c\n", it - buffer.begin(), character);
-				client.request.ReqstDone = 400;
+                setError(client, "Error: Body::read state START_BOUND", 400);
 				return;
 			}
 			count++;
@@ -49,29 +47,21 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 				hold.clear();
                 continue;
 			}
-			else
-			{
-				printf("Error: Body::read state AFTER_BOUND i = %ld c = %d\n", it - buffer.begin(), character);
-				client.request.ReqstDone = 400;
-				return;
-			}
+            setError(client, "Error: Body::read state AFTER_BOUND", 400);
+			return;
 		case LF_BOUNDARY:
 			if (character == '\n')
 			{
-				if (fileF != NULL)
-				{
-					fclose(fileF);
-					fileF = NULL;
-				}
-				client.request.subState = HANDLER_KEY;
+			    if (fileF != NULL)
+			    {
+			    	fclose(fileF);
+			    	fileF = NULL;
+			    }
+			    client.request.subState = HANDLER_KEY;
                 continue;
 			}
-			else
-			{
-				printf("Error: Headers::read state BEFOR_KRY i = %ld c = %c\n", it - buffer.begin(), character);
-				client.request.ReqstDone = 400;
-				return;
-			}
+            setError(client, "Error: Body::read state BEFOR_KRY", 400);
+			return;
 		case HANDLER_KEY: // set max
 			if (character == ':')
 			{
@@ -83,14 +73,12 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 			}
 			else if (!isValidKey(character))
 			{
-				printf("Error: Body::read state HANDLER_KEY i = %ld c = %c\n", it - buffer.begin(), character);
-				client.request.ReqstDone = 400;
+                setError(client, "Error: Body::read state HANDLER_KEY", 400);
 				return;
 			}
 			else if (count >= MAX_KEY)
 			{
-				printf("Error: Headers::read state KEY MAX_KEY i = %d c = %c\n", count, character);
-				client.request.ReqstDone = 400;
+                setError(client, "Error: Body::read state KEY MAX_KEY", 400);
 				return;
 			}
 			count++;
@@ -103,12 +91,7 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 				{
                     int returnValue = createFile(client ,hold, file.fileName);
 					if (returnValue != 0)
-					{
-						printf("Error: Body::read state HANDLER_VALUE ""fdFile i = %ld ""c = %c\n",it - buffer.begin(), character);
-						client.request.ReqstDone = returnValue;
-						return;
-					}
-                    // file.toDelete = true;
+						return ;
 				}
 				file.Content.insert(make_pair(key, trim(hold, " \t")));
 				client.request.files.insert(client.request.files.begin(), file); // clear file ??
@@ -120,8 +103,7 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 			}
 			if (count >= MAX_VALUE)
 			{
-				printf("Error: Headers::read state VALUE MAX_VALUE i = %d c = ""%c\n", count, character);
-				client.request.ReqstDone = 400;
+                setError(client, "Error: Body::read state VALUE MAX_VALUE", 400);
 				return;
 			}
 			count++;
@@ -129,16 +111,12 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 		case LF_VALUE:
 			if (character == '\n')
 			{
-				client.request.subState = CHECK_AFTER_VALUE;
-				hold.clear();
+			    client.request.subState = CHECK_AFTER_VALUE;
+			    hold.clear();
                 continue;
 			}
-			else
-			{
-				printf("Error: Headers::read state AFTER_VALUE i = %ld c = %c\n", it - buffer.begin(), character);
-				client.request.ReqstDone = 400;
-				return;
-			}
+            setError(client, "Error: Body::read state AFTER_VALUE", 400);
+			return;
 		case CHECK_AFTER_VALUE:
 			if (character == '\r')
 			{
@@ -148,47 +126,42 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 			else if (isValidKey(character))
 			{
 				client.request.subState = HANDLER_KEY;
+			    break;
 			}
-			else
-			{
-				printf("Error: Headers::read state CHECK i = %ld c = %c\n", it - buffer.begin(), character);
-				client.request.ReqstDone = 400;
-				return;
-			}
-			break;
+            setError(client, "Error: Body::read state CHECK", 400);
+			return;
 		case START_DATA:
 			if (character == '\n')
 			{
-				hold.clear();
-				client.request.subState = WRITE_DATA;
+			    hold.clear();
+			    client.request.subState = WRITE_DATA;
                 continue;
 			}
-			else
-			{
-				printf("Error: Headers::read state AFTER_WRITE_DATA i = %ld c ""= %c\n", it - buffer.begin(), character);
-				client.request.ReqstDone = 400;
-				return;
-			}
-			break;
+            setError(client, "Error: Body::read state AFTER_WRITE_DATA", 400);
+			return;
 		case WRITE_DATA:
-			if (count < client.request.sizeBoundary && character == client.request.boundary[count])
+			if (count < sizeBoundary && character == boundary[count])
 			{
 				count++;
-				if (count == client.request.sizeBoundary)
+				if (count == sizeBoundary)
 					client.request.subState = AFTER_BOUNDARY;
 			}
 			else
 			{
 				if (count == 0)
 				{
-					if (buffer.end() - it > client.request.sizeBoundary + 4)
+					if (buffer.end() - it > sizeBoundary + 4)
 					{
-						int index = it - buffer.begin();
-						size_t posBoundary = buffer.find(client.request.boundary, index);
+						size_t index = it - buffer.begin();
+						size_t posBoundary = buffer.find(boundary, index);
 						if (posBoundary == string::npos)
 						{
-							fwrite(&buffer[index], 1, size - client.request.sizeBoundary - index, fileF);
-							it = buffer.begin() + (size - client.request.sizeBoundary - 1);
+
+							size_t ret = fwrite(&buffer[index], 1, size - sizeBoundary - index, fileF);
+                            if (ret != (size - sizeBoundary - index))
+                                setError(client, "Error: fwrite fail", 500);
+                            // printf("ret  = %ld size - %ld\n", ret, size - sizeBoundary - index);
+							it = buffer.begin() + (size - sizeBoundary - 1);
 						}
 						else
 						{
@@ -210,58 +183,44 @@ void Body::multiPart(Client &client, string &buffer, ssize_t &size)
 		case CHECK_END:
 			if (character == '-')
 			{
-				hold.clear(); //<==
+                // printf("%c\n", character);
+				// hold.clear(); //<==
 				client.request.subState = CR_END;
+                continue;
 			}
-			else
-			{
-				printf("Error: Headers::read state CHECK_END i = %ld c = %c\n", it - buffer.begin(), character);
-				client.request.ReqstDone = 400;
-				return;
-			}
-			break;
+            setError(client, "Error: Body::read state CHECK_END", 400);
+			return;
 		case CR_END:
 			if (character == '\r')
 			{
-				hold.clear();
+				// hold.clear();
 				client.request.subState = LF_END;
+                continue;
 			}
-			else
-			{
-				printf("Error: Headers::read state CR_END i = %ld c = %c\n", it - buffer.begin(), character);
-				client.request.ReqstDone = 400;
-				return;
-			}
-			break;
+            setError(client, "Error: Body::read state CR_END", 400);
+			return;
 		case LF_END: // check size of content length
 			if (character == '\n')
 			{
-                // printf("parsheadelen = %ld countLength = %ld\n",client.request.ContentLength, countLength);
-                if ((isEncodChunk(client) == false && countLength == client.request.ContentLength)
+                if ((isEncodChunk(client) == false && countLength == client.request.contentLength)
                 || (isEncodChunk(client) == true && client.request.getEncodChunkState() == LF_END_CHUNKED))
                 {
                     if (fileF != NULL) {
                         fclose(fileF);
                         fileF = NULL;
                     }
-                    client.request.deleteFiles = false;
-				    client.request.ReqstDone = 201;
+                    client.request.setDeleteFiles(false);
+				    client.request.setReqstDone(201);
                 }
                 else
                 {
-                    printf("Error: Body::read LF_END countLength != client.request.ContentLength\n");
-	            	client.request.ReqstDone = 400;
+                    setError(client, "Error: Body::read LF_END countLength != client.request.contentLength", 400);
                 }
 				hold.clear();
 				return;
 			}
-			else
-			{
-				printf("Error: Headers::read state CR_END i = %ld c = %c\n", it - buffer.begin(), character);
-				client.request.ReqstDone = 400;
-				return;
-			}
-			break;
+            setError(client, "Error: Body::read state LF_END", 400);
+			return;
 		}
 		hold += character;
 	}
@@ -271,19 +230,18 @@ void Body::writeBody(Client &client, string &buffer, ssize_t &size)
 {
 	fwrite(&buffer[0], 1, size, fileF);
 	countLength += size;
-	// printf("counlen = %ld len = %ld\n", client.request.ContentLength, countLength);
-	if ((isEncodChunk(client) == false && countLength == client.request.ContentLength)
+	// printf("counlen = %ld len = %ld\n", client.request.contentLength, countLength);
+	if ((isEncodChunk(client) == false && countLength == client.request.contentLength)
     || (isEncodChunk(client) == true && client.request.getEncodChunkState() == LF_END_CHUNKED))
 	{
-		client.request.ReqstDone = 200;
+		client.request.setReqstDone(200);
 		fclose(fileF);
         fileF = NULL;
-        client.request.deleteFiles = false;
+        client.request.setDeleteFiles(false);
 	}
-	if (isEncodChunk(client) == false && countLength > client.request.ContentLength)
+	if (isEncodChunk(client) == false && countLength > client.request.contentLength)
 	{
-		printf("countLength > client.request.ContentLength\n"); client.request.mainState =// 0;
-        client.request.ReqstDone = 400;
+        setError(client, "countLength > client.request.ContentLength", 400);
 		return;
 	}
 }
@@ -293,14 +251,10 @@ int Body::createFile(Client &client, const string &value, string &fileName)
 	size_t fileNamePos = value.find("filename=");
 
 	if (fileNamePos == string::npos)
-    {
-        printf("Body::createFile filename= \n");
-		return 400;
-    }
-    // handel
+		return setError(client, "Body::createFile filename", 400);
 	fileName = trim(value.substr(fileNamePos + sizeof("filename")), " \"");
     fileName = getUploadPath(client) + fileName;
-    // printf("fileName = %s\n", &fileName[0]);//////
+    printf("fileName = %s\n", &fileName[0]);//////
 
 
     /*
@@ -314,7 +268,7 @@ int Body::createFile(Client &client, const string &value, string &fileName)
 
 	fileF = fopen(fileName.c_str(), "w");
 	if (!fileF)
-		return 500;
+		return setError(client, "Body::createFile fail to open file", 500);
 	return 0;
 }
 
@@ -343,9 +297,36 @@ bool Body::RandomFile(Request &Request, const string& path, const string& extens
 	return true;
 }
 
+int Body::setError(Client &client, const string& errorMsg, int statu)
+{
+    client.request.setReqstDone(statu);
+    client.request.setErrorMsg(errorMsg);
+    return statu;
+}
+
 bool Body::isEncodChunk(Client &client)
 {
-    return client.request.decodeFlag;
+    return client.request.getDecodeFlag();
+}
+
+void Body::setBoundary(const string & boundary)
+{
+    this->boundary = boundary;
+}
+
+string Body::getBoundary(void) const
+{
+    return boundary;
+}
+
+void Body::setSizeBoundary(const int & sizeBoundary)
+{
+    this->sizeBoundary = sizeBoundary;
+}
+
+int Body::getSizeBoundary(void) const
+{
+    return sizeBoundary;
 }
 
 void Body::reset()
@@ -356,14 +337,17 @@ void Body::reset()
         fclose(fileF);
     }
 	fileF = NULL;
+    sizeBoundary = 0;
     key.clear();
     hold.clear();
+    boundary.clear();
 }
 
 Body::Body()
 {
 	count = 2;
 	countLength = 0;
+    sizeBoundary = 0;
 	fileF = NULL;
 }
 
