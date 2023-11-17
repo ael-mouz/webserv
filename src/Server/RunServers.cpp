@@ -48,8 +48,9 @@ bool RunServers::receiveData(vector<Client>::iterator &it)
         return false;
 	}
 	string buffer(recvbuffer, size);
-    std::ofstream outf("/Users/yettabaa/Desktop/webservemerge/www/DebugFile.txt", std::ios::out | std::ios::app | std::ios::binary);
-                        outf << buffer;
+    // std::ofstream outf("/Users/yettabaa/Desktop/webservemerge/www/DebugFile.txt", std::ios::out | std::ios::app | std::ios::binary);
+    // outf << "-----------------------------------\n";
+    // outf << buffer;
     size_t timeMilSec;
     it->request.setTimeLastData((timeofday(timeMilSec)) ? timeMilSec : 0);
 	it->request.read(*it, buffer, size);
@@ -68,7 +69,8 @@ bool RunServers::receiveData(vector<Client>::iterator &it)
 
 bool RunServers::sendData(vector<Client>::iterator &it)
 {
-	// printf("req done = %d\n", it->request.ReqstDone);
+	// printf("req done num= %d\n", it->request.ReqstDone);
+    // printf("req done = %s\n", it->request.getErrorMsg().c_str());
 	if (!it->response.Config)
 		it->response.startResponse(*it);
 	it->response.checkErrorsRequest(*it);
@@ -148,7 +150,7 @@ void RunServers::timeoutClientChecker(Client &client)
     if (client.readEvent == true && client.request.getTimeLastData() != 0 && timeofday(timeMilSec)
     && (timeMilSec - client.request.getTimeLastData()) >= CLIENT_BODY_TIMEOUT)
     {
-        // printf("client_body_timeout = %lld\n",(timeofday() - client.request.timeLastData ));
+        // printf("client_body_timeout = %ld\n",timeMilSec - client.request.getTimeLastData());
         client.request.ReqstDone = 408;
         client.readEvent = false;
         client.writeEvent = true;
@@ -157,16 +159,14 @@ void RunServers::timeoutClientChecker(Client &client)
 
 void RunServers::timeoutChecker()
 {
-    std::cout << "Timeout\n"; //!!
     size_t timeMilSec;
 
     for (vector<Client>::iterator it = clients.begin(); it != clients.end(); it++)
     {
-        // printf("client_body_timeout = %lld fd ==> %d\n",(timeofday() - it->request.timeLastData), it->socketClient);
+        // printf("client_body_timeout = %ld fd ==> %d\n",(timeMilSec - it->request.getTimeLastData()), it->socketClient);
         if (it->readEvent == true && it->request.getTimeLastData() != 0 && timeofday(timeMilSec)
         && (timeMilSec - it->request.getTimeLastData()) >= CLIENT_BODY_TIMEOUT)
         {
-            // printf("408\n");
             it->request.ReqstDone = 408;
             it->readEvent = false;
             it->writeEvent = true;

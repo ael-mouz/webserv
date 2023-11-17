@@ -15,6 +15,7 @@ enum _mainState
     MultiPart,
     CGI,
     MIMETYPES,
+    _SKIP_BODY,
 };
 
 struct File

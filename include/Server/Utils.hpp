@@ -136,4 +136,5 @@ std::string getRealPath(std::string path);
 std::string humanReadableSize(off_t size);
 void ft_print_config(int h, ServerConfig &it, bool i);
 void ft_print_routes(int h, Route &it, std::string name);
+int deleteMthod(Client &client);
 // string getExtensionMimeType(const Client& client);

@@ -40,6 +40,7 @@ public:
 	std::string fullpath;
 	std::string extension;
 	std::string entryPath;
+	std::string root;
 	std::multimap<std::string, std::string> env;
 	Route route;
 	FILE *fptr;

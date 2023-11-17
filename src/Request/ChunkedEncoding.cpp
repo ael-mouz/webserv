@@ -75,8 +75,8 @@ int ChunkedEncoding::totalSizeChecker(Client &client, size_t totalSize)
     stream1 >> limitClientBodySize;
     if (limitClientBodySize < totalSize) // add left space here
         return statu(client, "error ChunkedEncoding::totalSizeChecker totalSize > limitClientBodySize client body size", 413);
-    if (getDiskSpace(getUploadPath(client), diskSpace) == false
-    || diskSpace <= totalSize)
+    if (client.request.Method == "POST" && (getDiskSpace(getUploadPath(client), diskSpace) == false
+    || diskSpace <= totalSize))
         return statu(client, "error ChunkedEncoding::totalSizeChecker diskSpace", 400);
     return 0;
 }

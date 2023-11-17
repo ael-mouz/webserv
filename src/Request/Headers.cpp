@@ -80,12 +80,8 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 int Headers::requestChecker(Client &client)
 {
     client.response.startResponse(client);
-    if(!client.response.method_allowd)
-        return statu(client, "Error: Headers::checkrequest client.response.method_allowd", 405);
-	if (client.request.Method == "GET" || client.request.Method == "HEAD")
-		return 200;
-    if (client.request.Method == "DELETE")
-        return deleteMthod(client);
+    // if(!client.response.method_allowd)
+    //     return statu(client, "Error: Headers::checkrequest client.response.method_allowd", 405);
     int returnValue;
 
     if ((returnValue = transEncodChecker(client)) != 0)
@@ -93,6 +89,18 @@ int Headers::requestChecker(Client &client)
     if (client.request.getDecodeFlag() == false
     && (returnValue = contentLenChecker(client)) != 0)
         return returnValue;
+	if (client.request.Method == "GET" || client.request.Method == "DELETE"|| client.request.Method == "HEAD")
+    {
+        if ((client.request.getDecodeFlag() == false && client.request.contentLength != 0)
+        || (client.request.getDecodeFlag() == true))
+        {
+            client.request.mainState = _SKIP_BODY;
+            return 0;
+        }
+        if (client.request.Method == "DELETE")
+            return deleteMthod(client);
+        return 200;
+    }
     if (client.response.isCgi)
 		return (client.request.setErrorMsg(""), cgiChecker(client));
 	multimap<string, string>::iterator it;
@@ -128,10 +136,10 @@ int Headers::contentLenChecker(Client &client)
     multimap<string, string>::iterator it;
 
     it = client.request.mapHeaders.find("content-length");
-	if (client.request.getDecodeFlag() == false && it == client.request.mapHeaders.end())
-		return statu(client, "error Headers::checkrequest no shuncked no Content-Length", 411);
-	else if (client.request.getDecodeFlag() == true && it == client.request.mapHeaders.end())
+	if (client.request.Method != "POST" && it == client.request.mapHeaders.end())
 		return 0;
+	else if (it == client.request.mapHeaders.end())
+		return statu(client, "error Headers::checkrequest no shuncked no Content-Length", 411);
 	stream << it->second;
 	stream >> client.request.contentLength;
 	if (!isDigit(it->second) || stream.fail())
@@ -141,11 +149,15 @@ int Headers::contentLenChecker(Client &client)
     stringstream stream1(client.response.Config->LimitClientBodySize);
     size_t limitClientBodySize, diskSpace;
     stream1 >> limitClientBodySize;
-    if (limitClientBodySize < client.request.contentLength) // add left space here
+    if (client.request.Method == "POST" && limitClientBodySize < client.request.contentLength)
         return statu(client, "error Headers::checkContentLen client.request.contentLength > limitClientBodySize client body size", 413);
-    if (getDiskSpace(getUploadPath(client), diskSpace) == false
-    || diskSpace <= client.request.contentLength)
-        return statu(client, "error Headers::checkContentLen diskSpace", 400);
+    if (client.request.Method == "POST")
+    {
+        if(getDiskSpace(getUploadPath(client), diskSpace) == false)
+            return statu(client, "error Upload file not found", 500);
+        if (diskSpace <= client.request.contentLength)
+            return statu(client, "error Headers::checkContentLen diskSpace", 507);
+    }
     return 0;
 }
 
@@ -178,22 +190,6 @@ int Headers::mimeTypeChecker(Client &client, string& value)
     client.request.mainState = MIMETYPES;
     // printf("Headers::MimeTypeChecker\n");
     return 0;
-}
-
-int Headers::deleteMthod(Client &client)
-{
-    try {
-        std::string root = client.response.fullpath;
-        std::cout << "route : " << client.response.fullpath << std::endl;  /////!!!!!
-        isCanBeRemoved(client.response.fullpath);
-        removeDirfolder(client.response.fullpath, root);
-    }
-    catch(int returnValue)
-    {
-        client.request.setErrorMsg("");
-        return returnValue;
-    }
-    return 200;
 }
 
 int Headers::statu(Client &client, const string& errorMsg, int statu)

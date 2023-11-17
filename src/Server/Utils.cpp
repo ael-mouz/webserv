@@ -253,6 +253,8 @@ bool checkPermission(const std::string path, mode_t permission)
 
 void isCanBeRemoved(const std::string &path)
 {
+    if (access(path.c_str(), F_OK) != 0)
+        throw 404;
     if (isRegularFile(path))
     {
         if (!checkPermission(path, S_IWUSR))
@@ -261,7 +263,7 @@ void isCanBeRemoved(const std::string &path)
     }
     DIR* directory = opendir(path.c_str());
     if ((!checkPermission(path, S_IRUSR) && !checkPermission(path, S_IWUSR)
-        && !checkPermission(path, S_IXUSR))|| directory == NULL) {
+        && !checkPermission(path, S_IXUSR)) || directory == NULL) {
         throw 403;
     }
     dirent* entry;
@@ -308,7 +310,25 @@ void removeDirfolder(const std::string &path, const std::string &root) // add ro
     }
     if (path != root)
         std::remove(path.c_str());
+    else
+       throw 403;
     closedir(directory);
+}
+
+int deleteMthod(Client &client)
+{
+    try {
+        std::string root = client.response.root;
+        // std::cout << "route : " << root << std::endl;  /////!!!!!
+        isCanBeRemoved(client.response.fullpath);
+        removeDirfolder(client.response.fullpath, root);
+    }
+    catch(int returnValue)
+    {
+        client.request.setErrorMsg("");
+        return returnValue;
+    }
+    return 200;
 }
 
 bool	timeofday(size_t& timeMilSec)

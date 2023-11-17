@@ -219,6 +219,40 @@ int Body::writeBody(Client &client, string &buffer, ssize_t &size)
     return statu(client, "", 0);
 }
 
+int Body::skipBody(Client &client, ssize_t &size)
+{
+	countLength += size;
+        // printf("size = %ld\n", size);
+	if ((isEncodChunk(client) == false && countLength == client.request.contentLength)
+    || (isEncodChunk(client) == true && client.request.getEncodChunkState() == END_LAST_HEXA))
+	{
+        if(!client.response.method_allowd)
+            return statu(client, "Error: Headers::checkrequest client.response.method_allowd", 405);
+        if (client.request.Method == "DELETE")
+            return statu(client, "",deleteMthod(client));
+        return statu(client, "", 200);
+	}
+	if (isEncodChunk(client) == false && countLength > client.request.contentLength)
+		return statu(client, "countLength > client.request.ContentLength", 400);
+    return statu(client, "", 0);
+}
+
+// int Body::deleteMthod(Client &client)
+// {
+//     try {
+//         std::string root = client.response.fullpath;
+//         std::cout << "route : " << client.response.fullpath << std::endl;  /////!!!!!
+//         isCanBeRemoved(client.response.fullpath);
+//         removeDirfolder(client.response.fullpath, root);
+//     }
+//     catch(int returnValue)
+//     {
+//         client.request.setErrorMsg("");
+//         return returnValue;
+//     }
+//     return 200;
+// }
+
 int Body::createFile(Client &client, const string &value, string &fileName)
 {
 	size_t fileNamePos = value.find("filename=");
@@ -227,7 +261,7 @@ int Body::createFile(Client &client, const string &value, string &fileName)
 		return statu(client, "Body::createFile filename", 400);
 	fileName = trim(value.substr(fileNamePos + sizeof("filename")), " \"");
     fileName = getUploadPath(client) + fileName;
-    printf("fileName = %s\n", &fileName[0]);//////
+    // printf("fileName = %s\n", &fileName[0]);//////
 
 
     /*
@@ -252,7 +286,7 @@ bool Body::RandomFile(Request &Request, const string& path, const string& extens
     while (true) {
         randomName = "file-" + intToString(time(NULL));
         randomName = path + randomName + extension;
-        printf("randomName = %s\n", &randomName[0]);
+        // printf("randomName = %s\n", &randomName[0]);
 	    ifstream inf(randomName.c_str());
         if (inf.is_open() == false)
             break ;
@@ -260,7 +294,7 @@ bool Body::RandomFile(Request &Request, const string& path, const string& extens
 	fileF = fopen(randomName.c_str(), "w");
 	if (!fileF)
 	{
-		printf("error Body::CGI fopen\n");
+		// printf("error Body::CGI fopen\n");
 		return false;
 	}
 	File file;

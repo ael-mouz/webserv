@@ -21,6 +21,8 @@ void Request::read(Client &client, string &buffer, ssize_t &size)
 	    body.multiPart(client, buffer, size);
     } else if (mainState == MIMETYPES || mainState == CGI) {
 		body.writeBody(client, buffer, size);
+    } else if (mainState == _SKIP_BODY) {
+        body.skipBody(client, size);
     }
 }
 

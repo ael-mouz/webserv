@@ -458,8 +458,9 @@ void Response::genrateRederiction(Client &client)
 	if (this->fullpath[this->fullpath.length() - 1] == '/')
 		this->fullpath.erase(this->fullpath.end() - 1);
 	else if (this->extension.empty() && isDirectory(this->fullpath.c_str()) == 1 &&
-			 (client.request.Method == "GET" || client.request.Method == "POST" || client.request.Method == "DELETE"))
+		(client.request.Method == "GET" || client.request.Method == "POST" || client.request.Method == "DELETE"))
 	{
+        (void)client;
 		std::stringstream Headers__;
 		this->responseStatus = "302";
 		Headers__ << "HTTP/1.1 302 " << this->Config->status.getStatus("302") << "\r\n";
@@ -517,15 +518,18 @@ void Response::getFULLpath()
 	if (route.Root != "default" && route.RoutePath != "default" && this->match == 1)
 		this->entryPath = this->fullpath.substr(route.RoutePath.size()),
 		this->fullpath = this->route.Root + this->fullpath.substr(route.RoutePath.size()),
-		this->path_translated = this->route.Root + this->path_info;
+		this->path_translated = this->route.Root + this->path_info,
+        this->root = this->route.Root;
 	else if (route.Root != "default" && route.RoutePath != "default")
 		this->entryPath = this->fullpath,
 		this->fullpath = this->route.Root + this->fullpath,
-		this->path_translated = this->route.Root + this->path_info;
+		this->path_translated = this->route.Root + this->path_info,
+        this->root = this->route.Root;
 	else
 		this->entryPath = this->fullpath,
 		this->fullpath = this->Config->GlobalRoot + this->fullpath,
-		this->path_translated = this->Config->GlobalRoot + this->path_info;
+		this->path_translated = this->Config->GlobalRoot + this->path_info,
+        this->root = this->Config->GlobalRoot;
 }
 
 void Response::handleScriptCGI(Client &client)
@@ -718,14 +722,15 @@ void Response::handleScriptCGI(Client &client)
 
 void Response::generateResponse(std::string status)
 {
-	if (responseDone)
-		return;
+	// if (responseDone) // check this again
+	// 	return;
 	std::string extension_;
 	this->responseStatus = status;
 	// 400 403 406 407 411 413 416 500 502 504 505;
-	if (status == "400" || status == "403" || status == "406" || status == "405" || status == "407" ||
+	if (status == "400" || status == "403" || status == "406" || status == "405" ||
+         status == "407" || status == "408" ||
 		status == "411" || status == "413" || status == "416" || status == "500" ||
-		status == "502" || status == "504" || status == "505")
+		status == "502" || status == "504" || status == "505" || status == "507")
 		this->closeClient = true;
 	size_t pos = this->Config->ErrorPage.find_last_of(".");
 	if (pos != std::string::npos)

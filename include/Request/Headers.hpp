@@ -26,7 +26,7 @@ private:
     int mimeTypeChecker(Client &client, string& value);
     int cgiChecker(Client &client);
     int transEncodChecker(Client &client);
-    int deleteMthod(Client &client);
+    // int deleteMthod(Client &client);
 
 public:
 	int read(Client &client, string &buffer, ssize_t &size);
