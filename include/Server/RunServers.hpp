@@ -23,16 +23,19 @@ private:
 	int maxFdstmp;
 	int newSocket;
 	int numberOfEvents;
-    struct timeval timeout;
+	struct timeval timeout;
 	char *recvbuffer;
 	vector<Server> servers;
 	vector<Client> clients;
+
+private:
 	int bindSockets(Server &server);
 	void resetFds();
 	void acceptClients();
 	bool receiveData(vector<Client>::iterator &it);
-    void timeoutChecker();
-    void timeoutClientChecker(Client &client);
+	bool sendData(vector<Client>::iterator &it);
+	void timeoutChecker();
+	void timeoutClientChecker(Client &client);
 
 public:
 	void runing();

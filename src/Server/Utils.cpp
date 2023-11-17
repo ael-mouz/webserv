@@ -1,5 +1,6 @@
 #include "../../include/Server/Utils.hpp"
 #include "../../include/Server/Client.hpp"
+#include "../../include/Config/ServerConfig.hpp"
 
 std::string trim(const std::string &str, const std::string &charactersToTrim)
 {
@@ -95,7 +96,7 @@ void logMessage(LogLevel level, const std::string &host, int fd, const std::stri
 	char timestamp[20];
 	strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localTime);
 	std::cout << BOLD << "[" << FG_DGRAY << std::setw(19) << timestamp << FG_WHITE << "] " << RESET_ALL;
-	std::cout << BOLD << "( "  << FG_YELLOW<< std::setw(2) << fd <<FG_WHITE << " ) " << RESET_ALL;
+	std::cout << BOLD << "( " << FG_YELLOW << std::setw(2) << fd << FG_WHITE << " ) " << RESET_ALL;
 	std::cout << BOLD << "[" << FG_DGRAY << host << FG_WHITE << "] " << RESET_ALL;
 	std::string level_ = "[" + color + levelStr + FG_WHITE + "]" + RESET_ALL;
 	std::cout << BOLD << level_ << std::setfill('=') << std::setw(32 - level_.length()) << ">" << std::setfill(' ');
@@ -156,7 +157,7 @@ std::string getParentDirectories(const std::string &uri)
 {
 	std::string parent;
 	size_t pos = uri.find_last_of("/");
-	if  (pos == 0)
+	if (pos == 0)
 		parent = "/";
 	else if (pos != std::string::npos)
 		parent = uri.substr(0, pos);
@@ -207,50 +208,50 @@ size_t HexaToDicimal(const std::string &hexStr)
 	return result;
 }
 
-string strToLower(const string& str)
+string strToLower(const string &str)
 {
-    string lower;
-    for (string::const_iterator it = str.begin(); it != str.end(); it++)
-        lower += std::tolower(*it);
-    return lower;
+	string lower;
+	for (string::const_iterator it = str.begin(); it != str.end(); it++)
+		lower += std::tolower(*it);
+	return lower;
 }
 
-string getUploadPath(const Client& client)
+string getUploadPath(const Client &client)
 {
-    std::string path = client.response.route.UploadPath;
-    std::string defaultPath = client.response.Config->GlobalUpload;
-    if (path == "default")
-        return defaultPath;
-    return path;
+	std::string path = client.response.route.UploadPath;
+	std::string defaultPath = client.response.Config->GlobalUpload;
+	if (path == "default")
+		return defaultPath;
+	return path;
 }
 
-bool isRegularFile(const std::string& path)
+bool isRegularFile(const std::string &path)
 {
-    struct stat fileStat;
-    if (stat(path.c_str(), &fileStat) == 0)
-        return S_ISREG(fileStat.st_mode);
-    return false;
+	struct stat fileStat;
+	if (stat(path.c_str(), &fileStat) == 0)
+		return S_ISREG(fileStat.st_mode);
+	return false;
 }
 
-bool isDirectory(const std::string& path)
+bool isDirectory(const std::string &path)
 {
-    struct stat fileStat;
-    if (stat(path.c_str(), &fileStat) == 0)
-        return S_ISDIR(fileStat.st_mode);
-    return false;
+	struct stat fileStat;
+	if (stat(path.c_str(), &fileStat) == 0)
+		return S_ISDIR(fileStat.st_mode);
+	return false;
 }
 
 bool checkPermission(const std::string path, mode_t permission)
 {
-    struct stat fileStat;
-    if (stat(path.c_str(), &fileStat) == 0)
-    {
-        return (fileStat.st_mode & permission) != 0;
-    }
-    return false;
+	struct stat fileStat;
+	if (stat(path.c_str(), &fileStat) == 0)
+	{
+		return (fileStat.st_mode & permission) != 0;
+	}
+	return false;
 }
 
-void isCanBeRemoved(const std::string& path)
+void isCanBeRemoved(const std::string &path)
 {
     if (isRegularFile(path))
     {
@@ -279,7 +280,7 @@ void isCanBeRemoved(const std::string& path)
     closedir(directory);
 }
 
-void removeDirfolder(const std::string& path, const std::string& root) //add rout in prototype to not delete it
+void removeDirfolder(const std::string &path, const std::string &root) // add rout in prototype to not delete it
 {
     if (isRegularFile(path))
     {
@@ -312,7 +313,7 @@ void removeDirfolder(const std::string& path, const std::string& root) //add rou
 
 bool	timeofday(size_t& timeMilSec)
 {
-	struct timeval	time;
+	struct timeval time;
 
 	if (gettimeofday(&time, NULL) == -1)
         return false;
@@ -330,3 +331,67 @@ bool getDiskSpace(const string& path, size_t& freeSpace)
     }
     return false;
 }
+
+std::string getRealPath(std::string path)
+{
+	char buf[4096];
+	char *res = realpath(path.c_str(), buf);
+	if (res)
+		return std::string(buf);
+	else
+		return path;
+}
+
+std::string humanReadableSize(off_t size)
+{
+	std::ostringstream sizeStr;
+	if (size >= (1 << 30))
+		sizeStr << (size / (1 << 30)) << " GB";
+	else if (size >= (1 << 20))
+		sizeStr << (size / (1 << 20)) << " MB";
+	else if (size >= (1 << 10))
+		sizeStr << (size / (1 << 10)) << " KB";
+	else
+		sizeStr << size << " B";
+	return sizeStr.str();
+}
+
+void ft_print_config(int h, ServerConfig &it, bool i)
+{
+	std::cout << "▻" BOLD " " << it.ServerNames << " " RESET_ALL "◅" << std::endl;
+	std::cout << "╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
+	if (i)
+		std::cout << "║" FG_BLUE BOLD " DEFAULT CONFIG " RESET_ALL << h << std::setw(61) << "║" << std::endl;
+	else
+		std::cout << "║" BOLD " OTHER CONFIG " RESET_ALL << h << std::setw(63) << "║" << std::endl;
+	std::cout << "╠═════════════════╦═════════════════════════════════════════════════════════╣" << std::endl;
+	std::cout << "║ Port            ║" << std::setw(58) << "▻" + it.Port << "◅║" << std::endl;
+	std::cout << "║ Host            ║" << std::setw(58) << "▻" + it.Host << "◅║" << std::endl;
+	std::cout << "║ ServerNames     ║" << std::setw(58) << "▻" + it.ServerNames << "◅║" << std::endl;
+	std::cout << "║ ErrorPage       ║" << std::setw(58) << "▻" + it.ErrorPage << "◅║" << std::endl;
+	std::cout << "║ LimitBodySize   ║" << std::setw(58) << "▻" + it.LimitClientBodySize << "◅║" << std::endl;
+	std::cout << "║ GlobalRoot      ║" << std::setw(58) << "▻" + it.GlobalRoot << "◅║" << std::endl;
+	std::cout << "╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
+}
+
+void ft_print_routes(int h, Route &it, std::string name)
+{
+	std::cout << "↦  ▻" BOLD " " << name << " " RESET_ALL "◅" << std::endl;
+	std::cout << "↦  ╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
+	std::cout << "↦  ║" FG_BLUE BOLD " ROUTE " << h << RESET_ALL << std::setw(70) << "║" << std::endl;
+	std::cout << "↦  ╠═════════════════╦═════════════════════════════════════════════════════════╣\n";
+	std::cout << "↦  ║ RoutePath       ║" << std::setw(58) << "▻" + it.RoutePath << "◅║" << std::endl;
+	std::cout << "↦  ║ UploadPath      ║" << std::setw(58) << "▻" + it.UploadPath << "◅║" << std::endl;
+	std::cout << "↦  ║ Redirection     ║" << std::setw(58) << "▻" + it.Redirection << "◅║" << std::endl;
+	std::cout << "↦  ║ RedirectStatus  ║" << std::setw(58) << "▻" + it.RedirectionStatus << "◅║" << std::endl;
+	std::cout << "↦  ║ RedirectionURL  ║" << std::setw(58) << "▻" + it.RedirectionURL << "◅║" << std::endl;
+	std::cout << "↦  ║ Root            ║" << std::setw(58) << "▻" + it.Root << "◅║" << std::endl;
+	std::cout << "↦  ║ Autoindex       ║" << std::setw(58) << "▻" + it.Autoindex << "◅║" << std::endl;
+	std::cout << "↦  ║ Index           ║" << std::setw(58) << "▻" + it.Index << "◅║" << std::endl;
+	std::cout << "↦  ║ Cgi_Exec        ║" << std::setw(58) << "▻" + it.CgiExec << "◅║" << std::endl;
+	std::cout << "↦  ║ Methods         ║" << std::setw(58) << "▻" + it.Accepted_Methods << "◅║" << std::endl;
+	std::cout << "↦  ║ Methods1        ║" << std::setw(58) << "▻" + it.Accepted_Methods_ << "◅║" << std::endl;
+	std::cout << "↦  ║ Methods2        ║" << std::setw(58) << "▻" + it.Accepted_Methods__ << "◅║" << std::endl;
+	std::cout << "↦  ║ Methods3        ║" << std::setw(58) << "▻" + it.Accepted_Methods___ << "◅║" << std::endl;
+	std::cout << "↦  ╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
+};

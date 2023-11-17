@@ -6,3 +6,5 @@ obj
 webserv
 .DS_Store
 .vscode
+DebugFile.txt
+config.conf

@@ -5,13 +5,13 @@ ServerConfig::ServerConfig()
 	std::string dir;
 	const char *homeDir = std::getenv("PWD");
 	homeDir != NULL ? dir = homeDir : dir = "";
-	this->Port = 80;
+	this->Port = "8000";
 	this->Host = "127.0.0.1";
-	this->ServerNames = "webserver";
+	this->ServerNames = "webserve";
 	this->GlobalRoot = dir + "/www";
 	this->GlobalUpload = dir + "/upload/";
-	this->LimitClientBodySize = "10M";
-	this->ErrorPage = "default";
+	this->LimitClientBodySize = "10485760";
+	this->ErrorPage = dir + "/www/error.html";
 	this->phpCgi = dir + "/tests/php-cgi_bin";
 	this->pythonCgi = "/usr/bin/python3";
 	this->rubyCgi = "/usr/bin/ruby";

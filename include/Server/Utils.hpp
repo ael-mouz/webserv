@@ -30,6 +30,8 @@
 # include <sys/time.h>
 
 class Client;
+class ServerConfig;
+
 using namespace std;
 
 #define MAX_URI 4096
@@ -101,16 +103,15 @@ struct Route
 			  Redirection("default"),
 			  RedirectionURL("default"),
 			  RedirectionStatus("default"),
-			  Accepted_Methods("default"),
-			  Accepted_Methods_("default"),
-			  Accepted_Methods__("default"),
+			  Accepted_Methods("on"),
+			  Accepted_Methods_("GET"),
+			  Accepted_Methods__("POST"),
 			  Accepted_Methods___("default"){};
 };
 
 std::string trim(const std::string &str, const std::string &charactersToTrim);
 std::vector<std::string> splitString(const std::string &input, const std::string &delimiter);
 std::string convertText(std::string a);
-// void logMessage(LogLevel level, const std::string &message);
 void logMessage(LogLevel level, const std::string &host, int fd, const std::string &message);
 void printMap(const std::multimap<std::string, std::string> &map);
 size_t getFreeSpace(const char *path);
@@ -131,4 +132,8 @@ void isCanBeRemoved(const std::string& path);
 void removeDirfolder(const std::string& path, const std::string& root);
 bool	timeofday(size_t& timeMilSec);
 bool getDiskSpace(const string& path, size_t& freeSpace);
+std::string getRealPath(std::string path);
+std::string humanReadableSize(off_t size);
+void ft_print_config(int h, ServerConfig &it, bool i);
+void ft_print_routes(int h, Route &it, std::string name);
 // string getExtensionMimeType(const Client& client);
