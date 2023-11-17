@@ -20,6 +20,7 @@ Response::Response()
 	responseDone = false;
 	responseSent = false;
 	method_allowd = false;
+	head_method = false;
 	match = 0;
 	offset = 0;
 	fileSize = 0;
@@ -58,6 +59,7 @@ void Response::clear()
 	responseDone = false;
 	responseSent = false;
 	method_allowd = false;
+	head_method = false;
 	match = 0;
 	offset = 0;
 	fileSize = 0;
@@ -164,13 +166,15 @@ void Response::sendResponse(Client &client)
 			logMessage(SINFO, client.clientHost, client.socketClient, " URI : " + URI);
 			logMessage(SRES, client.clientHost, client.socketClient, status + " " + StringStatus + " Response sent to " + client.clientIP);
 			// std::cout << convertText(HeaderResponse) << std::endl;
+			if(client.request.Method == "HEAD")
+				head_method = true;
 		}
-		if (!BodyResponse.empty())
+		if (!BodyResponse.empty() && !head_method)
 		{
 			responseString += BodyResponse;
 			responseSent = isBodySent = true;
 		}
-		else if (fptr && !feof(fptr))
+		else if (fptr && !feof(fptr) && !head_method)
 		{
 			char buffer[1024];
 			ssize_t bytesRead = fread(buffer, 1, sizeof(buffer), fptr);

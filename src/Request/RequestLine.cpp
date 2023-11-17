@@ -16,9 +16,9 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size) //change 
 		switch (request.subState)
 		{
 		case METHOD:
-            if ((request.hold == "GET" || request.hold == "POST" || request.hold == "DELETE")
-                && character == ' ')
-            {
+			if ((request.hold == "GET" || request.hold == "POST" || request.hold == "DELETE" || request.hold == "HEAD")
+			&& character == ' ')
+			{
                 count = 0;
                 request.Method = request.hold;
                 request.hold.clear();
@@ -28,6 +28,8 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size) //change 
             if (count < 3 && character == "GET"[count])
                 ;
             else if (count < 4 && character == "POST"[count])
+                ;
+            else if (count < 4 && character == "HEAD"[count])
                 ;
             else if (count < 6 && character == "DELETE"[count])
                 ;

@@ -26,6 +26,7 @@ public:
 	bool responseDone;
 	bool responseSent;
 	bool method_allowd;
+	bool head_method;
 	int match;
 	size_t offset;
 	size_t fileSize;

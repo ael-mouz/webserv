@@ -108,7 +108,7 @@ int Headers::requestChecker(Client &client)
         printf("Error: Headers::checkrequest client.response.method_allowd\n");
         return 405;
     }
-	if (client.request.Method == "GET")
+	if (client.request.Method == "GET" || client.request.Method == "HEAD")
 		return 200;
     if (client.request.Method == "DELETE")
         return deleteMthod(client);
