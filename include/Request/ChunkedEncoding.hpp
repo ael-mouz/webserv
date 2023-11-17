@@ -9,10 +9,8 @@ enum chunkedEncoding
 	HEXA,
 	LF_AFTER_HEXA,
 	SKIP_BODY,
-	CR_BEFOR_HEXA,
-	LF_BEFOR_HEXA,
-    CR_END_CHUNKED,
-    LF_END_CHUNKED,
+    BEFOR_HEXA,
+    END_LAST_HEXA,
 };
 
 class ChunkedEncoding
@@ -29,6 +27,7 @@ public:
     void setDecodeState(const int& decodeState);
     int getDecodeState(void) const;
 	int read(Client &client, string &buffer, ssize_t &size);
+    int statu(Client &client, const string& errorMsg, int statu);
 	void reset();
 	ChunkedEncoding();
 	~ChunkedEncoding();

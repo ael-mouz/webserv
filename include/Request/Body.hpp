@@ -33,11 +33,11 @@ private:
 	int sizeBoundary; // put it is header classe and make a geter
 
 public:
-	void multiPart(Client &client, string &buffer, ssize_t &size);
-	void writeBody(Client &client, string &buffer, ssize_t &size);
+	int multiPart(Client &client, string &buffer, ssize_t &size);
+	int writeBody(Client &client, string &buffer, ssize_t &size);
 	int createFile(Client &client,const string &value, std::string &fileName);
 	bool RandomFile(Request &Request, const string& path, const string& extension);
-    int setError(Client &client, const string& errorMsg, int statu);
+    int statu(Client &client, const string& errorMsg, int statu);
     bool isEncodChunk(Client &client);
     void setBoundary(const string& boundary);
     string getBoundary(void) const;

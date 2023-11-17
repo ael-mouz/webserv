@@ -45,10 +45,15 @@ check with docker nginx //a ayman
     * mimtype + CGI in the same functions
 
 - add rset fds when slect fail
+- ser eror msg ??
+- check fwrite if fail
+- return hold for the invalid method
+-if the method not valid dont print its info
+
+
+
 
 - understand
     * way we set socket to non blocking mode
     * test nonblocking mode
     * port vs ip
-
--ser eror msg ??

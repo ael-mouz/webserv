@@ -78,26 +78,23 @@ bool RunServers::receiveData(vector<Client>::iterator &it)
 		clients.erase(it);
         return false;
 	}
-	else
+	string buffer(recvbuffer, size);
+    // std::ofstream outf("/Users/yettabaa/Desktop/webservemerge/www/DebugFile.txt", std::ios::out | std::ios::app | std::ios::binary);
+    //                     outf << buffer;
+    size_t timeMilSec;
+    it->request.setTimeLastData((timeofday(timeMilSec)) ? timeMilSec : 0);
+	it->request.read(*it, buffer, size);
+	if (it->request.ReqstDone)
 	{
-	    string buffer(recvbuffer, size);
-        // std::ofstream outf("/Users/yettabaa/Desktop/webservemerge/www/DebugFile.txt", std::ios::out | std::ios::app | std::ios::binary);
-        //                     outf << buffer;
-        size_t timeMilSec;
-        it->request.setTimeLastData((timeofday(timeMilSec)) ? timeMilSec : 0);
-	    it->request.read(*it, buffer, size);
-	    if (it->request.ReqstDone)
-	    {
-	    	std::string method_ = "[" FG_YELLOW + it->request.Method + RESET_ALL + "]";
-	    	std::string URI = "[" FG_YELLOW + it->request.URI + RESET_ALL + "]";
-	    	logMessage(SREQ, it->clientHost, it->socketClient, method_ + " Received Data from " + it->clientIP);
-	    	logMessage(SINFO, it->clientHost, it->socketClient," URI : " + URI);
-	    	it->readEvent = false;
-	    	it->writeEvent = true;
-	    }
-	    buffer.clear();
-        return true;
+		std::string method_ = "[" FG_YELLOW + it->request.Method + RESET_ALL + "]";
+		std::string URI = "[" FG_YELLOW + it->request.URI + RESET_ALL + "]";
+		logMessage(SREQ, it->clientHost, it->socketClient, method_ + " Received Data from " + it->clientIP);
+		logMessage(SINFO, it->clientHost, it->socketClient," URI : " + URI);
+		it->readEvent = false;
+		it->writeEvent = true;
 	}
+	buffer.clear();
+    return true;
 }
 
 void RunServers::resetFds()

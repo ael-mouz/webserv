@@ -19,6 +19,7 @@ private:
 	int count;
 	string key;
     string hold;
+    int statu(Client &client, const string& errorMsg, int statu);
 	int requestChecker(Client &client);
     int contentLenChecker(Client &client);
     int multiPartChecker(Client &client, string& value);

@@ -7,16 +7,16 @@
 
 int RequestLine::read(Request &request, string &buffer, ssize_t &size) //change client to request
 {
-	unsigned char character;
+	unsigned char holdChar;
 
 	for (string::iterator it = buffer.begin(); it != buffer.end(); it++)
 	{
-		character = *it;
+		holdChar = *it;
 		switch (request.subState)
 		{
 		case METHOD:
             if ((hold == "GET" || hold == "POST" || hold == "HEAD"
-                || hold == "DELETE") && character == ' ')
+                || hold == "DELETE") && holdChar == ' ')
             {
                 count = 0;
                 request.Method = hold;
@@ -24,49 +24,41 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size) //change 
                 request.subState = _URI;
                 continue;
             }
-            if (count < 3 && character == "GET"[count])
+            if (count < 3 && holdChar == "GET"[count])
                 ;
-            else if (count < 4 && character == "POST"[count])
+            else if (count < 4 && holdChar == "POST"[count])
                 ;
-            else if (count < 4 && character == "HEAD"[count])
+            else if (count < 4 && holdChar == "HEAD"[count])
                 ;
-            else if (count < 6 && character == "DELETE"[count])
+            else if (count < 6 && holdChar == "DELETE"[count])
                 ;
             else {
-                printf("Error: RequestLine::read subState REQUEST i = %ld c = %c count = %d\n", it - buffer.begin(), character, count);
-				return request.setErrorMsg(""), 405;
+				return request.setErrorMsg("Error: RequestLine::read subState REQUEST"), 405;
             }
             count++;
             break;
 		case _URI:
-			if (character == ' ')
+			if (count > MAX_URI)
+				return request.setErrorMsg("Error: RequestLine::read subState URI count > max_lenURI"), 414;
+			if (holdChar == ' ')
 			{
 				request.subState = VERSION;
 				request.URI = hold;
 				count = 0;
 				hold.clear();
 				continue;
-			} else if (character == '%')
-            {
+			} else if (holdChar == '%') {
 				request.subState = DECODE_URI;
                 continue;
-            }
-			else if (!isValidURI(character))
-			{
-				printf("Error: RequestLine::read subState URI ValidURI i = %ld c = %c\n", it - buffer.begin(), character);
-				return request.setErrorMsg(""), 400;
-			}
-			else if (count > MAX_URI)
-			{
-				printf("Error: RequestLine::read subState URI count > max_lenURI i = %ld c = %c\n", it - buffer.begin(), character);
-				return request.setErrorMsg(""), 414;
+            } else if (!isValidURI(holdChar)) {
+				return request.setErrorMsg("Error: RequestLine::read subState URI ValidURI"), 400;
 			}
 			count++;
 			break;
 		case DECODE_URI:
-            if (std::isxdigit(character) && count_hexa < 2)
+            if (std::isxdigit(holdChar) && count_hexa < 2)
             {
-                hold += character;
+                hold += holdChar;
                 count_hexa++;
                 if (count_hexa == 2)
                 {
@@ -78,13 +70,9 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size) //change 
                 }
                 continue;
             }
-            else
-            {
-                printf("Error: RequestLine::read subState DECODE_URI i = %ld c = %c\n", it - buffer.begin(), character);
-				return request.setErrorMsg(""), 414;
-            }
+			return request.setErrorMsg("Error: RequestLine::read subState DECODE_URI"), 414;
 		case VERSION:
-			if (count < 10 && character == "HTTP/1.1\r\n"[count])
+			if (count < 10 && holdChar == "HTTP/1.1\r\n"[count])
             {
 				count++;
 			    if (count == 10)
@@ -97,15 +85,11 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size) //change 
 			        request.mainState = HEADERS;
 			    	return request.setErrorMsg(""), 0;
 			    }
+			    break;
             }
-			else
-			{
-				printf("Error: RequestLine::read subState VERSION i = %ld count = %d c = %c\n", it - buffer.begin(), count, character);
-				return request.setErrorMsg(""), 505;
-			}
-			break;
+	    	return request.setErrorMsg("Error: RequestLine::read subState VERSION"), 505;
 		}
-		hold += character;
+		hold += holdChar;
 	}
     return request.setErrorMsg(""), 0;
 }
