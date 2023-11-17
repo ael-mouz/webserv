@@ -219,6 +219,39 @@ int Body::writeBody(Client &client, string &buffer, ssize_t &size)
     return statu(client, "", 0);
 }
 
+int Body::skipBody(Client &client, string &buffer, ssize_t &size)
+{
+    (void)buffer;
+	countLength += size;
+	if ((isEncodChunk(client) == false && countLength == client.request.contentLength)
+    || (isEncodChunk(client) == true && client.request.getEncodChunkState() == END_LAST_HEXA))
+	{
+        printf("size = %ld\n", size);
+        if (client.request.Method == "DELETE")
+            return statu(client, "",deleteMthod(client));
+        return statu(client, "", 200);
+	}
+	if (isEncodChunk(client) == false && countLength > client.request.contentLength)
+		return statu(client, "countLength > client.request.ContentLength", 400);
+    return statu(client, "", 0);
+}
+
+int Body::deleteMthod(Client &client)
+{
+    try {
+        std::string root = client.response.fullpath;
+        std::cout << "route : " << client.response.fullpath << std::endl;  /////!!!!!
+        isCanBeRemoved(client.response.fullpath);
+        removeDirfolder(client.response.fullpath, root);
+    }
+    catch(int returnValue)
+    {
+        client.request.setErrorMsg("");
+        return returnValue;
+    }
+    return 200;
+}
+
 int Body::createFile(Client &client, const string &value, string &fileName)
 {
 	size_t fileNamePos = value.find("filename=");

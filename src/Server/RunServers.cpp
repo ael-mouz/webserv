@@ -80,7 +80,8 @@ bool RunServers::receiveData(vector<Client>::iterator &it)
 	}
 	string buffer(recvbuffer, size);
     // std::ofstream outf("/Users/yettabaa/Desktop/webservemerge/www/DebugFile.txt", std::ios::out | std::ios::app | std::ios::binary);
-    //                     outf << buffer;
+    // outf << "-----------------------------------\n";
+    // outf << buffer;
     size_t timeMilSec;
     it->request.setTimeLastData((timeofday(timeMilSec)) ? timeMilSec : 0);
 	it->request.read(*it, buffer, size);
