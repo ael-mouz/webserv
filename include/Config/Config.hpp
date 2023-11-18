@@ -23,8 +23,8 @@ public:
 	void parseMethods(Route &route, int start, const std::string &line, const std::string &filename);
 	void parsePort(std::string &port, int start, const std::string &line, const std::string &filename);
 	void parseRedirection(Route &route, int start, const std::string &line, const std::string &filename);
-	void parsePath(const std::string &path, int start, const std::string &line, const std::string &filename);
-	void parseRoutePath(const std::string &path, int start, const std::string &line, const std::string &filename);
+	void parsePath(std::string &path, int start, const std::string &line, const std::string &filename,int i);
+	void parseRoutePath(std::string &path, int start, const std::string &line, const std::string &filename);
 	void parseAutoindex(const std::string &value, int start, const std::string &line, const std::string &filename);
 	void parseServerNameAndHostName(std::string &serverName, int start, const std::string &line, const std::string &filename, int h);
 	void getIpv4Address(std::string &hostname, int start, const std::string &line, const std::string &filename);

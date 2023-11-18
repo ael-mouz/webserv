@@ -115,7 +115,7 @@ void Config::parseServer(const std::string &data, ServerConfig &serverConfig, in
 			else if (key == "Error_Page")
 			{
 				!value.empty() ? serverConfig.ErrorPage = value : serverConfig.ErrorPage = "", e++;
-				parsePath(serverConfig.ErrorPage, start, line, filename);
+				parsePath(serverConfig.ErrorPage, start, line, filename,1);
 			}
 			else if (key == "Port")
 			{
@@ -166,17 +166,17 @@ void Config::parseRoute(const std::string &data, Route &route, int start, const 
 			else if (key == "Root")
 			{
 				!value.empty() ? route.Root = value : route.Root = "", ro++;
-				parsePath(route.Root, start, line, filename);
+				parsePath(route.Root, start, line, filename,1);
 			}
 			else if (key == "Index")
 			{
 				!value.empty() ? route.Index = value : route.Index = "", i++;
-				parsePath(route.Index, start, line, filename);
+				parsePath(route.Index, start, line, filename,0);
 			}
 			else if (key == "Cgi_Exec")
 			{
 				!value.empty() ? route.CgiExec = value : route.CgiExec = "", c++;
-				parsePath(route.CgiExec, start, line, filename);
+				parsePath(route.CgiExec, start, line, filename,1);
 			}
 			else if (key == "Autoindex")
 			{
@@ -186,7 +186,7 @@ void Config::parseRoute(const std::string &data, Route &route, int start, const 
 			else if (key == "Upload_Path")
 			{
 				!value.empty() ? route.UploadPath = value : route.UploadPath = "", u++;
-				parsePath(route.UploadPath, start, line, filename);
+				parsePath(route.UploadPath, start, line, filename,1);
 			}
 			else if (key == "Redirection")
 			{
@@ -232,22 +232,30 @@ void Config::parseServerNameAndHostName(std::string &serverName, int start, cons
 		getIpv4Address(serverName, start, line, filename);
 }
 
-void Config::parsePath(const std::string &path, int start, const std::string &line, const std::string &filename)
+void Config::parsePath(std::string &path, int start, const std::string &line, const std::string &filename, int i)
 {
 	std::string validCharacterPath = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 `~!@#$%^&*()_+=-{}[]:;\"\'?/><.,";
 	if (path.empty())
 		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty path" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	if (path.find_first_not_of(validCharacterPath) != std::string::npos)
 		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid character path" RESET_ALL "\n\t" << line << std::endl, exit(1);
+	path = getRealPath(path);
+	if (i)
+	{
+		if (access(path.c_str(), F_OK) != 0)
+			std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid path" RESET_ALL "\n\t" << line << std::endl, exit(1);
+	}
 }
 
-void Config::parseRoutePath(const std::string &path, int start, const std::string &line, const std::string &filename)
+void Config::parseRoutePath(std::string &path, int start, const std::string &line, const std::string &filename)
 {
 	std::string validCharacterPath = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%";
 	if (path.empty())
 		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty route path" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	if (path.find_first_not_of(validCharacterPath) != std::string::npos)
 		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid character route path" RESET_ALL "\n\t" << line << std::endl, exit(1);
+	if (path[path.length() - 1] == '/' && path.length() != 1)
+		path.erase(path.end() - 1);
 }
 
 void Config::parseAutoindex(const std::string &value, int start, const std::string &line, const std::string &filename)
@@ -450,7 +458,7 @@ void Config::printServers(void)
 	int h = 0;
 	for (it = this->Servers_.begin(); it != this->Servers_.end(); ++it)
 	{
-		ft_print_config(++h, it->DefaultServerConfig,1);
+		ft_print_config(++h, it->DefaultServerConfig, 1);
 		std::vector<Route>::iterator it2;
 		int b = 0;
 		for (it2 = it->DefaultServerConfig.Routes.begin(); it2 != it->DefaultServerConfig.Routes.end(); it2++)
@@ -459,7 +467,7 @@ void Config::printServers(void)
 		int f = 0;
 		for (it1 = it->OtherServerConfig.begin(); it1 != it->OtherServerConfig.end(); ++it1)
 		{
-			ft_print_config(++f, it1->second,0);
+			ft_print_config(++f, it1->second, 0);
 			std::vector<Route>::iterator it3;
 			int c = 0;
 			for (it3 = it->DefaultServerConfig.Routes.begin(); it3 != it->DefaultServerConfig.Routes.end(); it3++)

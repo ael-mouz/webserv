@@ -1,5 +1,5 @@
 CXX = c++
-CXXFLAGS = -std=c++98 -Wall -Wextra -Werror -g #-fsanitize=address
+CXXFLAGS = -std=c++98 -Wall -Wextra -Werror -g -fsanitize=address
 TARGET = webserv
 BIN = obj/
 
@@ -24,7 +24,6 @@ SRC =	src/Request/ChunkedEncoding.cpp \
 		src/Server/RunServers.cpp \
 		src/main.cpp
 
-# src/Request/main.cpp
 
 HEADERS =	include/Request/ChunkedEncoding.hpp \
 			include/Request/Headers.hpp \
@@ -44,34 +43,37 @@ HEADERS =	include/Request/ChunkedEncoding.hpp \
 OBJS = $(addprefix $(BIN), $(SRC:.cpp=.o))
 
 IP_ADDRESS := $(shell ifconfig | grep inet | awk 'NR==5 {print $$2}')
-PORT := 8000
 
-FLAG =	" ██╗    ██╗███████╗██████╗ ███████╗███████╗██████╗ ██╗   ██\n"\
-		"██║    ██║██╔════╝██╔══██╗██╔════╝██╔════╝██╔══██╗██║   ██\n"\
-		"██║ █╗ ██║█████╗  ██████╔╝███████╗█████╗  ██████╔╝██║   ██\n"\
-		"██║███╗██║██╔══╝  ██╔══██╗╚════██║██╔══╝  ██╔══██╗╚██╗ ██╔\n"\
-		"╚███╔███╔╝███████╗██████╔╝███████║███████╗██║  ██║ ╚████╔╝\n"\
-		" ╚══╝╚══╝ ╚══════╝╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝ \n"
-
+FLAG =	" $(G)██$(Y)╗    $(G)██$(Y)╗$(G)███████$(Y)╗$(G)██████$(Y)╗ $(G)███████$(Y)╗$(G)███████$(Y)╗$(G)██████$(Y)╗ $(G)██$(Y)╗   $(G)██$(Y)╗\n"\
+		"$(G)██$(Y)║    $(G)██$(Y)║$(G)██$(Y)╔════╝$(G)██$(Y)╔══$(G)██$(Y)╗$(G)██$(Y)╔════╝$(G)██$(Y)╔════╝$(G)██$(Y)╔══$(G)██$(Y)╗$(G)██$(Y)║   $(G)██$(Y)║\n"\
+		"$(G)██$(Y)║ $(G)█$(Y)╗ $(G)██$(Y)║$(G)█████$(Y)╗  $(G)██████$(Y)╔╝$(G)███████$(Y)╗$(G)█████$(Y)╗  $(G)██████$(Y)╔╝$(G)██$(Y)║   $(G)██$(Y)║\n"\
+		"$(G)██$(Y)║$(G)███$(Y)╗$(G)██$(Y)║$(G)██$(Y)╔══╝  $(G)██$(Y)╔══$(G)██$(Y)╗╚════$(G)██$(Y)║$(G)██$(Y)╔══╝  $(G)██$(Y)╔══$(G)██$(Y)╗╚$(G)██$(Y)╗ $(G)██$(Y)╔╝\n"\
+		"╚$(G)███$(Y)╔$(G)███$(Y)╔╝$(G)███████$(Y)╗$(G)██████$(Y)╔╝$(G)███████$(Y)║$(G)███████$(Y)╗$(G)██$(Y)║  $(G)██$(Y)║ ╚$(G)████$(Y)╔╝\n"\
+		" $(Y)╚══╝╚══╝ ╚══════╝╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝$(W) \n"\
+		"		made by ($(Y)ael-mouz$(W)) and ($(Y)yettabaa$(W)) \n"\
+		"		generate executable ($(V)webserv$(W))"
 
 all: $(TARGET)
-	@clear
-	@echo  $(FLAG)
 
+# clear;
 ip:
 	@echo $(IP_ADDRESS)
 
 debug: CXXFLAGS += -DDEBUG_C
 debug: re
-SPINNER = ⠿ ⠷ ⠶ ⠦ ⠤ ⠴ ⠾ ⠇⠿
+SPINNER = ⠿ ⠷ ⠶ ⠦ ⠤ ⠴ ⠾ ⠇ ⠿ ⠷ ⠶ ⠦ ⠤ ⠴ ⠾ ⠇ ⠿
+
+export IP_ADDRESS
 
 $(TARGET): $(OBJS)
-	@for i in $(SPINNER); do \
-		clear; \
-		echo "$(Y)$$i  $(V)Compiling:$(W) $<"; \
-		sleep 0.05;\
-	done
 	@$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
+	@for i in $(SPINNER); do \
+		printf "$(Y)$$i  $(V)Compiling:$(W) $@\r"; \
+		sleep 0.1;\
+	done
+	@clear;
+	@echo  $(FLAG)
+
 
 NUM_FILES	:=	$(words $(SRC))
 NUM			:=	0
@@ -82,9 +84,7 @@ $(BIN)%.o: %.cpp $(HEADERS)
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 	@$(eval NUM := $(shell echo $$(($(NUM) + 1))))
 	@$(eval RES := $(shell echo $$(($(NUM) * 100 / $(NUM_FILES)))))
-	@clear;
-	@echo "$(Y)$<$(W)";
-	@echo "$(G)$(RES)% compiled successfully ✓$(W)"
+	@printf "%-3s $(Y)%-32s$(W) $(G)compiled successfully ✓$(W)\n" "$(RES)%" "$<"
 
 clean:
 	@rm -rf $(BIN)
