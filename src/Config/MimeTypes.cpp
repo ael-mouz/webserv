@@ -124,16 +124,16 @@ std::string MimeTypes::getMimeType(const std::string &extension) const
 
 std::string MimeTypes::getExtensionMimeType(const std::string &mimeType) const
 {
-    map<string, string>::const_iterator it;
+	map<string, string>::const_iterator it;
 
-    for (it = mimeTypes_.begin(); it != mimeTypes_.end(); it++)
-    {
-        if (it->second == mimeType)
-            break;
-    }
-    if (it != mimeTypes_.end())
-        return it->first;
-    return "";
+	for (it = mimeTypes_.begin(); it != mimeTypes_.end(); it++)
+	{
+		if (it->second == mimeType)
+			break;
+	}
+	if (it != mimeTypes_.end())
+		return it->first;
+	return "";
 }
 
 MimeTypes::~MimeTypes() {}

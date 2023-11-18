@@ -18,10 +18,13 @@ void RunServers::runing()
 			for (vector<Client>::iterator it = clients.begin(); it != clients.end();)
 			{
 				timeoutClientChecker(*it);
-				if (FD_ISSET(it->socketClient, &readFds)) {
+				if (FD_ISSET(it->socketClient, &readFds))
+				{
 					if (receiveData(it) == false)
 						continue;
-				} else if (FD_ISSET(it->socketClient, &writeFds)) {
+				}
+				else if (FD_ISSET(it->socketClient, &writeFds))
+				{
 					if (sendData(it) == false)
 						continue;
 				}
@@ -35,35 +38,35 @@ void RunServers::runing()
 
 bool RunServers::receiveData(vector<Client>::iterator &it)
 {
-    ssize_t size = recv(it->socketClient, recvbuffer, 4096 * 4, 0);
+	ssize_t size = recv(it->socketClient, recvbuffer, 4096 * 4, 0);
 	if (size <= 0)
 	{
 		logMessage(SCLOSE, it->clientHost, it->socketClient, "Request: Close conection from " + it->clientIP);
 		close(it->socketClient);
 		it->request.reset();
 		clients.erase(it);
-        return false;
+		return false;
 	}
 	string buffer(recvbuffer, size);
-    // std::ofstream outf("/Users/yettabaa/Desktop/webservemerge/www/DebugFile.txt", std::ios::out | std::ios::app | std::ios::binary);
-    // outf << "-----------------------------------\n";
-    // outf << buffer;
-    size_t timeMilSec;
-    it->request.setTimeLastData((timeofday(timeMilSec)) ? timeMilSec : 0);
+	// std::ofstream outf("/Users/yettabaa/Desktop/webservemerge/www/DebugFile.txt", std::ios::out | std::ios::app | std::ios::binary);
+	// outf << "-----------------------------------\n";
+	// outf << buffer;
+	size_t timeMilSec;
+	it->request.setTimeLastData((timeofday(timeMilSec)) ? timeMilSec : 0);
 	it->request.read(*it, buffer, size);
 	if (it->request.ReqstDone)
 	{
 		std::string method_ = "[" FG_YELLOW + it->request.Method + RESET_ALL + "]";
 		std::string URI = "[" FG_YELLOW + it->request.URI + RESET_ALL + "]";
-        if(!it->request.Method.empty())
-		    logMessage(SREQ, it->clientHost, it->socketClient, method_ + " Received Data from " + it->clientIP);
-        if(!it->request.URI.empty())
-		    logMessage(SINFO, it->clientHost, it->socketClient," URI : " + URI);
+		if (!it->request.Method.empty())
+			logMessage(SREQ, it->clientHost, it->socketClient, method_ + " Received Data from " + it->clientIP);
+		if (!it->request.URI.empty())
+			logMessage(SINFO, it->clientHost, it->socketClient, " URI : " + URI);
 		it->readEvent = false;
 		it->writeEvent = true;
 	}
 	buffer.clear();
-    return true;
+	return true;
 }
 
 bool RunServers::sendData(vector<Client>::iterator &it)
@@ -81,8 +84,8 @@ bool RunServers::sendData(vector<Client>::iterator &it)
 	it->response.sendResponse(*it);
 	if (it->response.responseSent)
 	{
-        if(!it->request.getErrorMsg().empty())
-		    logMessage(SDEBUG, it->clientHost, it->socketClient, it->request.getErrorMsg());
+		if (!it->request.getErrorMsg().empty())
+			logMessage(SDEBUG, it->clientHost, it->socketClient, it->request.getErrorMsg());
 		if (it->response.closeClient)
 		{
 			logMessage(SCLOSE, it->clientHost, it->socketClient, "Response: Close conection from " + it->clientIP);
@@ -106,7 +109,7 @@ void RunServers::resetFds()
 	FD_ZERO(&writeFds);
 	readFds = serverFds;
 	maxFds = maxFdstmp;
-	for (vector<Client>::iterator it = clients.begin(); it != clients.end();it++)
+	for (vector<Client>::iterator it = clients.begin(); it != clients.end(); it++)
 	{
 		if (it->readEvent)
 			FD_SET(it->socketClient, &readFds);
@@ -144,31 +147,29 @@ void RunServers::acceptClients()
 
 void RunServers::timeoutClientChecker(Client &client)
 {
-    size_t timeMilSec;
+	size_t timeMilSec;
 
-    if (client.readEvent == true && client.request.getTimeLastData() != 0 && timeofday(timeMilSec)
-    && (timeMilSec - client.request.getTimeLastData()) >= CLIENT_BODY_TIMEOUT)
-    {
-        client.request.ReqstDone = 408;
-        client.readEvent = false;
-        client.writeEvent = true;
-    }
+	if (client.readEvent == true && client.request.getTimeLastData() != 0 && timeofday(timeMilSec) && (timeMilSec - client.request.getTimeLastData()) >= CLIENT_BODY_TIMEOUT)
+	{
+		client.request.ReqstDone = 408;
+		client.readEvent = false;
+		client.writeEvent = true;
+	}
 }
 
 void RunServers::timeoutChecker()
 {
-    size_t timeMilSec;
+	size_t timeMilSec;
 
-    for (vector<Client>::iterator it = clients.begin(); it != clients.end(); it++)
-    {
-        if (it->readEvent == true && it->request.getTimeLastData() != 0 && timeofday(timeMilSec)
-        && (timeMilSec - it->request.getTimeLastData()) >= CLIENT_BODY_TIMEOUT)
-        {
-            it->request.ReqstDone = 408;
-            it->readEvent = false;
-            it->writeEvent = true;
-        }
-    }
+	for (vector<Client>::iterator it = clients.begin(); it != clients.end(); it++)
+	{
+		if (it->readEvent == true && it->request.getTimeLastData() != 0 && timeofday(timeMilSec) && (timeMilSec - it->request.getTimeLastData()) >= CLIENT_BODY_TIMEOUT)
+		{
+			it->request.ReqstDone = 408;
+			it->readEvent = false;
+			it->writeEvent = true;
+		}
+	}
 }
 
 int RunServers::bindSockets(Server &server)

@@ -115,7 +115,7 @@ void Config::parseServer(const std::string &data, ServerConfig &serverConfig, in
 			else if (key == "Error_Page")
 			{
 				!value.empty() ? serverConfig.ErrorPage = value : serverConfig.ErrorPage = "", e++;
-				parsePath(serverConfig.ErrorPage, start, line, filename,1);
+				parsePath(serverConfig.ErrorPage, start, line, filename, 1);
 			}
 			else if (key == "Port")
 			{
@@ -166,17 +166,17 @@ void Config::parseRoute(const std::string &data, Route &route, int start, const 
 			else if (key == "Root")
 			{
 				!value.empty() ? route.Root = value : route.Root = "", ro++;
-				parsePath(route.Root, start, line, filename,1);
+				parsePath(route.Root, start, line, filename, 1);
 			}
 			else if (key == "Index")
 			{
 				!value.empty() ? route.Index = value : route.Index = "", i++;
-				parsePath(route.Index, start, line, filename,0);
+				parsePath(route.Index, start, line, filename, 0);
 			}
 			else if (key == "Cgi_Exec")
 			{
 				!value.empty() ? route.CgiExec = value : route.CgiExec = "", c++;
-				parsePath(route.CgiExec, start, line, filename,1);
+				parsePath(route.CgiExec, start, line, filename, 1);
 			}
 			else if (key == "Autoindex")
 			{
@@ -186,7 +186,7 @@ void Config::parseRoute(const std::string &data, Route &route, int start, const 
 			else if (key == "Upload_Path")
 			{
 				!value.empty() ? route.UploadPath = value : route.UploadPath = "", u++;
-				parsePath(route.UploadPath, start, line, filename,1);
+				parsePath(route.UploadPath, start, line, filename, 1);
 			}
 			else if (key == "Redirection")
 			{
@@ -244,9 +244,9 @@ void Config::parsePath(std::string &path, int start, const std::string &line, co
 	{
 		if (access(path.c_str(), F_OK) != 0)
 			std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid path" RESET_ALL "\n\t" << line << std::endl, exit(1);
-        if (path[path.length() - 1] != '/')
-		    path += "/";
-    }
+		if (path[path.length() - 1] != '/')
+			path += "/";
+	}
 }
 
 void Config::parseRoutePath(std::string &path, int start, const std::string &line, const std::string &filename)

@@ -11,9 +11,7 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size)
 		switch (request.subState)
 		{
 		case METHOD:
-			if ((hold == "GET" || hold == "POST" || hold == "DELETE"
-			|| hold == "PUT" || hold == "OPTIONS" || hold == "TRACE"
-			|| hold == "CONNECT" || hold == "PATCH") && holdChar == ' ')
+			if ((hold == "GET" || hold == "POST" || hold == "DELETE" || hold == "PUT" || hold == "OPTIONS" || hold == "TRACE" || hold == "CONNECT" || hold == "PATCH") && holdChar == ' ')
 			{
 				count = 0;
 				request.Method = hold;
@@ -39,7 +37,8 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size)
 				;
 			else if (count < 6 && holdChar == "PATCH"[count])
 				;
-			else {
+			else
+			{
 				return request.setErrorMsg("Unknown method"), 400;
 			}
 			count++;
@@ -56,10 +55,14 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size)
 				count = 0;
 				hold.clear();
 				continue;
-			} else if (holdChar == '%') {
+			}
+			else if (holdChar == '%')
+			{
 				request.subState = DECODE_URI;
 				continue;
-			} else if (!isValidURI(holdChar)) {
+			}
+			else if (!isValidURI(holdChar))
+			{
 				return request.setErrorMsg("Invalid URI character"), 400;
 			}
 			count++;
@@ -72,7 +75,7 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size)
 				if (count_hexa == 2)
 				{
 					char c = HexaToDicimal(hold.substr(hold.size() - 2));
-					hold.erase(hold.end() -2, hold.end());
+					hold.erase(hold.end() - 2, hold.end());
 					hold += c;
 					count_hexa = 0;
 					request.subState = _URI;

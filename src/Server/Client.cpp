@@ -1,6 +1,6 @@
 #include "../../include/Server/Client.hpp"
 
-Client::Client(ServerConf &serverConf, int socketClient, std::string clientIP,std::string host)
+Client::Client(ServerConf &serverConf, int socketClient, std::string clientIP, std::string host)
 	: socketClient(socketClient), serverConf(serverConf)
 {
 	this->clientHost = host;

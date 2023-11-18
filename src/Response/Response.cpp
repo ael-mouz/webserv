@@ -167,7 +167,7 @@ void Response::sendResponse(Client &client)
 				StringStatus = "[" FG_GREEN + this->Config->status.getStatus(responseStatus) + RESET_ALL + "]";
 			}
 			logMessage(SRES, client.clientHost, client.socketClient, status + " " + StringStatus + " Response sent to " + client.clientIP);
-			if(client.request.Method == "HEAD")
+			if (client.request.Method == "HEAD")
 				head_method = true;
 		}
 		if (!BodyResponse.empty() && !head_method)
@@ -188,9 +188,9 @@ void Response::sendResponse(Client &client)
 			responseSent = isBodySent = true;
 		if (responseString.length() > 0)
 		{
-            size_t size;
+			size_t size;
 			if ((size = send(client.socketClient, responseString.c_str(), responseString.length(), 0)) <= 0)
-                closeClient = responseSent = true;
+				closeClient = responseSent = true;
 		}
 	}
 	if (responseSent)
@@ -354,7 +354,7 @@ void Response::parseUri(std::string uri)
 	std::string path;
 	for (std::vector<std::string>::const_iterator it2 = resolvedPath.begin(); it2 != resolvedPath.end(); it2++)
 		path += '/' + *it2;
-	if(uri[uri.length() - 1] == '/')
+	if (uri[uri.length() - 1] == '/')
 		path += "/";
 	if (!path.empty())
 		uri = path;
@@ -430,9 +430,9 @@ void Response::genrateRederiction(Client &client)
 	if (this->fullpath[this->fullpath.length() - 1] == '/')
 		this->fullpath.erase(this->fullpath.end() - 1);
 	else if (this->extension.empty() && isDirectory(this->fullpath.c_str()) == 1 &&
-		(client.request.Method == "GET" || client.request.Method == "POST" || client.request.Method == "DELETE"))
+			 (client.request.Method == "GET" || client.request.Method == "POST" || client.request.Method == "DELETE"))
 	{
-        (void)client;
+		(void)client;
 		std::stringstream Headers__;
 		this->responseStatus = "302";
 		Headers__ << "HTTP/1.1 302 " << this->Config->status.getStatus("302") << "\r\n";
@@ -490,17 +490,17 @@ void Response::getFULLpath()
 		this->entryPath = this->fullpath.substr(route.RoutePath.size()),
 		this->fullpath = this->route.Root + this->fullpath.substr(route.RoutePath.size()),
 		this->path_translated = this->route.Root + this->path_info,
-        this->root = this->route.Root;
+		this->root = this->route.Root;
 	else if (route.Root != "default" && route.RoutePath != "default")
 		this->entryPath = this->fullpath,
 		this->fullpath = this->route.Root + this->fullpath,
 		this->path_translated = this->route.Root + this->path_info,
-        this->root = this->route.Root;
+		this->root = this->route.Root;
 	else
 		this->entryPath = this->fullpath,
 		this->fullpath = this->Config->GlobalRoot + this->fullpath,
 		this->path_translated = this->Config->GlobalRoot + this->path_info,
-        this->root = this->Config->GlobalRoot;
+		this->root = this->Config->GlobalRoot;
 }
 
 void Response::handleScriptCGI(Client &client)
@@ -587,11 +587,11 @@ void Response::handleScriptCGI(Client &client)
 		}
 		close(pipefd[1]);
 		if (fcntl(pipefd[0], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1)
-        {
-            generateResponse("500");
+		{
+			generateResponse("500");
 			responseDone = true;
 			return;
-        }
+		}
 		char tempFile[] = "/tmp/.cgi_body_XXXXXXXXXXX";
 		FDCGIBody = mkstemp(tempFile);
 		tempFileName = tempFile;
@@ -694,9 +694,9 @@ void Response::generateResponse(std::string status)
 	std::string extension_;
 	this->responseStatus = status;
 	if (status == "400" || status == "403" || status == "406" ||
-        status == "405" || status == "407" || status == "408" ||
-        status == "411" || status == "413" || status == "416" ||
-        status == "500" || status == "501" || status == "502" ||
+		status == "405" || status == "407" || status == "408" ||
+		status == "411" || status == "413" || status == "416" ||
+		status == "500" || status == "501" || status == "502" ||
 		status == "504" || status == "505" || status == "507")
 		this->closeClient = true;
 	size_t pos = this->Config->ErrorPage.find_last_of(".");
@@ -748,7 +748,7 @@ void Response::generateResponse(std::string status)
 		header_ << "Content-Type: " + this->Config->mime.getMimeType("html") + "\r\n";
 		header_ << "Content-Length: " + intToString(body.str().length()) + "\r\n";
 		header_ << "Connection: close\r\n";
-        header_ << "\r\n";
+		header_ << "\r\n";
 		this->HeaderResponse = header_.str();
 		this->responseDone = true;
 		this->error_page = true;
