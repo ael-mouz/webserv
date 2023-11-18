@@ -4,7 +4,7 @@
 
 void RunServers::runing()
 {
-	recvbuffer = new char[4096 * 4]; // delete it
+	recvbuffer = new char[4096 * 4];
 	forever
 	{
 		resetFds();
@@ -18,13 +18,10 @@ void RunServers::runing()
 			for (vector<Client>::iterator it = clients.begin(); it != clients.end();)
 			{
 				timeoutClientChecker(*it);
-				if (FD_ISSET(it->socketClient, &readFds))
-				{
+				if (FD_ISSET(it->socketClient, &readFds)) {
 					if (receiveData(it) == false)
 						continue;
-				}
-				else if (FD_ISSET(it->socketClient, &writeFds))
-				{
+				} else if (FD_ISSET(it->socketClient, &writeFds)) {
 					if (sendData(it) == false)
 						continue;
 				}
@@ -58,8 +55,10 @@ bool RunServers::receiveData(vector<Client>::iterator &it)
 	{
 		std::string method_ = "[" FG_YELLOW + it->request.Method + RESET_ALL + "]";
 		std::string URI = "[" FG_YELLOW + it->request.URI + RESET_ALL + "]";
-		logMessage(SREQ, it->clientHost, it->socketClient, method_ + " Received Data from " + it->clientIP);
-		logMessage(SINFO, it->clientHost, it->socketClient," URI : " + URI);
+        if(!it->request.Method.empty())
+		    logMessage(SREQ, it->clientHost, it->socketClient, method_ + " Received Data from " + it->clientIP);
+        if(!it->request.URI.empty())
+		    logMessage(SINFO, it->clientHost, it->socketClient," URI : " + URI);
 		it->readEvent = false;
 		it->writeEvent = true;
 	}
@@ -69,7 +68,6 @@ bool RunServers::receiveData(vector<Client>::iterator &it)
 
 bool RunServers::sendData(vector<Client>::iterator &it)
 {
-	// printf("req done num= %d\n", it->request.ReqstDone);
 	if (!it->response.Config)
 		it->response.startResponse(*it);
 	it->response.checkErrorsRequest(*it);
@@ -83,7 +81,8 @@ bool RunServers::sendData(vector<Client>::iterator &it)
 	it->response.sendResponse(*it);
 	if (it->response.responseSent)
 	{
-        printf("req done = %s\n", it->request.getErrorMsg().c_str());
+        if(!it->request.getErrorMsg().empty())
+		    logMessage(SDEBUG, it->clientHost, it->socketClient, it->request.getErrorMsg());
 		if (it->response.closeClient)
 		{
 			logMessage(SCLOSE, it->clientHost, it->socketClient, "Response: Close conection from " + it->clientIP);
@@ -150,7 +149,6 @@ void RunServers::timeoutClientChecker(Client &client)
     if (client.readEvent == true && client.request.getTimeLastData() != 0 && timeofday(timeMilSec)
     && (timeMilSec - client.request.getTimeLastData()) >= CLIENT_BODY_TIMEOUT)
     {
-        // printf("client_body_timeout = %ld\n",timeMilSec - client.request.getTimeLastData());
         client.request.ReqstDone = 408;
         client.readEvent = false;
         client.writeEvent = true;
@@ -163,7 +161,6 @@ void RunServers::timeoutChecker()
 
     for (vector<Client>::iterator it = clients.begin(); it != clients.end(); it++)
     {
-        // printf("client_body_timeout = %ld fd ==> %d\n",(timeMilSec - it->request.getTimeLastData()), it->socketClient);
         if (it->readEvent == true && it->request.getTimeLastData() != 0 && timeofday(timeMilSec)
         && (timeMilSec - it->request.getTimeLastData()) >= CLIENT_BODY_TIMEOUT)
         {
@@ -219,7 +216,6 @@ RunServers::RunServers(char **av) : numberOfEvents(0)
 	timeout.tv_sec = CLIENT_BODY_TIMEOUT / 1000;
 	timeout.tv_usec = 0;
 	maxFdstmp = -1;
-	// printf("size client = %ld\n", sizeof(Client));
 	for (vector<ServerConf>::iterator it = serverConf.begin();
 		 it != serverConf.end(); it++)
 	{

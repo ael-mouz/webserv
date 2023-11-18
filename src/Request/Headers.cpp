@@ -21,32 +21,32 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 				client.request.subState = END_HEADERS;
 			    break;
             }
-			return statu(client, "Error: Headers::read state CHECK", 400);
-		case KEY: // set max
+			return statu(client, "Invalid headers syntax", 400);
+		case KEY:
 			if (count >= MAX_KEY)
-				return statu(client, "Error: Headers::read state KEY MAX_KEY", 400);
+				return statu(client, "Header key too long", 400);
 			if (holdChar == ':')
 			{
 				key = strToLower(hold);
-				hold.clear(); // store key
+				hold.clear();
 				client.request.subState = VALUE;
 				count = 0;
 				continue;
 			}
 			else if (!isValidKey(holdChar))
-				return statu(client ,"Error: Headers::read state KEY", 400);
+				return statu(client ,"Invalid header key character", 400);
 			count++;
 			break;
-		case VALUE: // set max
+		case VALUE:
 			if (count >= MAX_VALUE)
-				return statu(client, "Error: Headers::read state VALUE MAX_VALUE", 400);
+				return statu(client, "Header value too long", 400);
 			if (holdChar == '\r')
 			{
 				client.request.mapHeaders.insert(make_pair(key, trim(hold, " \t")));
 				hold.clear();
 				key.clear();
                 if (client.request.mapHeaders.size() > MAX_HEADERS)
-				    return statu(client, "Error: Headers::read state VALUE MAX_HEADERS ", 400);
+				    return statu(client, "Too many headers", 400);
 				client.request.subState = END_VALUE;
 				count = 0;
 				continue;
@@ -59,7 +59,7 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 				client.request.subState = CHECK;
 				continue;
 			}
-			return statu(client ,"Error: Headers::read state END_VALUE", 400);
+			return statu(client ,"Header value must end with LF (Line Feed)", 400);
 		case END_HEADERS:
 			if (holdChar == '\n')
 			{
@@ -68,11 +68,9 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 				hold.clear();
 				return requestChecker(client);
 			}
-			return statu(client, "Error: Headers::read state END_HEADER", 400);
+			return statu(client, "Headers must end with LF (Line Feed)", 400);
 		}
 		hold += holdChar;
-		// printf(" i = %ld count = %d  char = |%c| hold = |%s|\n",i,count,c, hold.c_str());
-		// std::cout << "hold = "<< hold <<"\n";
 	}
     return 0;
 }
@@ -80,7 +78,7 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 int Headers::requestChecker(Client &client)
 {
     int returnValue;
-    
+
     client.response.startResponse(client);
     if ((returnValue = transEncodChecker(client)) != 0)
         return returnValue;
@@ -102,11 +100,11 @@ int Headers::requestChecker(Client &client)
         return 200;
     }
     if (client.response.isCgi)
-		return (client.request.setErrorMsg(""), cgiChecker(client));
+		return (cgiChecker(client));
 	multimap<string, string>::iterator it;
-	it = client.request.mapHeaders.find("content-type"); // Content-Type: Body/form-data; boundary=- ???
+	it = client.request.mapHeaders.find("content-type");
     if (it == client.request.mapHeaders.end())
-        return statu(client, "Error: Headers::checkrequest there is no Content-Type", 415);
+        return statu(client, "No Content-Type provided", 415);
     if (it ->second.find("multipart/form-data") != string::npos) {
         if ((returnValue = multiPartChecker(client, it->second)) != 0)
             return returnValue;
@@ -124,7 +122,7 @@ int Headers::transEncodChecker(Client &client)
 	if (it != client.request.mapHeaders.end())
 	{
 		if (it->second != "chunked")
-			return statu(client, "Error: Headers::checkrequest it->second != \"chunked\"", 501);
+			return statu(client, "Transfer-Encoding must be 'chunked'", 501);
 		client.request.setDecodeFlag(true);
 	}
     return 0;
@@ -139,24 +137,24 @@ int Headers::contentLenChecker(Client &client)
 	if (client.request.Method != "POST" && it == client.request.mapHeaders.end())
 		return 0;
 	else if (it == client.request.mapHeaders.end())
-		return statu(client, "error Headers::checkrequest no shuncked no Content-Length", 411);
+		return statu(client, "Unknown body length", 411);
 	stream << it->second;
 	stream >> client.request.contentLength;
 	if (!isDigit(it->second) || stream.fail())
-		return statu(client, "error Headers::checkrequest ContentLength", 400);
+		return statu(client, "Invalid Content-Length", 400);
     if (client.request.contentLength == 0)
         return 200;
     stringstream stream1(client.response.Config->LimitClientBodySize);
     size_t limitClientBodySize, diskSpace;
     stream1 >> limitClientBodySize;
     if (client.request.Method == "POST" && limitClientBodySize < client.request.contentLength)
-        return statu(client, "error Headers::checkContentLen client.request.contentLength > limitClientBodySize client body size", 413);
+        return statu(client, "Body too large", 413);
     if (client.request.Method == "POST")
     {
         if(getDiskSpace(getUploadPath(client), diskSpace) == false)
-            return statu(client, "error Upload file not found", 500);
+            return statu(client, "Upload file not found", 500);
         if (diskSpace <= client.request.contentLength)
-            return statu(client, "error Headers::checkContentLen diskSpace", 507);
+            return statu(client, "No space left", 507);
     }
     return 0;
 }
@@ -164,17 +162,20 @@ int Headers::contentLenChecker(Client &client)
 int Headers::cgiChecker(Client &client)
 {
     if (client.request.openBodyFile("/tmp/.", "") == false)
-		return statu(client, "error Headers::MimeTypeChecker cgiChecker", 500);
+		return statu(client, "Generate file failed for cgi", 500);
     client.request.mainState = CGI;
     return 0;
 }
 
 int Headers::multiPartChecker(Client &client, string& value)
 {
-    size_t posBoundary = value.find("boundary="); //if boudry vid or not in correct form ??
+    size_t posBoundary = value.find("boundary=");
 	if (posBoundary == string::npos)
-		return statu(client, "error Headers::checkrequest Content-Type boundary", 400);
-	client.request.setBoundary("\r\n--" + value.substr(posBoundary + sizeof("boundary")));
+		return statu(client, "No boundary provided", 400);
+    string boundary = value.substr(posBoundary + sizeof("boundary"));
+    if (boundary.empty())
+        return statu(client, "Empty boundary", 400);
+	client.request.setBoundary("\r\n--" + boundary);
 	client.request.setSizeBoundary(client.request.getBoundary().size());
     client.request.mainState = MultiPart;
     client.request.subState = FIRST_BOUNDARY;
@@ -183,12 +184,11 @@ int Headers::multiPartChecker(Client &client, string& value)
 
 int Headers::mimeTypeChecker(Client &client, string& value)
 {
-    string extension = client.serverConf.DefaultServerConfig.mime.getExtensionMimeType(value);
-
-    if (client.request.openBodyFile(getUploadPath(client), "." + extension) == false)
-		return statu(client, "error Headers::MimeTypeChecker openBodyFile", 500);
+    string newExtension, extension = client.serverConf.DefaultServerConfig.mime.getExtensionMimeType(value);
+    newExtension = (extension.empty()) ? extension : "." + extension ;
+    if (client.request.openBodyFile(getUploadPath(client), newExtension) == false)
+		return statu(client, "Generate file failed for MimeType", 500);
     client.request.mainState = MIMETYPES;
-    // printf("Headers::MimeTypeChecker\n");
     return 0;
 }
 

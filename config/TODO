@@ -1,5 +1,4 @@
 -errors parsing request
-    *** don't forget to check file if already existe
     * do more tests for parse body syntax error
     * handel checker in headers class
         /mulpart form data
@@ -50,7 +49,7 @@ check with docker nginx //a ayman
 - return hold for the invalid method
 -if the method not valid dont print its info
 
-
+- methods Not allowed
 
 
 - understand
@@ -60,3 +59,5 @@ check with docker nginx //a ayman
 
 - fixeit
 	* error Headers::checkContentLen len = 0
+
+- empty body

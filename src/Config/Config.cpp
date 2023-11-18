@@ -244,7 +244,9 @@ void Config::parsePath(std::string &path, int start, const std::string &line, co
 	{
 		if (access(path.c_str(), F_OK) != 0)
 			std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid path" RESET_ALL "\n\t" << line << std::endl, exit(1);
-	}
+        if (path[path.length() - 1] != '/')
+		    path += "/";
+    }
 }
 
 void Config::parseRoutePath(std::string &path, int start, const std::string &line, const std::string &filename)
@@ -454,7 +456,6 @@ void Config::printConfig(void)
 void Config::printServers(void)
 {
 	std::vector<ServerConf>::iterator it;
-	std::cout << BOLD "NUMBER OF SERVERS : " << this->NbServer << std::endl;
 	int h = 0;
 	for (it = this->Servers_.begin(); it != this->Servers_.end(); ++it)
 	{

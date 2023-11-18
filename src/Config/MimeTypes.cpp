@@ -2,8 +2,8 @@
 
 MimeTypes::MimeTypes()
 {
-	mimeTypes_["html"] = "text/html";
 	mimeTypes_["htm"] = "text/html";
+	mimeTypes_["html"] = "text/html";
 	mimeTypes_["shtml"] = "text/html";
 	mimeTypes_["css"] = "text/css";
 	mimeTypes_["xml"] = "text/xml";
@@ -133,7 +133,7 @@ std::string MimeTypes::getExtensionMimeType(const std::string &mimeType) const
     }
     if (it != mimeTypes_.end())
         return it->first;
-    return "bin";
+    return "";
 }
 
 MimeTypes::~MimeTypes() {}

@@ -85,15 +85,6 @@ size_t Request::getTimeLastData(void) const
 {
     return timeLastData;
 }
-// void Request::setContentLength(const size_t& contentLength)
-// {
-//     this->contentLength = contentLength;
-// }
-
-// size_t Request::getContentLength(void) const
-// {
-//     return contentLength;
-// }
 
 void Request::setReqstDone(const int& ReqstDone)
 {
@@ -116,21 +107,15 @@ string Request::getErrorMsg(void) const
 }
 
 
-void Request::reset(void) // im smart
+void Request::reset(void)
 {
-	// Request   clear();
-	// hold.clear();
-	// key.clear();
-	// boundary.clear();
 	Method.clear();
 	URI.clear();
 	mapHeaders.clear();
 	for (vector<File>::iterator it = files.begin(); it != files.end(); it++)
 	{
         if (deleteFiles == true)
-        {
-            std::remove(&it->fileName[0]); // can ramove an existing file
-        }
+            std::remove(&it->fileName[0]);
 		it->fileName.clear();
 		it->Content.clear();
 	}
@@ -138,7 +123,6 @@ void Request::reset(void) // im smart
 	mainState = METHOD;
 	ReqstDone = 0;
 	subState = 0;
-	// sizeBoundary = 0;
 	contentLength = 0;
 	decodeFlag = false;
     deleteFiles = true;
@@ -147,7 +131,6 @@ void Request::reset(void) // im smart
 	headers.reset();
 	body.reset();
 	decode.reset();
-	// *this = clear;
 }
 
 Request::Request()
@@ -156,7 +139,6 @@ Request::Request()
 	ReqstDone = 0;
 	subState = 0;
 	decodeFlag = false;
-	// sizeBoundary = 0;
 	contentLength = 0;
     deleteFiles = true;
     timeLastData = 0;

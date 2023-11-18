@@ -118,11 +118,9 @@ void Response::handleNormalFiles(Client &client)
 {
 	if (this->responseDone)
 		return;
-	// std::cout << "▻NormalFiles◅ ----------------------------------------------------" << std::endl;
 	this->fptr = fopen(this->fullpath.c_str(), "rb");
 	if (!this->fptr)
 	{
-		std::cout << "here" << std::endl;
 		generateResponse("500");
 		this->responseDone = true;
 		return;
@@ -168,10 +166,7 @@ void Response::sendResponse(Client &client)
 				status = "[" FG_GREEN + responseStatus + RESET_ALL + "]";
 				StringStatus = "[" FG_GREEN + this->Config->status.getStatus(responseStatus) + RESET_ALL + "]";
 			}
-			std::string URI = "[" FG_YELLOW + this->fullpath + RESET_ALL + "]";
-			logMessage(SINFO, client.clientHost, client.socketClient, " URI : " + URI);
 			logMessage(SRES, client.clientHost, client.socketClient, status + " " + StringStatus + " Response sent to " + client.clientIP);
-			// std::cout << convertText(HeaderResponse) << std::endl;
 			if(client.request.Method == "HEAD")
 				head_method = true;
 		}
@@ -193,16 +188,9 @@ void Response::sendResponse(Client &client)
 			responseSent = isBodySent = true;
 		if (responseString.length() > 0)
 		{
-			if (send(client.socketClient, responseString.c_str(), responseString.length(), 0) < 0)
-				closeClient = responseSent = true;
-			// std::stringstream ss;
-			// time_t currentTime = time(NULL);
-			// ss << "file" << currentTime;
-			// std::ofstream file(ss.str().c_str());
-			// file << "--------------------------------------------------" << std::endl;
-			// file << convertText(responseString.c_str()) << std::endl;
-			// file << "--------------------------------------------------" << std::endl;
-			// file.close();
+            size_t size;
+			if ((size = send(client.socketClient, responseString.c_str(), responseString.length(), 0)) <= 0)
+                closeClient = responseSent = true;
 		}
 	}
 	if (responseSent)
@@ -221,13 +209,6 @@ void Response::startResponse(Client &client)
 	checkerPath(client);
 	regenerateExtonsion();
 	checkAcceptedMethod(client);
-	// if (this->route.Accepted_Methods == "on")
-	// {
-	// 	if (client.request.Method == this->route.Accepted_Methods_ ||
-	// 		client.request.Method == this->route.Accepted_Methods__ ||
-	// 		client.request.Method == this->route.Accepted_Methods___)
-	// 		method_allowd = true;
-	// }
 }
 
 void Response::checkAcceptedMethod(Client &client)
@@ -329,7 +310,6 @@ void Response::CGI(Client &client)
 
 void Response::getConfig(Client &client)
 {
-	// std::cout << "▻Get config◅ -----------------------------------------------------" << std::endl;
 	this->Config = &client.serverConf.DefaultServerConfig;
 	std::multimap<std::string, std::string>::iterator it = client.request.mapHeaders.find("host");
 	std::string servername;
@@ -348,7 +328,6 @@ void Response::regenerateExtonsion()
 {
 	if (this->responseDone)
 		return;
-	// std::cout << "▻Regenerate extension◅ -------------------------------------------" << std::endl;
 	size_t pos5 = this->fullpath.find_last_of(".");
 	if (pos5 != std::string::npos)
 		this->extension = this->fullpath.substr(pos5 + 1, this->fullpath.length() - pos5 + 1);
@@ -357,9 +336,8 @@ void Response::regenerateExtonsion()
 		this->isCgi = true;
 }
 
-void Response::parseUri(std::string uri) // TODO:: uri empty ?/?
+void Response::parseUri(std::string uri)
 {
-	// std::cout << "▻Parse uri◅ ------------------------------------------------------" << std::endl;
 	size_t posquery = uri.find("?");
 	if (posquery != std::string::npos)
 	{
@@ -405,7 +383,6 @@ void Response::parseUri(std::string uri) // TODO:: uri empty ?/?
 
 void Response::getRoute()
 {
-	// std::cout << "▻Get Route◅ -----------------------------------------------------" << std::endl;
 	std::string dir;
 	this->route = this->Config->getRoute(this->fullpath);
 	if (this->route.RoutePath == "default")
@@ -424,31 +401,20 @@ void Response::getRoute()
 			{
 				this->route = this->Config->getRoute(dir);
 				match = 0;
-					// std::cout << "Default match     : " << this->route.RoutePath << std::endl;
 			}
 			else
-			{
 				match = 1;
-				// std::cout << "Directory match   : " << this->route.RoutePath << std::endl;
-			}
 		}
 		else
-		{
 			match = 2;
-			// std::cout << "Extention match   : " << this->route.RoutePath << std::endl;
-		}
 	}
 	else
-	{
 		match = 3;
-		// std::cout << "Full match        : " << this->route.RoutePath << std::endl;
-	}
 }
 void Response::genrateRederiction(Client &client)
 {
 	if (this->responseDone)
 		return;
-	// std::cout << "▻Generate redirection◅ -----------------------------------------------------" << std::endl;
 	if (this->route.Redirection == "on")
 	{
 		std::stringstream Headers__;
@@ -520,7 +486,6 @@ void Response::getFULLpath()
 {
 	if (this->responseDone)
 		return;
-	// std::cout << "▻Get full path◅ --------------------------------------------------" << std::endl; // TODO:: CHECK nginx
 	if (route.Root != "default" && route.RoutePath != "default" && this->match == 1)
 		this->entryPath = this->fullpath.substr(route.RoutePath.size()),
 		this->fullpath = this->route.Root + this->fullpath.substr(route.RoutePath.size()),
@@ -540,7 +505,6 @@ void Response::getFULLpath()
 
 void Response::handleScriptCGI(Client &client)
 {
-	// std::cout << "▻Run Cgi◅ --------------------------------------------------------" << std::endl;
 	if (client.request.Method == "DELETE")
 	{
 		generateResponse("501");
@@ -551,7 +515,6 @@ void Response::handleScriptCGI(Client &client)
 		CgiRunning = true;
 		if (client.request.Method == "POST")
 		{
-			// std::cout << "FILE : " << client.request.files[0].fileName << std::endl;
 			tempFD = open(client.request.files[0].fileName.c_str(), O_RDONLY);
 			if (tempFD == -1)
 			{
@@ -567,7 +530,6 @@ void Response::handleScriptCGI(Client &client)
 			return;
 		}
 		pid = fork();
-		// pid_t pid = fork();
 		if (pid == -1)
 		{
 			generateResponse("500");
@@ -616,9 +578,8 @@ void Response::handleScriptCGI(Client &client)
 			else if (this->extension == "php")
 			{
 				char *const args[] = {(char *)this->Config->phpCgi.c_str(), (char *)this->fullpath.c_str(), NULL};
-				execve(this->Config->phpCgi.c_str(), args, envp); // must change
+				execve(this->Config->phpCgi.c_str(), args, envp);
 			}
-			// perror("execve failed");
 			for (int i = 0; envp[i] != NULL; i++)
 				delete[] envp[i];
 			delete[] envp;
@@ -626,9 +587,11 @@ void Response::handleScriptCGI(Client &client)
 		}
 		close(pipefd[1]);
 		if (fcntl(pipefd[0], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1)
-		{
-			perror("fcntl");
-		}
+        {
+            generateResponse("500");
+			responseDone = true;
+			return;
+        }
 		char tempFile[] = "/tmp/.cgi_body_XXXXXXXXXXX";
 		FDCGIBody = mkstemp(tempFile);
 		tempFileName = tempFile;
@@ -665,9 +628,7 @@ void Response::handleScriptCGI(Client &client)
 		}
 	}
 	else
-	{
 		write(FDCGIBody, resCgi.c_str(), resCgi.length());
-	}
 	if (bytesRead <= 0)
 	{
 		int status;
@@ -728,20 +689,19 @@ void Response::handleScriptCGI(Client &client)
 
 void Response::generateResponse(std::string status)
 {
-	if (error_page) // check this again
+	if (error_page)
 		return;
 	std::string extension_;
 	this->responseStatus = status;
-	// 400 403 406 407 411 413 416 500 502 504 505;
-	if (status == "400" || status == "403" || status == "406" || status == "405" ||
-         status == "407" || status == "408" ||
-		status == "411" || status == "413" || status == "416" || status == "500" ||
-		status == "502" || status == "504" || status == "505" || status == "507")
+	if (status == "400" || status == "403" || status == "406" ||
+        status == "405" || status == "407" || status == "408" ||
+        status == "411" || status == "413" || status == "416" ||
+        status == "500" || status == "501" || status == "502" ||
+		status == "504" || status == "505" || status == "507")
 		this->closeClient = true;
 	size_t pos = this->Config->ErrorPage.find_last_of(".");
 	if (pos != std::string::npos)
 		extension_ = this->Config->ErrorPage.substr(pos + 1, this->Config->ErrorPage.length() - pos + 1);
-	// std::ifstream infile(this->Config->ErrorPage.c_str());
 	this->fptr = fopen(this->Config->ErrorPage.c_str(), "rb");
 	if (!this->fptr || (extension_ != "html" && extension_ != "txt"))
 	{
@@ -786,7 +746,9 @@ void Response::generateResponse(std::string status)
 		std::stringstream header_;
 		header_ << "HTTP/1.1 " + status + " " + this->Config->status.getStatus(status) + "\r\n";
 		header_ << "Content-Type: " + this->Config->mime.getMimeType("html") + "\r\n";
-		header_ << "Content-Length: " + intToString(body.str().length()) + "\r\n\r\n";
+		header_ << "Content-Length: " + intToString(body.str().length()) + "\r\n";
+		header_ << "Connection: close\r\n";
+        header_ << "\r\n";
 		this->HeaderResponse = header_.str();
 		this->responseDone = true;
 		this->error_page = true;
@@ -917,7 +879,6 @@ std::multimap<std::string, std::string> Response::parseResponseHeader(std::strin
 		std::string value = line.substr(pos + 2, line.length() - (pos + 2) - 1);
 		headers.insert(std::make_pair(key, value));
 	}
-	// printMap(headers);
 	return headers;
 }
 
@@ -950,7 +911,6 @@ std::string Response::generateResponseHeaderCGI(std::multimap<std::string, std::
 
 void Response::mergeHeadersValuesCGI(Client &client)
 {
-	// std::cout << "▻merge Headers Values◅ -------------------------------------------" << std::endl;
 	std::multimap<std::string, std::string> newHeaders;
 	for (std::multimap<std::string, std::string>::iterator it =
 			 client.request.mapHeaders.begin();
@@ -969,10 +929,9 @@ void Response::mergeHeadersValuesCGI(Client &client)
 
 void Response::generateEnvCGI(Client &client)
 {
-	// std::cout << "▻Generate Cgi env◅ -----------------------------------------------" << std::endl;
 	std::multimap<std::string, std::string> env;
 	std::string SERVER_SOFTWARE = "webserv";
-	std::string SERVER_NAME = this->Config->ServerNames; // TODO:: maybe i should put the server host instead
+	std::string SERVER_NAME = this->Config->ServerNames;
 	std::string GATEWAY_INTERFACE = "CGI/1.1";
 	std::string SERVER_PROTOCOL = "HTTP/1.1";
 	std::string SERVER_PORT = this->Config->Port;
@@ -1026,42 +985,4 @@ void Response::generateEnvCGI(Client &client)
 		env.insert(std::pair<std::string, std::string>(keyEnv, valueEnv));
 	}
 	this->env = env;
-}
-
-void Response::ft_printconfig()
-{
-	if (this->Config)
-	{
-		std::cout << "╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
-		std::cout << "║" BOLD " GLOBAL TABLE " RESET_ALL << std::setw(64) << "║" << std::endl;
-		std::cout << "╠═════════════════╦═════════════════════════════════════════════════════════╣" << std::endl;
-		std::cout << "║ Port            ║" << std::setw(58) << "▻" + this->Config->Port << "◅║" << std::endl;
-		std::cout << "║ Host            ║" << std::setw(58) << "▻" + this->Config->Host << "◅║" << std::endl;
-		std::cout << "║ ServerNames     ║" << std::setw(58) << "▻" + this->Config->ServerNames << "◅║" << std::endl;
-		std::cout << "║ ErrorPage       ║" << std::setw(58) << "▻" + this->Config->ErrorPage << "◅║" << std::endl;
-		std::cout << "║ LimitBodySize   ║" << std::setw(58) << "▻" + this->Config->LimitClientBodySize << "◅║" << std::endl;
-		std::cout << "║ GlobalRoot      ║" << std::setw(58) << "▻" + this->Config->GlobalRoot << "◅║" << std::endl;
-		std::cout << "╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
-	}
-}
-
-void Response::ft_printroute()
-{
-	std::cout << "↦  ╔═══════════════════════════════════════════════════════════════════════════╗" << std::endl;
-	std::cout << "↦  ║" FG_BLUE BOLD " ROUTE " << RESET_ALL << std::setw(71) << "║" << std::endl;
-	std::cout << "↦  ╠═════════════════╦═════════════════════════════════════════════════════════╣\n";
-	std::cout << "↦  ║ RoutePath       ║" << std::setw(58) << "▻" + this->route.RoutePath << "◅║" << std::endl;
-	std::cout << "↦  ║ UploadPath      ║" << std::setw(58) << "▻" + this->route.UploadPath << "◅║" << std::endl;
-	std::cout << "↦  ║ Redirection     ║" << std::setw(58) << "▻" + this->route.Redirection << "◅║" << std::endl;
-	std::cout << "↦  ║ RedirectStatus  ║" << std::setw(58) << "▻" + this->route.RedirectionStatus << "◅║" << std::endl;
-	std::cout << "↦  ║ RedirectionURL  ║" << std::setw(58) << "▻" + this->route.RedirectionURL << "◅║" << std::endl;
-	std::cout << "↦  ║ Root            ║" << std::setw(58) << "▻" + this->route.Root << "◅║" << std::endl;
-	std::cout << "↦  ║ Autoindex       ║" << std::setw(58) << "▻" + this->route.Autoindex << "◅║" << std::endl;
-	std::cout << "↦  ║ Index           ║" << std::setw(58) << "▻" + this->route.Index << "◅║" << std::endl;
-	std::cout << "↦  ║ Cgi_Exec        ║" << std::setw(58) << "▻" + this->route.CgiExec << "◅║" << std::endl;
-	std::cout << "↦  ║ Methods         ║" << std::setw(58) << "▻" + this->route.Accepted_Methods << "◅║" << std::endl;
-	std::cout << "↦  ║ Methods1        ║" << std::setw(58) << "▻" + this->route.Accepted_Methods_ << "◅║" << std::endl;
-	std::cout << "↦  ║ Methods2        ║" << std::setw(58) << "▻" + this->route.Accepted_Methods__ << "◅║" << std::endl;
-	std::cout << "↦  ║ Methods3        ║" << std::setw(58) << "▻" + this->route.Accepted_Methods___ << "◅║" << std::endl;
-	std::cout << "↦  ╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
 }

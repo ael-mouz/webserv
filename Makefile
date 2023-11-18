@@ -1,5 +1,5 @@
 CXX = c++
-CXXFLAGS = -std=c++98 -Wall -Wextra -Werror -g -fsanitize=address
+CXXFLAGS = -std=c++98 -Wall -Wextra -Werror -g #-fsanitize=address
 TARGET = webserv
 BIN = obj/
 
@@ -53,6 +53,7 @@ FLAG =	" $(G)██$(Y)╗    $(G)██$(Y)╗$(G)███████$(Y)╗$
 		"		made by ($(Y)ael-mouz$(W)) and ($(Y)yettabaa$(W)) \n"\
 		"		generate executable ($(V)webserv$(W))"
 
+
 all: $(TARGET)
 
 # clear;
@@ -98,4 +99,4 @@ exec: all
 	@ ./webserv ./config/config.conf
 
 fds:
-	@ while true; do pgrep -o -x webserv | xargs -I{} lsof -p {} ; sleep 4 ;clear; done
+	@ while true; do pgrep -o -x webserv | xargs -I{} lsof -p {} ; sleep 1 ;clear; done

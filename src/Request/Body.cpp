@@ -5,10 +5,9 @@ int Body::multiPart(Client &client, string &buffer, ssize_t &size)
 {
 	unsigned char holdChar;
 
-    // printf("parsheadelen = %ld countLength = %ld\n",client.request.ContentLength, countLength);
 	countLength += size;
     if (isEncodChunk(client) == false && countLength > client.request.contentLength)
-		return statu(client, "Error: Body::read size > client.request.ContentLength", 400);
+		return statu(client, "Body length higher than content length", 400);
 	for (string::iterator it = buffer.begin(); it != buffer.end(); it++)
 	{
 		holdChar = *it;
@@ -26,7 +25,7 @@ int Body::multiPart(Client &client, string &buffer, ssize_t &size)
                 }
 			}
 			if (count > sizeBoundary +1)
-				return statu(client, "Error: Body::read state START_BOUND", 400);
+				return statu(client, "Invalid first boundary", 400);
 			count++;
             break;
 		case AFTER_BOUNDARY:
@@ -41,7 +40,7 @@ int Body::multiPart(Client &client, string &buffer, ssize_t &size)
 				hold.clear();
                 continue;
 			}
-			return statu(client, "Error: Body::read state AFTER_BOUND", 400);
+			return statu(client, "Invalid boundary", 400);
 		case LF_BOUNDARY:
 			if (holdChar == '\n')
 			{
@@ -53,38 +52,38 @@ int Body::multiPart(Client &client, string &buffer, ssize_t &size)
 			    client.request.subState = HANDLER_KEY;
                 continue;
 			}
-			return statu(client, "Error: Body::read state BEFOR_KRY", 400);
-		case HANDLER_KEY: // set max
+			return statu(client, "Boundary must end with LF (Line Feed)", 400);
+		case HANDLER_KEY:
 			if (count >= MAX_KEY)
-				return statu(client, "Error: Body::read state KEY MAX_KEY", 400);
+				return statu(client, "Multipart key too long", 400);
 			if (holdChar == ':')
 			{
 				client.request.subState = HANDLER_VALUE;
 				count = 0;
-				key = hold;
-				hold.clear(); // store key
+				key = strToLower(hold);
+				hold.clear();
                 continue;
 			}
 			else if (!isValidKey(holdChar))
-				return statu(client, "Error: Body::read state HANDLER_KEY", 400);
+				return statu(client, "Invalid multipart key", 400);
 			count++;
 			break;
-		case HANDLER_VALUE: // set max
+		case HANDLER_VALUE:
 			if (count >= MAX_VALUE)
-				return statu(client, "Error: Body::read state VALUE MAX_VALUE", 400);
+				return statu(client, "Multipart value too long", 400);
 			if (holdChar == '\r')
 			{
 				File file;
-				if (key == "Content-Disposition")
+				if (key == "content-disposition")
 				{
                     int returnValue = createFile(client ,hold, file.fileName);
 					if (returnValue != 0)
 						return returnValue;
 				}
 				file.Content.insert(make_pair(key, trim(hold, " \t")));
-				client.request.files.insert(client.request.files.begin(), file); // clear file ??
+				client.request.files.insert(client.request.files.begin(), file);
                 if (client.request.files.size() > MAX_HEADERS)
-				    return statu(client, "Error: Body::read state VALUE MAX_VALUE > MAX_HEADERS", 400);
+				    return statu(client, "Too many headers in multipart", 400);
 				hold.clear();
 				key.clear();
 				client.request.subState = LF_VALUE;
@@ -100,7 +99,7 @@ int Body::multiPart(Client &client, string &buffer, ssize_t &size)
 			    hold.clear();
                 continue;
 			}
-			return statu(client, "Error: Body::read state AFTER_VALUE", 400);
+			return statu(client, "Multipart Header value must end with LF (Line Feed)", 400);
 		case CHECK_AFTER_VALUE:
 			if (holdChar == '\r')
 			{
@@ -112,15 +111,17 @@ int Body::multiPart(Client &client, string &buffer, ssize_t &size)
 				client.request.subState = HANDLER_KEY;
 			    break;
 			}
-			return statu(client, "Error: Body::read state CHECK", 400);
+			return statu(client, "Invalid multipart headers syntax", 400);
 		case START_DATA:
 			if (holdChar == '\n')
 			{
 			    hold.clear();
+                if (fileF == NULL)
+                    return statu(client, "No file in multipart provided", 400);
 			    client.request.subState = WRITE_DATA;
                 continue;
 			}
-			return statu(client, "Error: Body::read state AFTER_WRITE_DATA", 400);
+			return statu(client, "Multipart Headers must end with LF (Line Feed)", 400);
 		case WRITE_DATA:
         {
 			if (count < sizeBoundary && holdChar == boundary[count])
@@ -139,26 +140,26 @@ int Body::multiPart(Client &client, string &buffer, ssize_t &size)
 					if (posBoundary == string::npos)
 					{
                         if (fwrite(&buffer[index], 1, size - sizeBoundary - index, fileF) != (size - sizeBoundary - index))
-                            return statu(client, "Error: fwrite fail", 500);
+                            return statu(client, "System call function failed: fwrite", 500);
 						it = buffer.begin() + (size - sizeBoundary - 1);
 					}
 					else
 					{
                         if (fwrite(&buffer[index], 1, posBoundary - index, fileF) != (posBoundary - index))
-                            return statu(client, "Error: fwrite fail", 500);
+                            return statu(client, "System call function failed: fwrite", 500);
 						it = buffer.begin() + posBoundary - 1;
 					}
 					continue;
 				}
 				if (fputc(holdChar, fileF) != holdChar)
-                    return statu(client, "Error: fputc fail", 500);
+                    return statu(client, "System call function failed: fputc", 500);
 				continue;
 			}
             size_t holdSize = hold.size();
             if (fwrite(&hold[0], 1, holdSize, fileF) != holdSize)
-                return statu(client, "Error: fwrite fail", 500);
+                return statu(client, "System call function failed: fwrite", 500);
 			if (fputc(holdChar, fileF) != holdChar)
-                return statu(client, "Error: fputc fail", 500);
+                return statu(client, "System call function failed: fputc", 500);
 			hold.clear();
 			count = 0;
 			continue;
@@ -169,15 +170,15 @@ int Body::multiPart(Client &client, string &buffer, ssize_t &size)
 				client.request.subState = CR_END;
                 continue;
 			}
-			return statu(client, "Error: Body::read state CHECK_END", 400);
+			return statu(client, "Boundary must end with -", 400);
 		case CR_END:
 			if (holdChar == '\r')
 			{
 				client.request.subState = LF_END;
                 continue;
 			}
-			return statu(client, "Error: Body::read state CR_END", 400);
-		case LF_END: // check size of content length
+			return statu(client, "Multipart Headers must end with CR (Carriage Return)", 400);
+		case LF_END:
 			if (holdChar == '\n')
 			{
                 if ((isEncodChunk(client) == false && countLength == client.request.contentLength)
@@ -191,9 +192,9 @@ int Body::multiPart(Client &client, string &buffer, ssize_t &size)
                     return statu(client, "", 201);
                 }
 				hold.clear();
-				return statu(client, "Error: Body::read LF_END countLength != client.request.contentLength", 400);
+				return statu(client, "Invalid Length in multipart", 400);
 			}
-			return statu(client, "Error: Body::read state LF_END", 400);
+			return statu(client, "Multipart Headers must end with LF (Line Feed)", 400);
 		}
 		hold += holdChar;
 	}
@@ -203,9 +204,9 @@ int Body::multiPart(Client &client, string &buffer, ssize_t &size)
 int Body::writeBody(Client &client, string &buffer, ssize_t &size)
 {
 	if (fwrite(&buffer[0], 1, size, fileF) != (size_t)size)
-        return statu(client, "Error: fwrite fail", 500);
+        return statu(client, "System call function failed: fwrite", 500);
 	countLength += size;
-	printf("counlen = %ld len = %ld\n", client.request.contentLength, countLength);
+	// printf("counlen = %ld len = %ld\n", client.request.contentLength, countLength);
 	if ((isEncodChunk(client) == false && countLength == client.request.contentLength)
     || (isEncodChunk(client) == true && client.request.getEncodChunkState() == END_LAST_HEXA))
 	{
@@ -217,67 +218,41 @@ int Body::writeBody(Client &client, string &buffer, ssize_t &size)
         return statu(client, "", 201);
 	}
 	if (isEncodChunk(client) == false && countLength > client.request.contentLength)
-		return statu(client, "countLength > client.request.ContentLength", 400);
+		return statu(client, "Invalid Body length", 400);
     return statu(client, "", 0);
 }
 
 int Body::skipBody(Client &client, ssize_t &size)
 {
 	countLength += size;
-        // printf("size = %ld\n", size);
+    // printf("size = %ld\n", size);
 	if ((isEncodChunk(client) == false && countLength == client.request.contentLength)
     || (isEncodChunk(client) == true && client.request.getEncodChunkState() == END_LAST_HEXA))
 	{
         if(!client.response.method_allowd)
-            return statu(client, "Error: Headers::checkrequest client.response.method_allowd", 405);
+            return statu(client, "Method not allowed", 405);
         if (client.request.Method == "DELETE")
             return statu(client, "",deleteMthod(client));
         return statu(client, "", 200);
 	}
 	if (isEncodChunk(client) == false && countLength > client.request.contentLength)
-		return statu(client, "countLength > client.request.ContentLength", 400);
+		return statu(client, "Invalid Body length", 400);
     return statu(client, "", 0);
 }
-
-// int Body::deleteMthod(Client &client)
-// {
-//     try {
-//         std::string root = client.response.fullpath;
-//         std::cout << "route : " << client.response.fullpath << std::endl;  /////!!!!!
-//         isCanBeRemoved(client.response.fullpath);
-//         removeDirfolder(client.response.fullpath, root);
-//     }
-//     catch(int returnValue)
-//     {
-//         client.request.setErrorMsg("");
-//         return returnValue;
-//     }
-//     return 200;
-// }
 
 int Body::createFile(Client &client, const string &value, string &fileName)
 {
 	size_t fileNamePos = value.find("filename=");
-
 	if (fileNamePos == string::npos)
-		return statu(client, "Body::createFile filename", 400);
+		return statu(client, "No file name provided", 400);
 	fileName = trim(value.substr(fileNamePos + sizeof("filename")), " \"");
     fileName = getUploadPath(client) + fileName;
     // printf("fileName = %s\n", &fileName[0]);//////
-
-
-    /*
-    struct stat stats;
-    if (stat(fileName.c_str(), &stats) == 0)
-    {
-        printf("Body::createFile file alredy exist= \n");
-        return 400;
-    }
-    */
-
+    if (access(fileName.c_str(), F_OK) == 0)
+        return statu(client, "File already exists", 400);;
 	fileF = fopen(fileName.c_str(), "w");
 	if (!fileF)
-		return statu(client, "Body::createFile fail to open file", 500);
+		return statu(client, "Generate file failed for Multipart", 500);
 	return 0;
 }
 
@@ -295,10 +270,7 @@ bool Body::RandomFile(Request &Request, const string& path, const string& extens
     }
 	fileF = fopen(randomName.c_str(), "w");
 	if (!fileF)
-	{
-		// printf("error Body::CGI fopen\n");
 		return false;
-	}
 	File file;
 	file.fileName = randomName;
 	Request.files.push_back(file);

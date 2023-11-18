@@ -10,7 +10,7 @@ int ChunkedEncoding::read(Client &client, string &buffer, ssize_t &size)
 		holdChar = *it;
 		switch (decodeState)
 		{
-		case HEXA: // remove hexa
+		case HEXA:
 			if (holdChar == '\r')
 			{
 				buffer.erase(it);
@@ -18,13 +18,13 @@ int ChunkedEncoding::read(Client &client, string &buffer, ssize_t &size)
 				continue;
 			}
 			if (!isxdigit(holdChar))
-				return statu(client, "Error: ChunkedEncoding::read state HEXA", 400);
+				return statu(client, "Invalid hexadecimal number", 400);
 			hold += holdChar;
 			buffer.erase(it);
 			continue;
 		case LF_AFTER_HEXA:
 			if (holdChar != '\n' || hold.empty())
-				return statu(client, "Error: ChunkedEncoding::read state LF_FIRST_HEXA", 400);
+				return statu(client, "Invalid chunked syntax", 400);
 			countLength = HexaToDicimal(hold);
 			hold.clear();
 			buffer.erase(it);
@@ -48,7 +48,7 @@ int ChunkedEncoding::read(Client &client, string &buffer, ssize_t &size)
 		}
         case BEFOR_HEXA:
             if (holdChar != "\r\n"[count])
-				return statu(client, "Error: ChunkedEncoding::read state BEFOR_HEXA", 400);
+				return statu(client, "Invalid CRLF (Carriage Return + Line Feed) before hexadecimal", 400);
 			buffer.erase(it);
             count++;
             if (count == 2 && !(count = 0))
@@ -56,7 +56,7 @@ int ChunkedEncoding::read(Client &client, string &buffer, ssize_t &size)
 			continue;
         case END_LAST_HEXA:
             if (count > 2 || holdChar != "\r\n"[count])
-				return statu(client, "Error: ChunkedEncoding::read state END_LAST_HEXA", 400);
+				return statu(client, "Invalid chunked body", 400);
 			buffer.erase(it);
             count++;
 			continue;
@@ -73,11 +73,11 @@ int ChunkedEncoding::totalSizeChecker(Client &client, size_t totalSize)
     stringstream stream1(client.response.Config->LimitClientBodySize);
     size_t limitClientBodySize, diskSpace;
     stream1 >> limitClientBodySize;
-    if (limitClientBodySize < totalSize) // add left space here
-        return statu(client, "error ChunkedEncoding::totalSizeChecker totalSize > limitClientBodySize client body size", 413);
+    if (limitClientBodySize < totalSize)
+        return statu(client, "Body too large", 413);
     if (client.request.Method == "POST" && (getDiskSpace(getUploadPath(client), diskSpace) == false
     || diskSpace <= totalSize))
-        return statu(client, "error ChunkedEncoding::totalSizeChecker diskSpace", 400);
+        return statu(client, "No space left", 400);
     return 0;
 }
 
