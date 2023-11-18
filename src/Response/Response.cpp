@@ -21,6 +21,7 @@ Response::Response()
 	responseSent = false;
 	method_allowd = false;
 	head_method = false;
+	error_page = false;
 	match = 0;
 	offset = 0;
 	fileSize = 0;
@@ -34,6 +35,7 @@ Response::Response()
 	fullpath.clear();
 	extension.clear();
 	entryPath.clear();
+	root.clear();
 	env.clear();
 	fptr = NULL;
 	Config = NULL;
@@ -49,6 +51,8 @@ void Response::clear()
 	tempFD = -1;
 	FDCGIBody = -1;
 	resCgi.clear();
+	if (!tempFileName.empty())
+		unlink(tempFileName.c_str());
 	tempFileName.clear();
 	MAPhederscgi.clear();
 	// RESPONSE
@@ -60,6 +64,7 @@ void Response::clear()
 	responseSent = false;
 	method_allowd = false;
 	head_method = false;
+	error_page = false;
 	match = 0;
 	offset = 0;
 	fileSize = 0;
@@ -73,6 +78,7 @@ void Response::clear()
 	fullpath.clear();
 	extension.clear();
 	entryPath.clear();
+	root.clear();
 	env.clear();
 	if (fptr)
 		fclose(fptr);
@@ -722,8 +728,8 @@ void Response::handleScriptCGI(Client &client)
 
 void Response::generateResponse(std::string status)
 {
-	// if (responseDone) // check this again
-	// 	return;
+	if (error_page) // check this again
+		return;
 	std::string extension_;
 	this->responseStatus = status;
 	// 400 403 406 407 411 413 416 500 502 504 505;
@@ -783,6 +789,7 @@ void Response::generateResponse(std::string status)
 		header_ << "Content-Length: " + intToString(body.str().length()) + "\r\n\r\n";
 		this->HeaderResponse = header_.str();
 		this->responseDone = true;
+		this->error_page = true;
 		return;
 	}
 	else
@@ -796,8 +803,8 @@ void Response::generateResponse(std::string status)
 		header_ << "Content-Length: " + intToString(this->fileSize) + "\r\n\r\n";
 		this->HeaderResponse = header_.str();
 		this->responseDone = true;
+		this->error_page = true;
 	}
-	// infile.close();
 	return;
 }
 
