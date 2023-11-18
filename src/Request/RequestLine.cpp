@@ -15,8 +15,9 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size) //change 
 		switch (request.subState)
 		{
 		case METHOD:
-            if ((hold == "GET" || hold == "POST" || hold == "HEAD"
-                || hold == "DELETE") && holdChar == ' ')
+            if ((hold == "GET" || hold == "POST" || hold == "DELETE"
+            || hold == "PUT" || hold == "OPTIONS" || hold == "TRACE"
+            || hold == "CONNECT") && holdChar == ' ')
             {
                 count = 0;
                 request.Method = hold;
@@ -28,12 +29,20 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size) //change 
                 ;
             else if (count < 4 && holdChar == "POST"[count])
                 ;
-            else if (count < 4 && holdChar == "HEAD"[count])
-                ;
             else if (count < 6 && holdChar == "DELETE"[count])
                 ;
+            else if (count < 4 && holdChar == "HEAD"[count])
+                ;
+            else if (count < 3 && holdChar == "PUT"[count])
+                ;
+            else if (count < 7 && holdChar == "OPTIONS"[count])
+                ;
+            else if (count < 5 && holdChar == "TRACE"[count])
+                ;
+            else if (count < 7 && holdChar == "CONNECT"[count])
+                ;
             else {
-				return request.setErrorMsg("Error: RequestLine::read subState REQUEST"), 405;
+				return request.setErrorMsg("Error: RequestLine::read subState REQUEST"), 400;
             }
             count++;
             break;

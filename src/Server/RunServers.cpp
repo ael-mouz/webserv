@@ -70,7 +70,7 @@ bool RunServers::receiveData(vector<Client>::iterator &it)
 bool RunServers::sendData(vector<Client>::iterator &it)
 {
 	// printf("req done num= %d\n", it->request.ReqstDone);
-    // printf("req done = %s\n", it->request.getErrorMsg().c_str());
+    printf("req done = %s\n", it->request.getErrorMsg().c_str());
 	if (!it->response.Config)
 		it->response.startResponse(*it);
 	it->response.checkErrorsRequest(*it);
