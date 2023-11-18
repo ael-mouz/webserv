@@ -205,14 +205,16 @@ int Body::writeBody(Client &client, string &buffer, ssize_t &size)
 	if (fwrite(&buffer[0], 1, size, fileF) != (size_t)size)
         return statu(client, "Error: fwrite fail", 500);
 	countLength += size;
-	// printf("counlen = %ld len = %ld\n", client.request.contentLength, countLength);
+	printf("counlen = %ld len = %ld\n", client.request.contentLength, countLength);
 	if ((isEncodChunk(client) == false && countLength == client.request.contentLength)
     || (isEncodChunk(client) == true && client.request.getEncodChunkState() == END_LAST_HEXA))
 	{
 		fclose(fileF);
         fileF = NULL;
         client.request.setDeleteFiles(false);
-        return statu(client, "", 200);
+        if (client.response.isCgi)
+            return statu(client, "", 200);
+        return statu(client, "", 201);
 	}
 	if (isEncodChunk(client) == false && countLength > client.request.contentLength)
 		return statu(client, "countLength > client.request.ContentLength", 400);

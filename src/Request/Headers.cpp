@@ -79,17 +79,15 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 
 int Headers::requestChecker(Client &client)
 {
-    client.response.startResponse(client);
-    // if(!client.response.method_allowd)
-    //     return statu(client, "Error: Headers::checkrequest client.response.method_allowd", 405);
     int returnValue;
-
+    
+    client.response.startResponse(client);
     if ((returnValue = transEncodChecker(client)) != 0)
         return returnValue;
     if (client.request.getDecodeFlag() == false
     && (returnValue = contentLenChecker(client)) != 0)
         return returnValue;
-	if (client.request.Method == "GET" || client.request.Method == "DELETE"|| client.request.Method == "HEAD")
+	if (client.request.Method != "POST")
     {
         if ((client.request.getDecodeFlag() == false && client.request.contentLength != 0)
         || (client.request.getDecodeFlag() == true))
@@ -99,6 +97,8 @@ int Headers::requestChecker(Client &client)
         }
         if (client.request.Method == "DELETE")
             return deleteMthod(client);
+        else if (client.request.Method != "GET")
+            return 405;
         return 200;
     }
     if (client.response.isCgi)
