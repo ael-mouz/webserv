@@ -79,14 +79,37 @@ int Headers::requestChecker(Client &client)
 {
 	int returnValue;
 
+	// multimap<string, string>::iterator it;
+	// it = client.request.mapHeaders.find("content-type");
+    // if (client.request.Method == "POST")
+    // {
+	//     if (it == client.request.mapHeaders.end())
+	//     	return statu(client, "No Content-Type provided", 415);
+	//     if (it->second.find("multipart/form-data") != string::npos)
+	//     {
+	//     	if ((returnValue = multiPartChecker(client, it->second)) != 0)
+	//     		return returnValue;
+	//     }
+	//     else if ((returnValue = mimeTypeChecker(client, it->second)) != 0)
+	//     	return returnValue;
+    // }
+    // contentType = (it == client.request.mapHeaders.end()) ? false : true;
+    // // return 0;
+
 	client.response.startResponse(client);
+    if ((returnValue = contentTypeChecker(client) != 0))
+        return returnValue;
+
 	if ((returnValue = transEncodChecker(client)) != 0)
 		return returnValue;
 	if (client.request.getDecodeFlag() == false && (returnValue = contentLenChecker(client)) != 0)
 		return returnValue;
 	if (client.request.Method != "POST")
 	{
-		if ((client.request.getDecodeFlag() == false && client.request.contentLength != 0) || (client.request.getDecodeFlag() == true))
+        if (contentType == true && contentLength == false)
+            return statu(client, "Unknown body length", 411);
+		if ((client.request.getDecodeFlag() == false && client.request.contentLength > 0)
+        || (client.request.getDecodeFlag() == true))
 		{
 			client.request.mainState = _SKIP_BODY;
 			return 0;
@@ -94,23 +117,13 @@ int Headers::requestChecker(Client &client)
 		if (client.request.Method == "DELETE")
 			return deleteMthod(client);
 		else if (client.request.Method != "GET")
-			return 405;
+			return statu(client, "Method not allowed", 405);
 		return 200;
 	}
 	if (client.response.isCgi)
 		return (cgiChecker(client));
-	multimap<string, string>::iterator it;
-	it = client.request.mapHeaders.find("content-type");
-	if (it == client.request.mapHeaders.end())
-		return statu(client, "No Content-Type provided", 415);
-	if (it->second.find("multipart/form-data") != string::npos)
-	{
-		if ((returnValue = multiPartChecker(client, it->second)) != 0)
-			return returnValue;
-	}
-	else if ((returnValue = mimeTypeChecker(client, it->second)) != 0)
-		return returnValue;
 	return 0;
+
 }
 
 int Headers::transEncodChecker(Client &client)
@@ -134,7 +147,7 @@ int Headers::contentLenChecker(Client &client)
 
 	it = client.request.mapHeaders.find("content-length");
 	if (client.request.Method != "POST" && it == client.request.mapHeaders.end())
-		return 0;
+		return contentLength = false, 0;
 	else if (it == client.request.mapHeaders.end())
 		return statu(client, "Unknown body length", 411);
 	stream << it->second;
@@ -155,7 +168,30 @@ int Headers::contentLenChecker(Client &client)
 		if (diskSpace <= client.request.contentLength)
 			return statu(client, "No space left", 507);
 	}
-	return 0;
+	return contentLength = true, 0;
+}
+
+int Headers::contentTypeChecker(Client &client)
+{
+    int returnValue;
+
+    multimap<string, string>::iterator it;
+	it = client.request.mapHeaders.find("content-type");
+    if (client.request.Method == "POST")
+    {
+	    if (it == client.request.mapHeaders.end())
+	    	return statu(client, "No Content-Type provided", 415);
+	    if (it->second.find("multipart/form-data") != string::npos)
+	    {
+	    	if ((returnValue = multiPartChecker(client, it->second)) != 0)
+	    		return returnValue;
+	    }
+	    else if ((returnValue = mimeTypeChecker(client, it->second)) != 0)
+	    	return returnValue;
+    }
+    else
+        contentType = (it == client.request.mapHeaders.end()) ? false : true;
+    return 0;
 }
 
 int Headers::cgiChecker(Client &client)
@@ -203,8 +239,10 @@ void Headers::reset()
 	count = 0;
 	key.clear();
 	hold.clear();
+    contentType = false;
+    contentLength = false;
 }
 
-Headers::Headers() : count(0) {}
+Headers::Headers() : count(0), contentType(false), contentLength(false){}
 
 Headers::~Headers() {}

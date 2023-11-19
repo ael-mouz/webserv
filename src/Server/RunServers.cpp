@@ -10,7 +10,11 @@ void RunServers::runing()
 		resetFds();
 		numberOfEvents = select(maxFds + 1, &readFds, &writeFds, NULL, &timeout);
 		if (numberOfEvents <= -1)
+        {
 			std::cout << "Error in select function\n"; ///!!
+            hardReset();
+            continue;
+        }
 		else if (numberOfEvents == 0)
 			timeoutChecker();
 		else
@@ -42,6 +46,7 @@ bool RunServers::receiveData(vector<Client>::iterator &it)
 	if (size <= 0)
 	{
 		logMessage(SCLOSE, it->clientHost, it->socketClient, "Request: Close conection from " + it->clientIP);
+        shutdown(it->socketClient, SHUT_RDWR);
 		close(it->socketClient);
 		it->request.reset();
 		clients.erase(it);
@@ -89,6 +94,7 @@ bool RunServers::sendData(vector<Client>::iterator &it)
 		if (it->response.closeClient)
 		{
 			logMessage(SCLOSE, it->clientHost, it->socketClient, "Response: Close conection from " + it->clientIP);
+            shutdown(it->socketClient, SHUT_RDWR);
 			close(it->socketClient);
 			it->response.clear();
 			it->request.reset();
@@ -143,6 +149,23 @@ void RunServers::acceptClients()
 			}
 		}
 	}
+}
+
+void RunServers::hardReset()
+{
+    FD_ZERO(&readFds);
+	FD_ZERO(&writeFds);
+	readFds = serverFds;
+	maxFds = maxFdstmp;
+	for (vector<Client>::iterator it = clients.begin(); it != clients.end(); )
+	{
+		shutdown(it->socketClient, SHUT_RDWR);
+		close(it->socketClient);
+        it->response.clear();
+		it->request.reset();
+		clients.erase(it);
+	}
+    clients.clear();
 }
 
 void RunServers::timeoutClientChecker(Client &client)

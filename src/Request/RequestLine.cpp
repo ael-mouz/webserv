@@ -11,14 +11,27 @@ int RequestLine::read(Request &request, string &buffer, ssize_t &size)
 		switch (request.subState)
 		{
 		case METHOD:
-			if ((hold == "GET" || hold == "POST" || hold == "DELETE" || hold == "PUT" || hold == "OPTIONS" || hold == "TRACE" || hold == "CONNECT" || hold == "PATCH") && holdChar == ' ')
+            // if ((hold == "GET" || hold == "POST" || hold == "DELETE" || hold == "HEAD" || hold == "PUT" || hold == "OPTIONS" || hold == "TRACE" || hold == "CONNECT" || hold == "PATCH") && holdChar == ' ')
+			// {
+			// 	count = 0;
+			// 	request.Method = hold;
+			// 	hold.clear();
+			// 	request.subState = _URI;
+			// 	continue;
+			// }
+			if ((hold == "GET" || hold == "POST" || hold == "DELETE" || hold == "HEAD") && holdChar == ' ')
 			{
 				count = 0;
 				request.Method = hold;
 				hold.clear();
 				request.subState = _URI;
 				continue;
-			}
+			} else if ((hold == "PUT" || hold == "OPTIONS" || hold == "TRACE" || hold == "CONNECT" || hold == "PATCH") && holdChar == ' ') {
+				count = 0;
+				request.Method = hold;
+				hold.clear();
+                return request.setErrorMsg( "Method not allowed"), 405;
+            }
 			if (count < 3 && holdChar == "GET"[count])
 				;
 			else if (count < 4 && holdChar == "POST"[count])

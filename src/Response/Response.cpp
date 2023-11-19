@@ -188,6 +188,7 @@ void Response::sendResponse(Client &client)
 			responseSent = isBodySent = true;
 		if (responseString.length() > 0)
 		{
+            // usleep(400);
 			size_t size;
 			if ((size = send(client.socketClient, responseString.c_str(), responseString.length(), 0)) <= 0)
 				closeClient = responseSent = true;
@@ -695,9 +696,10 @@ void Response::generateResponse(std::string status)
 	this->responseStatus = status;
 	if (status == "400" || status == "403" || status == "406" ||
 		status == "405" || status == "407" || status == "408" ||
-		status == "411" || status == "413" || status == "416" ||
-		status == "500" || status == "501" || status == "502" ||
-		status == "504" || status == "505" || status == "507")
+		status == "411" || status == "413" || status == "415" ||
+        status == "416" || status == "500" || status == "501" ||
+        status == "502" || status == "504" || status == "505" ||
+        status == "507")
 		this->closeClient = true;
 	size_t pos = this->Config->ErrorPage.find_last_of(".");
 	if (pos != std::string::npos)

@@ -19,14 +19,16 @@ private:
 	int count;
 	string key;
     string hold;
+    bool contentType;
+    bool contentLength;
     int statu(Client &client, const string& errorMsg, int statu);
 	int requestChecker(Client &client);
     int contentLenChecker(Client &client);
+    int contentTypeChecker(Client &client);
     int multiPartChecker(Client &client, string& value);
     int mimeTypeChecker(Client &client, string& value);
     int cgiChecker(Client &client);
     int transEncodChecker(Client &client);
-    // int deleteMthod(Client &client);
 
 public:
 	int read(Client &client, string &buffer, ssize_t &size);

@@ -61,3 +61,5 @@ check with docker nginx //a ayman
 	* error Headers::checkContentLen len = 0
 
 - empty body
+
+- in all method if there is coutent type the coutent len is importent

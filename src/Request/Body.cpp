@@ -224,7 +224,7 @@ int Body::writeBody(Client &client, string &buffer, ssize_t &size)
 int Body::skipBody(Client &client, ssize_t &size)
 {
 	countLength += size;
-	// printf("size = %ld\n", size);
+	printf("size = %ld\n", size);
 	if ((isEncodChunk(client) == false && countLength == client.request.contentLength) || (isEncodChunk(client) == true && client.request.getEncodChunkState() == END_LAST_HEXA))
 	{
 		if (!client.response.method_allowd)
@@ -241,11 +241,13 @@ int Body::skipBody(Client &client, ssize_t &size)
 int Body::createFile(Client &client, const string &value, string &fileName)
 {
 	size_t fileNamePos = value.find("filename=");
+	// printf("fileName = |%s|\n", &fileName[0]);//////
 	if (fileNamePos == string::npos)
 		return statu(client, "No file name provided", 400);
 	fileName = trim(value.substr(fileNamePos + sizeof("filename")), " \"");
+	if (fileName.empty())
+		return statu(client, "No file name provided", 400);
 	fileName = getUploadPath(client) + fileName;
-	// printf("fileName = %s\n", &fileName[0]);//////
 	if (access(fileName.c_str(), F_OK) == 0)
 		return statu(client, "File already exists", 400);
 	;

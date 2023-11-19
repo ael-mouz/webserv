@@ -31,8 +31,6 @@ private:
 	Headers headers;
 	ChunkedEncoding decode;
 	Body body;
-	// string boundary; // put it is header classe and make a geter
-	// int sizeBoundary; // put it is header classe and make a geter
     bool deleteFiles;
 	bool decodeFlag;
     size_t timeLastData;

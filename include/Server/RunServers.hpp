@@ -31,6 +31,7 @@ private:
 private:
 	int bindSockets(Server &server);
 	void resetFds();
+    void hardReset();
 	void acceptClients();
 	bool receiveData(vector<Client>::iterator &it);
 	bool sendData(vector<Client>::iterator &it);
