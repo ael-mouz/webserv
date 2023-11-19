@@ -97,8 +97,11 @@ int Headers::requestChecker(Client &client)
     // // return 0;
 
 	client.response.startResponse(client);
-    if ((returnValue = contentTypeChecker(client) != 0))
+    if ((returnValue = contentTypeChecker(client)) != 0)
+    {
+        printf("returnValue = %d\n", returnValue);
         return returnValue;
+    }
 
 	if ((returnValue = transEncodChecker(client)) != 0)
 		return returnValue;
@@ -180,7 +183,11 @@ int Headers::contentTypeChecker(Client &client)
     if (client.request.Method == "POST")
     {
 	    if (it == client.request.mapHeaders.end())
+        {
+            puts("waaaame");
+             printf("returnValue = %d\n", statu(client, "No Content-Type provided", 415));
 	    	return statu(client, "No Content-Type provided", 415);
+        }
 	    if (it->second.find("multipart/form-data") != string::npos)
 	    {
 	    	if ((returnValue = multiPartChecker(client, it->second)) != 0)

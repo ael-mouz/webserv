@@ -4,7 +4,7 @@
 #include "../../include/Config/ServerConf.hpp"
 #include "../../include/Server/Client.hpp"
 #include "../../include/Server/Utils.hpp"
-
+#include <poll.h>
 #define CLIENT_BODY_TIMEOUT 3000
 
 struct Server
@@ -19,11 +19,13 @@ private:
 	fd_set readFds;
 	fd_set writeFds;
 	fd_set serverFds;
+    struct pollfd fds[1024];
 	int maxFds;
 	int maxFdstmp;
 	int newSocket;
 	int numberOfEvents;
-	struct timeval timeout;
+	int timeout;
+	// struct timeval timeout;
 	char *recvbuffer;
 	vector<Server> servers;
 	vector<Client> clients;

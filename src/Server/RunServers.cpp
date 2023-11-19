@@ -8,26 +8,34 @@ void RunServers::runing()
 	forever
 	{
 		resetFds();
-		numberOfEvents = select(maxFds + 1, &readFds, &writeFds, NULL, &timeout);
-		if (numberOfEvents <= -1)
+		// numberOfEvents = select(maxFds + 1, &readFds, &writeFds, NULL, &timeout);
+        // printf("fd = %ld\n",maxFdstmp+clients.size());
+        numberOfEvents = poll(fds, maxFdstmp+clients.size(),3000);
+		if (numberOfEvents <= 0)
         {
 			std::cout << "Error in select function\n"; ///!!
             hardReset();
             continue;
         }
 		else if (numberOfEvents == 0)
+        {
+
+			std::cout << "timout\n"; ///!!
 			timeoutChecker();
+        }
 		else
 		{
 			for (vector<Client>::iterator it = clients.begin(); it != clients.end();)
 			{
 				timeoutClientChecker(*it);
-				if (FD_ISSET(it->socketClient, &readFds))
+				// if (FD_ISSET(it->socketClient, &readFds))
+				if (fds[maxFdstmp + it - clients.begin()].revents & POLLIN)
 				{
 					if (receiveData(it) == false)
 						continue;
+
 				}
-				else if (FD_ISSET(it->socketClient, &writeFds))
+				else if (fds[maxFdstmp + it - clients.begin()].revents & POLLOUT)
 				{
 					if (sendData(it) == false)
 						continue;
@@ -61,6 +69,7 @@ bool RunServers::receiveData(vector<Client>::iterator &it)
 	it->request.read(*it, buffer, size);
 	if (it->request.ReqstDone)
 	{
+        printf("req Done = %d\n", it->request.ReqstDone);
 		std::string method_ = "[" FG_YELLOW + it->request.Method + RESET_ALL + "]";
 		std::string URI = "[" FG_YELLOW + it->request.URI + RESET_ALL + "]";
 		if (!it->request.Method.empty())
@@ -93,6 +102,7 @@ bool RunServers::sendData(vector<Client>::iterator &it)
 			logMessage(SDEBUG, it->clientHost, it->socketClient, it->request.getErrorMsg());
 		if (it->response.closeClient)
 		{
+            printf("ffdsgggfgfgsf\n");
 			logMessage(SCLOSE, it->clientHost, it->socketClient, "Response: Close conection from " + it->clientIP);
             shutdown(it->socketClient, SHUT_RDWR);
 			close(it->socketClient);
@@ -111,27 +121,53 @@ bool RunServers::sendData(vector<Client>::iterator &it)
 
 void RunServers::resetFds()
 {
-	FD_ZERO(&readFds);
-	FD_ZERO(&writeFds);
-	readFds = serverFds;
-	maxFds = maxFdstmp;
+    // puts("--------------------");
+    std::memset(fds, 0, sizeof(fds));
+    for (vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
+    {
+        // printf("ind = %ld fd = %d\n",it - servers.begin(), it->socketServer);
+		fds[it - servers.begin()].fd = it->socketServer;
+		fds[it - servers.begin()].events = POLLIN;
+    }
+    // printf("nb clients = %ld\n", clients.size());
 	for (vector<Client>::iterator it = clients.begin(); it != clients.end(); it++)
 	{
 		if (it->readEvent)
-			FD_SET(it->socketClient, &readFds);
+        {
+			fds[maxFdstmp + it - clients.begin()].fd = it->socketClient;
+			fds[maxFdstmp + it - clients.begin()].events = POLLIN;
+        }
 		else if (it->writeEvent)
-			FD_SET(it->socketClient, &writeFds);
-		if (it->socketClient > maxFds)
-			maxFds = it->socketClient;
+        {
+			fds[maxFdstmp + it - clients.begin()].fd = it->socketClient;
+			fds[maxFdstmp  +it - clients.begin()].events = POLLOUT;
+        }
+        //  printf("ind = %ld fd = %d\n",maxFdstmp + (it - clients.begin()), fds[maxFdstmp + (it - clients.begin())].fd);
 	}
+	// FD_ZERO(&readFds);
+	// FD_ZERO(&writeFds);
+	// readFds = serverFds;
+	// maxFds = maxFdstmp;
+	// for (vector<Client>::iterator it = clients.begin(); it != clients.end(); it++)
+	// {
+	// 	if (it->readEvent)
+	// 		FD_SET(it->socketClient, &readFds);
+	// 	else if (it->writeEvent)
+	// 		FD_SET(it->socketClient, &writeFds);
+	// 	if (it->socketClient > maxFds)
+	// 		maxFds = it->socketClient;
+	// }
 }
 
 void RunServers::acceptClients()
 {
 	for (vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
 	{
-		if (FD_ISSET(it->socketServer, &readFds))
+		// if (FD_ISSET(it->socketServer, &readFds))
+        //  printf("ind = %ld fd = %d\n",it - servers.begin(), fds[it-servers.begin()].fd);
+		if (fds[it-servers.begin()].revents & POLLIN)
 		{
+            puts("sss");
 			newSocket = -1;
 			struct sockaddr_in clientAddr;
 			socklen_t clientAddrLen = sizeof(clientAddr);
@@ -237,9 +273,10 @@ RunServers::RunServers(char **av) : numberOfEvents(0)
 	config.printServers();
 #endif
 	vector<ServerConf> &serverConf = config.getServerConfig();
-	timeout.tv_sec = CLIENT_BODY_TIMEOUT / 1000;
-	timeout.tv_usec = 0;
-	maxFdstmp = -1;
+	// timeout.tv_sec = CLIENT_BODY_TIMEOUT / 1000;
+	// timeout.tv_usec = 0;
+    timeout = CLIENT_BODY_TIMEOUT;
+	maxFdstmp = 0;
 	for (vector<ServerConf>::iterator it = serverConf.begin();
 		 it != serverConf.end(); it++)
 	{
@@ -247,12 +284,19 @@ RunServers::RunServers(char **av) : numberOfEvents(0)
 		serv.serverConf = *it;
 		int fd = bindSockets(serv);
 		if (fd > maxFdstmp)
-			maxFdstmp = fd;
+			maxFdstmp++;
 		servers.push_back(serv);
 	}
-	FD_ZERO(&serverFds);
+	// FD_ZERO(&serverFds);
 	for (vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
-		FD_SET(it->socketServer, &serverFds);
+    {
+        // printf("ind = %ld fd = %d\n",it - servers.begin(), it->socketServer);
+		fds[it - servers.begin()].fd = it->socketServer;
+		fds[it - servers.begin()].events = POLLIN;
+    }
+	// FD_ZERO(&serverFds);
+	// for (vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
+	// 	FD_SET(it->socketServer, &serverFds);
 }
 
 RunServers::~RunServers() {}
