@@ -177,7 +177,7 @@ void Response::sendResponse(Client &client)
 		}
 		else if (fptr && !feof(fptr) && !head_method)
 		{
-			char buffer[1024];
+			char buffer[4069 * 2];
 			ssize_t bytesRead = fread(buffer, 1, sizeof(buffer), fptr);
 			if (bytesRead > 0)
 				responseString += std::string(buffer, bytesRead);
@@ -188,10 +188,18 @@ void Response::sendResponse(Client &client)
 			responseSent = isBodySent = true;
 		if (responseString.length() > 0)
 		{
-            // usleep(400);
-			size_t size;
-			if ((size = send(client.socketClient, responseString.c_str(), responseString.length(), 0)) <= 0)
-				closeClient = responseSent = true;
+            // usleep(500);
+            for(size_t i = 0; i < responseString.size(); i++)
+            {
+                usleep(1);
+			    size_t size;
+			    if ((size = send(client.socketClient, responseString.c_str() +i, 1, 0)) <= 0)
+			    	closeClient = responseSent = true;
+
+            }
+			// size_t size;
+			// if ((size = send(client.socketClient, responseString.c_str(), responseString.length(), 0)) <= 0)
+			// 	closeClient = responseSent = true;
 		}
 	}
 	if (responseSent)

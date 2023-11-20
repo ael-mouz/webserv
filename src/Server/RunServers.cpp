@@ -10,8 +10,8 @@ void RunServers::runing()
 		resetFds();
 		// numberOfEvents = select(maxFds + 1, &readFds, &writeFds, NULL, &timeout);
         // printf("fd = %ld\n",maxFdstmp+clients.size());
-        numberOfEvents = poll(fds, maxFdstmp+clients.size(),3000);
-		if (numberOfEvents <= 0)
+        numberOfEvents = poll(&fds[0], fds.size(), 3000);
+		if (numberOfEvents <  0)
         {
 			std::cout << "Error in select function\n"; ///!!
             hardReset();
@@ -40,6 +40,19 @@ void RunServers::runing()
 					if (sendData(it) == false)
 						continue;
 				}
+				else if (fds[maxFdstmp + it - clients.begin()].revents & POLLHUP)
+				{
+                    logMessage(SCLOSE, it->clientHost, it->socketClient, "Response: Close conection from " + it->clientIP);
+                    shutdown(it->socketClient, SHUT_RDWR);
+			        close(it->socketClient);
+			        it->response.clear();
+			        it->request.reset();
+                    fds.erase(fds.begin() + (maxFdstmp + it - clients.begin()));
+			        clients.erase(it);
+                    continue;
+					// if (sendData(it) == false)
+					// 	continue;
+				}
 				it++;
 			}
 		}
@@ -57,6 +70,7 @@ bool RunServers::receiveData(vector<Client>::iterator &it)
         shutdown(it->socketClient, SHUT_RDWR);
 		close(it->socketClient);
 		it->request.reset();
+        fds.erase(fds.begin() + (maxFdstmp + it - clients.begin()));
 		clients.erase(it);
 		return false;
 	}
@@ -69,7 +83,7 @@ bool RunServers::receiveData(vector<Client>::iterator &it)
 	it->request.read(*it, buffer, size);
 	if (it->request.ReqstDone)
 	{
-        printf("req Done = %d\n", it->request.ReqstDone);
+        // printf("req Done = %d\n", it->request.ReqstDone);
 		std::string method_ = "[" FG_YELLOW + it->request.Method + RESET_ALL + "]";
 		std::string URI = "[" FG_YELLOW + it->request.URI + RESET_ALL + "]";
 		if (!it->request.Method.empty())
@@ -102,12 +116,12 @@ bool RunServers::sendData(vector<Client>::iterator &it)
 			logMessage(SDEBUG, it->clientHost, it->socketClient, it->request.getErrorMsg());
 		if (it->response.closeClient)
 		{
-            printf("ffdsgggfgfgsf\n");
 			logMessage(SCLOSE, it->clientHost, it->socketClient, "Response: Close conection from " + it->clientIP);
             shutdown(it->socketClient, SHUT_RDWR);
 			close(it->socketClient);
 			it->response.clear();
 			it->request.reset();
+            fds.erase(fds.begin() + (maxFdstmp + it - clients.begin()));
 			clients.erase(it);
 			return false;
 		}
@@ -122,41 +136,15 @@ bool RunServers::sendData(vector<Client>::iterator &it)
 void RunServers::resetFds()
 {
     // puts("--------------------");
-    std::memset(fds, 0, sizeof(fds));
-    for (vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
-    {
-        // printf("ind = %ld fd = %d\n",it - servers.begin(), it->socketServer);
-		fds[it - servers.begin()].fd = it->socketServer;
-		fds[it - servers.begin()].events = POLLIN;
-    }
-    // printf("nb clients = %ld\n", clients.size());
 	for (vector<Client>::iterator it = clients.begin(); it != clients.end(); it++)
 	{
 		if (it->readEvent)
-        {
-			fds[maxFdstmp + it - clients.begin()].fd = it->socketClient;
-			fds[maxFdstmp + it - clients.begin()].events = POLLIN;
-        }
+            fds[maxFdstmp + it - clients.begin()].events = POLLIN;
 		else if (it->writeEvent)
-        {
-			fds[maxFdstmp + it - clients.begin()].fd = it->socketClient;
-			fds[maxFdstmp  +it - clients.begin()].events = POLLOUT;
-        }
+            fds[maxFdstmp + it - clients.begin()].events = POLLOUT | POLLHUP;
+        // fds.push_back(fds1);
         //  printf("ind = %ld fd = %d\n",maxFdstmp + (it - clients.begin()), fds[maxFdstmp + (it - clients.begin())].fd);
 	}
-	// FD_ZERO(&readFds);
-	// FD_ZERO(&writeFds);
-	// readFds = serverFds;
-	// maxFds = maxFdstmp;
-	// for (vector<Client>::iterator it = clients.begin(); it != clients.end(); it++)
-	// {
-	// 	if (it->readEvent)
-	// 		FD_SET(it->socketClient, &readFds);
-	// 	else if (it->writeEvent)
-	// 		FD_SET(it->socketClient, &writeFds);
-	// 	if (it->socketClient > maxFds)
-	// 		maxFds = it->socketClient;
-	// }
 }
 
 void RunServers::acceptClients()
@@ -165,9 +153,8 @@ void RunServers::acceptClients()
 	{
 		// if (FD_ISSET(it->socketServer, &readFds))
         //  printf("ind = %ld fd = %d\n",it - servers.begin(), fds[it-servers.begin()].fd);
-		if (fds[it-servers.begin()].revents & POLLIN)
+		if (fds[it - servers.begin()].revents & POLLIN)
 		{
-            puts("sss");
 			newSocket = -1;
 			struct sockaddr_in clientAddr;
 			socklen_t clientAddrLen = sizeof(clientAddr);
@@ -180,8 +167,15 @@ void RunServers::acceptClients()
 			{
 				std::string clientIP = inet_ntoa(clientAddr.sin_addr);
 				logMessage(SACCEPT, host, newSocket, "Accept connection from " + clientIP);
+                fcntl(newSocket, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
 				Client client(it->serverConf, newSocket, clientIP, host);
 				clients.push_back(client);
+                struct pollfd fds1;
+
+                fds1.fd = newSocket;
+                fds1.revents = 0;
+                fds1.events = POLLIN;
+                fds.push_back(fds1);
 			}
 		}
 	}
@@ -238,9 +232,16 @@ int RunServers::bindSockets(Server &server)
 		throw std::runtime_error("Error: Failed to create socket");
 	// Enable socket address reuse
 	int enableReuse = 1;
+	if (setsockopt(server.socketServer, SOL_SOCKET, SO_REUSEPORT, &enableReuse,
+				   sizeof(enableReuse)) < 0)
+		throw std::runtime_error("Error: Failed to setsockopt for reuse");
+	enableReuse = 1;
 	if (setsockopt(server.socketServer, SOL_SOCKET, SO_REUSEADDR, &enableReuse,
 				   sizeof(enableReuse)) < 0)
 		throw std::runtime_error("Error: Failed to setsockopt for reuse");
+	// Set the socket to non-blocking mode
+	if (fcntl(server.socketServer, F_SETFL, O_NONBLOCK, FD_CLOEXEC) < 0)
+		throw std::runtime_error("Error: Failed to set socket to non-blocking mode");
 	// Define and configure the server address
 	struct sockaddr_in serverAddr;
 	std::memset(&serverAddr, 0, sizeof(serverAddr));
@@ -253,11 +254,8 @@ int RunServers::bindSockets(Server &server)
 			   sizeof(serverAddr)) == -1)
 		throw std::runtime_error("Error: Failed to bind socket to address");
 	// Listen for incoming connections
-	if (listen(server.socketServer, FD_SETSIZE) < 0)
+	if (listen(server.socketServer, 128) < 0)
 		throw std::runtime_error("Error: Failed to listen on socket");
-	// Set the socket to non-blocking mode
-	if (fcntl(server.socketServer, F_SETFL, O_NONBLOCK, FD_CLOEXEC) < 0)
-		throw std::runtime_error("Error: Failed to set socket to non-blocking mode");
 	// Disable SIGPIPE to prevent the program from being terminated when writing to a closed socket.
 	signal(SIGPIPE, SIG_IGN);
 	std::string host = "http://" + server.serverConf.DefaultServerConfig.Host + ":" + server.serverConf.DefaultServerConfig.Port;
@@ -288,11 +286,16 @@ RunServers::RunServers(char **av) : numberOfEvents(0)
 		servers.push_back(serv);
 	}
 	// FD_ZERO(&serverFds);
+    // printf("%d\n", maxFdstmp);
 	for (vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
     {
+        struct pollfd fds1;
+        fds1.fd = it->socketServer;
+        fds1.events = POLLIN;
+        fds1.revents = 0;
+        fds.push_back(fds1);
         // printf("ind = %ld fd = %d\n",it - servers.begin(), it->socketServer);
-		fds[it - servers.begin()].fd = it->socketServer;
-		fds[it - servers.begin()].events = POLLIN;
+
     }
 	// FD_ZERO(&serverFds);
 	// for (vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)

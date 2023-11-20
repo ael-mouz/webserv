@@ -19,7 +19,7 @@ private:
 	fd_set readFds;
 	fd_set writeFds;
 	fd_set serverFds;
-    struct pollfd fds[1024];
+    vector<struct pollfd> fds;
 	int maxFds;
 	int maxFdstmp;
 	int newSocket;
