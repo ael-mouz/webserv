@@ -7,17 +7,16 @@
 
 class Client
 {
-
 public:
 	int socketClient;
-	std::string clientHost;
-	std::string clientIP;
-	ServerConf &serverConf;
-	Response response;
-	Request request;
 	bool readEvent;
 	bool writeEvent;
-	Client(ServerConf &serverConf, int socketClient, std::string clientIP,std::string host);
+	ServerConf &serverConf;
+	std::string clientHost;
+	std::string clientIP;
+	Response response;
+	Request request;
+	Client(ServerConf &serverConf, int socketClient, std::string clientIP, std::string host);
 	Client &operator=(const Client &overl);
 	Client(const Client &copy);
 	~Client();

@@ -9,12 +9,12 @@ void RunServers::runing()
 	{
 		resetFds();
 		numberOfEvents = select(maxFds + 1, &readFds, &writeFds, NULL, &timeout);
-		if (numberOfEvents <= -1)
-        {
+		if (numberOfEvents == -1)
+		{
 			std::cout << "Error in select function\n"; ///!!
-            hardReset();
-            continue;
-        }
+			hardReset();
+			continue;
+		}
 		else if (numberOfEvents == 0)
 			timeoutChecker();
 		else
@@ -46,7 +46,7 @@ bool RunServers::receiveData(vector<Client>::iterator &it)
 	if (size <= 0)
 	{
 		logMessage(SCLOSE, it->clientHost, it->socketClient, "Request: Close conection from " + it->clientIP);
-        shutdown(it->socketClient, SHUT_RDWR);
+		shutdown(it->socketClient, SHUT_RDWR);
 		close(it->socketClient);
 		it->request.reset();
 		clients.erase(it);
@@ -94,7 +94,7 @@ bool RunServers::sendData(vector<Client>::iterator &it)
 		if (it->response.closeClient)
 		{
 			logMessage(SCLOSE, it->clientHost, it->socketClient, "Response: Close conection from " + it->clientIP);
-            shutdown(it->socketClient, SHUT_RDWR);
+			shutdown(it->socketClient, SHUT_RDWR);
 			close(it->socketClient);
 			it->response.clear();
 			it->request.reset();
@@ -142,6 +142,8 @@ void RunServers::acceptClients()
 				logMessage(SERROR, host, newSocket, "Accept failed");
 			else
 			{
+				if (fcntl(newSocket, F_SETFL, O_NONBLOCK, FD_CLOEXEC) < 0)
+					continue;
 				std::string clientIP = inet_ntoa(clientAddr.sin_addr);
 				logMessage(SACCEPT, host, newSocket, "Accept connection from " + clientIP);
 				Client client(it->serverConf, newSocket, clientIP, host);
@@ -153,26 +155,27 @@ void RunServers::acceptClients()
 
 void RunServers::hardReset()
 {
-    FD_ZERO(&readFds);
+	FD_ZERO(&readFds);
 	FD_ZERO(&writeFds);
 	readFds = serverFds;
 	maxFds = maxFdstmp;
-	for (vector<Client>::iterator it = clients.begin(); it != clients.end(); )
+	for (vector<Client>::iterator it = clients.begin(); it != clients.end();)
 	{
 		shutdown(it->socketClient, SHUT_RDWR);
 		close(it->socketClient);
-        it->response.clear();
+		it->response.clear();
 		it->request.reset();
 		clients.erase(it);
 	}
-    clients.clear();
+	clients.clear();
 }
 
 void RunServers::timeoutClientChecker(Client &client)
 {
 	size_t timeMilSec;
 
-	if (client.readEvent == true && client.request.getTimeLastData() != 0 && timeofday(timeMilSec) && (timeMilSec - client.request.getTimeLastData()) >= CLIENT_BODY_TIMEOUT)
+	if (client.readEvent == true && client.request.getTimeLastData() != 0 && timeofday(timeMilSec) &&
+		(timeMilSec - client.request.getTimeLastData()) >= CLIENT_BODY_TIMEOUT)
 	{
 		client.request.ReqstDone = 408;
 		client.readEvent = false;
@@ -186,7 +189,8 @@ void RunServers::timeoutChecker()
 
 	for (vector<Client>::iterator it = clients.begin(); it != clients.end(); it++)
 	{
-		if (it->readEvent == true && it->request.getTimeLastData() != 0 && timeofday(timeMilSec) && (timeMilSec - it->request.getTimeLastData()) >= CLIENT_BODY_TIMEOUT)
+		if (it->readEvent == true && it->request.getTimeLastData() != 0 && timeofday(timeMilSec) &&
+			(timeMilSec - it->request.getTimeLastData()) >= CLIENT_BODY_TIMEOUT)
 		{
 			it->request.ReqstDone = 408;
 			it->readEvent = false;
@@ -210,14 +214,12 @@ int RunServers::bindSockets(Server &server)
 	std::memset(&serverAddr, 0, sizeof(serverAddr));
 	serverAddr.sin_family = AF_INET; // Set the address family to AF_INET (for IPv4)
 	serverAddr.sin_port = htons(std::atoi(server.serverConf.DefaultServerConfig.Port.c_str()));
-	inet_pton(AF_INET, server.serverConf.DefaultServerConfig.Host.c_str(),
-			  &serverAddr.sin_addr);
+	inet_pton(AF_INET, server.serverConf.DefaultServerConfig.Host.c_str(), &serverAddr.sin_addr);
 	// Bind the socket to the server address
-	if (::bind(server.socketServer, (struct sockaddr *)&serverAddr,
-			   sizeof(serverAddr)) == -1)
+	if (::bind(server.socketServer, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0)
 		throw std::runtime_error("Error: Failed to bind socket to address");
 	// Listen for incoming connections
-	if (listen(server.socketServer, FD_SETSIZE) < 0)
+	if (listen(server.socketServer, SOMAXCONN) < 0)
 		throw std::runtime_error("Error: Failed to listen on socket");
 	// Set the socket to non-blocking mode
 	if (fcntl(server.socketServer, F_SETFL, O_NONBLOCK, FD_CLOEXEC) < 0)
@@ -237,7 +239,7 @@ RunServers::RunServers(char **av) : numberOfEvents(0)
 	config.printServers();
 #endif
 	vector<ServerConf> &serverConf = config.getServerConfig();
-	timeout.tv_sec = CLIENT_BODY_TIMEOUT / 1000;
+	timeout.tv_sec = 300;
 	timeout.tv_usec = 0;
 	maxFdstmp = -1;
 	for (vector<ServerConf>::iterator it = serverConf.begin();

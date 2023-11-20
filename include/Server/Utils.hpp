@@ -1,7 +1,6 @@
 #pragma once
 
 // cpp headers
-#include <set>
 #include <map>
 #include <ctime>
 #include <fstream>
@@ -27,7 +26,7 @@
 #include <dirent.h>
 #include <netdb.h>
 #include <netinet/in.h>
-# include <sys/time.h>
+#include <sys/time.h>
 
 class Client;
 class ServerConfig;
@@ -93,7 +92,6 @@ struct Route
 	std::string Accepted_Methods_;
 	std::string Accepted_Methods__;
 	std::string Accepted_Methods___;
-	// std::vector<std::string> AcceptedMethods;
 	Route() : Root("default"),
 			  Index("default"),
 			  CgiExec("default"),

@@ -78,38 +78,19 @@ int Headers::read(Client &client, string &buffer, ssize_t &size)
 int Headers::requestChecker(Client &client)
 {
 	int returnValue;
-
-	// multimap<string, string>::iterator it;
-	// it = client.request.mapHeaders.find("content-type");
-    // if (client.request.Method == "POST")
-    // {
-	//     if (it == client.request.mapHeaders.end())
-	//     	return statu(client, "No Content-Type provided", 415);
-	//     if (it->second.find("multipart/form-data") != string::npos)
-	//     {
-	//     	if ((returnValue = multiPartChecker(client, it->second)) != 0)
-	//     		return returnValue;
-	//     }
-	//     else if ((returnValue = mimeTypeChecker(client, it->second)) != 0)
-	//     	return returnValue;
-    // }
-    // contentType = (it == client.request.mapHeaders.end()) ? false : true;
-    // // return 0;
-
 	client.response.startResponse(client);
-    if ((returnValue = contentTypeChecker(client) != 0))
-        return returnValue;
-
+	if ((returnValue = contentTypeChecker(client)) != 0)
+		return returnValue;
 	if ((returnValue = transEncodChecker(client)) != 0)
 		return returnValue;
 	if (client.request.getDecodeFlag() == false && (returnValue = contentLenChecker(client)) != 0)
 		return returnValue;
 	if (client.request.Method != "POST")
 	{
-        if (contentType == true && contentLength == false)
-            return statu(client, "Unknown body length", 411);
-		if ((client.request.getDecodeFlag() == false && client.request.contentLength > 0)
-        || (client.request.getDecodeFlag() == true))
+		if (contentType == true && contentLength == false)
+			return statu(client, "Unknown body length", 411);
+		if ((client.request.getDecodeFlag() == false && client.request.contentLength > 0) ||
+			(client.request.getDecodeFlag() == true))
 		{
 			client.request.mainState = _SKIP_BODY;
 			return 0;
@@ -123,7 +104,6 @@ int Headers::requestChecker(Client &client)
 	if (client.response.isCgi)
 		return (cgiChecker(client));
 	return 0;
-
 }
 
 int Headers::transEncodChecker(Client &client)
@@ -173,25 +153,25 @@ int Headers::contentLenChecker(Client &client)
 
 int Headers::contentTypeChecker(Client &client)
 {
-    int returnValue;
+	int returnValue;
 
-    multimap<string, string>::iterator it;
+	multimap<string, string>::iterator it;
 	it = client.request.mapHeaders.find("content-type");
-    if (client.request.Method == "POST")
-    {
-	    if (it == client.request.mapHeaders.end())
-	    	return statu(client, "No Content-Type provided", 415);
-	    if (it->second.find("multipart/form-data") != string::npos)
-	    {
-	    	if ((returnValue = multiPartChecker(client, it->second)) != 0)
-	    		return returnValue;
-	    }
-	    else if ((returnValue = mimeTypeChecker(client, it->second)) != 0)
-	    	return returnValue;
-    }
-    else
-        contentType = (it == client.request.mapHeaders.end()) ? false : true;
-    return 0;
+	if (client.request.Method == "POST")
+	{
+		if (it == client.request.mapHeaders.end())
+			return statu(client, "No Content-Type provided", 415);
+		if (it->second.find("multipart/form-data") != string::npos)
+		{
+			if ((returnValue = multiPartChecker(client, it->second)) != 0)
+				return returnValue;
+		}
+		else if ((returnValue = mimeTypeChecker(client, it->second)) != 0)
+			return returnValue;
+	}
+	else
+		contentType = (it == client.request.mapHeaders.end()) ? false : true;
+	return 0;
 }
 
 int Headers::cgiChecker(Client &client)
@@ -239,10 +219,10 @@ void Headers::reset()
 	count = 0;
 	key.clear();
 	hold.clear();
-    contentType = false;
-    contentLength = false;
+	contentType = false;
+	contentLength = false;
 }
 
-Headers::Headers() : count(0), contentType(false), contentLength(false){}
+Headers::Headers() : count(0), contentType(false), contentLength(false) {}
 
 Headers::~Headers() {}

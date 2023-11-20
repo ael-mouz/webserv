@@ -63,3 +63,10 @@ check with docker nginx //a ayman
 - empty body
 
 - in all method if there is coutent type the coutent len is importent
+
+
+- close error fd in the fork
+- make function for config error;
+- timeout in the config
+- macro
+- check status error

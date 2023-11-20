@@ -1,8 +1,8 @@
 #include "../../include/Server/Client.hpp"
 
-Client::Client(ServerConf &serverConf, int socketClient, std::string clientIP, std::string host)
-	: socketClient(socketClient), serverConf(serverConf)
+Client::Client(ServerConf &serverConf, int socketClient, std::string clientIP, std::string host) : serverConf(serverConf)
 {
+	this->socketClient = socketClient;
 	this->clientHost = host;
 	this->clientIP = clientIP;
 	readEvent = true;
@@ -21,8 +21,7 @@ Client &Client::operator=(const Client &overl)
 	return (*this);
 }
 
-Client::Client(const Client &copy)
-	: serverConf(copy.serverConf)
+Client::Client(const Client &copy) : serverConf(copy.serverConf)
 {
 	*this = copy;
 }

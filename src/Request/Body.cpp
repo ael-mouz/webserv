@@ -224,7 +224,7 @@ int Body::writeBody(Client &client, string &buffer, ssize_t &size)
 int Body::skipBody(Client &client, ssize_t &size)
 {
 	countLength += size;
-	printf("size = %ld\n", size);
+	// printf("size = %ld\n", size);
 	if ((isEncodChunk(client) == false && countLength == client.request.contentLength) || (isEncodChunk(client) == true && client.request.getEncodChunkState() == END_LAST_HEXA))
 	{
 		if (!client.response.method_allowd)
