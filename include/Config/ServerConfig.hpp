@@ -15,6 +15,7 @@ public:
 	std::string ErrorPage;
 	std::string GlobalRoot;
 	std::string GlobalUpload;
+	std::string CgiTimeout;
 	std::string LimitClientBodySize;
 	std::string phpCgi;
 	std::string pythonCgi;

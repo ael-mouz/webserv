@@ -155,7 +155,7 @@ int deleteMthod(Client &client);
 		"font-family: Arial, sans-serif;"                                              \
 		"background-image: url('/images/site42-bg.png');"                              \
 		"background-size: cover;"                                                      \
-		"background-position: center;"                                                 \
+		"background-position: contain;"                                                \
 		"height: 100vh;"                                                               \
 		"display: flex;"                                                               \
 		"flex-direction: column;"                                                      \
@@ -196,7 +196,7 @@ int deleteMthod(Client &client);
 		"padding: 0;"                                       \
 		"background-image: url(\"/images/site42-bg.png\");" \
 		"background-size: cover;"                           \
-		"background-position: center;"                      \
+		"background-position: contain;"                     \
 		"}"                                                 \
 		".upload-status {"                                  \
 		"max-width: 600px;"                                 \
@@ -236,11 +236,11 @@ int deleteMthod(Client &client);
 		fullpath +                                                                                \
 		"</title>"                                                                                \
 		"<style>"                                                                                 \
-		"body { font-family: Arial, sans-serif;background-image: url(\"/images/site42-bg.gif\");" \
-		"background-size: cover;background-position: center; }"                                   \
+		"body { font-family: Arial, sans-serif;background-image: url(\"/images/site42-bg.png\");" \
+		"background-size: cover;background-position: contain; }"                                  \
 		"table { width: 100%; border-collapse: collapse; }"                                       \
 		"th, td { padding: 10px; text-align: left; border-bottom: 1px solid black;}"              \
-		".icon { width: 20px; height: 20px; margin-right: 10px; }"                                \
+		".icon { width: 20px; height: 20px; margin-right: 10px;object-fit:contain;}"              \
 		".Directory { color: #0070c0; background:#f2f2f2; }"                                      \
 		".File { color: #000; }"                                                                  \
 		".col { text-align: center; }"                                                            \

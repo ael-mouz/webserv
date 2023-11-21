@@ -11,8 +11,6 @@ void Response::sendResponse(Client &client)
 		{
 			responseString = HeaderResponse;
 			isHeaderSent = true;
-			if (client.request.Method == "HEAD")
-				head_method = true;
 			std::string status, StringStatus;
 			if (responseStatus >= "400")
 				status = "[" FG_RED + responseStatus + RESET_ALL + "]",
@@ -21,6 +19,8 @@ void Response::sendResponse(Client &client)
 				status = "[" FG_GREEN + responseStatus + RESET_ALL + "]",
 				StringStatus = "[" FG_GREEN + this->Config->status.getStatus(responseStatus) + RESET_ALL + "]";
 			logMessage(SRES, client.clientHost, client.socketClient, status + " " + StringStatus + " Response sent to " + client.clientIP);
+			if (client.request.Method == "HEAD")
+				head_method = true;
 		}
 		if (!BodyResponse.empty() && !head_method)
 			responseString += BodyResponse,
@@ -107,7 +107,7 @@ void Response::handleRange(stringstream &header, const std::string &range)
 	fseek(this->fptr, this->offset, SEEK_SET);
 	this->responseStatus = "206";
 	std::string status = "206";
-	header << "HTTP/1.1" << status << " " << this->Config->status.getStatus("206") << "\r\n";
+	header << "HTTP/1.1 " << status << " " << this->Config->status.getStatus("206") << "\r\n";
 	header << "Accept-Ranges: " << std::string("bytes") << "\r\n";
 	header << "Content-Type: " << this->Config->mime.getMimeType(this->extension) << "\r\n";
 	header << "Content-Range: " << std::string("bytes ") << this->offset << "-" << (this->fileSize - 1) << "/" << this->fileSize << "\r\n";
@@ -283,7 +283,6 @@ void Response::genrateRederiction(Client &client)
 	else if (this->extension.empty() && isDirectory(this->fullpath.c_str()) == 1 &&
 			 (client.request.Method == "GET" || client.request.Method == "POST" || client.request.Method == "DELETE"))
 	{
-		(void)client;
 		std::stringstream Headers__;
 		std::string status = "302";
 		Headers__ << "HTTP/1.1 " << status << " " << this->Config->status.getStatus("302") << "\r\n";
@@ -310,6 +309,7 @@ void Response::checkerPath(Client &clinet)
 			this->fullpath += "/index.html";
 		else
 			this->fullpath = this->fullpath + "/" + this->route.Index;
+		std::cout << this->fullpath << std::endl;
 		dirr = isDirectory(this->fullpath.c_str());
 		if (dirr == -1 || dirr == 1)
 			return (generateResponse("404"));
@@ -322,11 +322,22 @@ void Response::getFULLpath()
 {
 	if (this->responseDone)
 		return;
-	if (route.Root != "default" && route.RoutePath != "default" && this->match == 1)
-		this->entryPath = this->fullpath.substr(route.RoutePath.size()),
-		this->fullpath = this->route.Root + this->fullpath.substr(route.RoutePath.size()),
+	std::string tmp = route.RoutePath;
+	if (tmp != "/" && tmp[tmp.length() - 1] == '/')
+		tmp.erase(tmp.end() - 1);
+	std::string newtmp;
+	if (route.Root != "default" && route.RoutePath != "default" && (this->match == 1 || this->match == 3) && this->extension != tmp)
+		this->entryPath = this->fullpath,
+		newtmp = this->fullpath.substr(tmp.length(), this->fullpath.length() - tmp.length()),
+		this->fullpath = this->route.Root + newtmp,
 		this->path_translated = this->route.Root + this->path_info,
 		this->root = this->route.Root;
+	else if (route.Root == "default" && route.RoutePath != "default" && (this->match == 1 || this->match == 3) && this->extension != tmp)
+		this->entryPath = this->fullpath,
+		newtmp = this->fullpath.substr(tmp.length(), this->fullpath.length() - tmp.length()),
+		this->fullpath = this->Config->GlobalRoot + newtmp,
+		this->path_translated = this->Config->GlobalRoot + this->path_info,
+		this->root = this->Config->GlobalRoot;
 	else if (route.Root != "default" && route.RoutePath != "default")
 		this->entryPath = this->fullpath,
 		this->fullpath = this->route.Root + this->fullpath,
@@ -352,7 +363,7 @@ void Response::generateAutoIndex(void)
 		if (entry->d_type == DT_DIR && std::strcmp(entry->d_name, ".") == 0)
 			continue;
 		std::string fileType = (entry->d_type == DT_DIR) ? "Directory" : "File";
-		std::string icon = (entry->d_type == DT_DIR) ? "/images/folder.svg" : "/images/file.png";
+		std::string icon = (entry->d_type == DT_DIR) ? "/images/folder.png" : "/images/file.png";
 		std::string link;
 		if (!this->entryPath.empty() && this->entryPath != "/" && this->entryPath[this->entryPath.length() - 1] != '/')
 			link = this->entryPath + "/" + entry->d_name;
@@ -368,7 +379,8 @@ void Response::generateAutoIndex(void)
 			path = this->fullpath + entry->d_name;
 		autoIndexBody << "<tr>\n";
 		autoIndexBody << "<td class='" << fileType << "'>\n";
-		autoIndexBody << "<img src='" << icon << "' class='icon'><a href='" << link << "' class='" << fileType << "'>" << entry->d_name << "</a>\n";
+		autoIndexBody << "<img src='" << icon << "' class='icon'></img>\n";
+		autoIndexBody << "<a href='" << link << "' class='" << fileType << "'>" << entry->d_name << "</a>\n";
 		autoIndexBody << "</td>\n";
 		autoIndexBody << "<td class='" << fileType << " col'>" << fileType << "</td>\n";
 		if (stat(path.c_str(), &fileStat) == 0)
@@ -403,12 +415,12 @@ void Response::generateResponse(std::string status)
 		return;
 	std::string extension_;
 	this->responseStatus = status;
-	if (status == "400" || status == "403" || status == "406" ||
-		status == "405" || status == "407" || status == "408" ||
-		status == "411" || status == "413" || status == "415" ||
+	if (status == "400" || status == "403" || status == "405" ||
+		status == "406" || status == "408" || status == "411" ||
+		status == "413" || status == "414" || status == "415" ||
 		status == "416" || status == "500" || status == "501" ||
 		status == "502" || status == "504" || status == "505" ||
-		status == "507") // check this again
+		status == "507")
 		this->closeClient = true;
 	size_t pos = this->Config->ErrorPage.find_last_of(".");
 	if (pos != std::string::npos)
@@ -464,7 +476,13 @@ void Response::handleScriptCGI(Client &client)
 			close(pipefd[0]);
 			dup2(pipefd[1], STDOUT_FILENO);
 			close(pipefd[1]);
-			alarm(50);
+			std::stringstream iss;
+			iss << this->Config->CgiTimeout;
+			unsigned int alarmValue;
+			iss >> alarmValue;
+			if (iss.fail())
+				return (generateResponse("500"));
+			alarm(alarmValue);
 			if (tempFD != -1 && client.request.Method == "POST")
 				dup2(tempFD, STDIN_FILENO);
 			close(tempFD);
@@ -516,20 +534,25 @@ void Response::handleScriptCGI(Client &client)
 			return (generateResponse("500"));
 		char tempFile[] = "/tmp/.cgi_body_XXXXXXXXXXX";
 		FDCGIBody = mkstemp(tempFile);
-		tempFileName = tempFile;
+		if (FDCGIBody)
+			tempFileName = tempFile;
 	}
 	char buffer[4096];
 	ssize_t bytesRead;
-	while ((bytesRead = read(pipefd[0], buffer, 4096)) > 0)
+	resCgi.clear();
+	while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
 		resCgi.append(buffer, bytesRead);
-	if (!this->headerCgiReady)
+	if (resCgi.length() > 0)
+		write(FDCGIBody, resCgi.c_str(), resCgi.length());
+	if (bytesRead == 0)
 	{
-		size_t pos = resCgi.find("\r\n\r\n");
-		if (pos != std::string::npos)
+		resCgi.clear();
+		if (!this->headerCgiReady)
 		{
-			std::istringstream responseStream(resCgi);
-			std::string resHeaders__, resBody__;
-			std::string line;
+			std::ifstream infile(tempFileName);
+			std::stringstream responseStream, bodyStream;
+			responseStream << infile.rdbuf();
+			std::string resHeaders__, resBody__, line;
 			while (std::getline(responseStream, line))
 			{
 				if (line.empty() || line == "\r")
@@ -545,53 +568,62 @@ void Response::handleScriptCGI(Client &client)
 					close(tempFD), unlink(client.request.files[0].fileName.c_str());
 				return;
 			}
-			resBody__ = resCgi.substr(pos + 4, resCgi.length() - pos + 4);
-			write(FDCGIBody, resBody__.c_str(), resBody__.length());
-			this->headerCgiReady = true;
-			resCgi.clear();
-		}
-	}
-	else
-		write(FDCGIBody, resCgi.c_str(), resCgi.length());
-	if (bytesRead <= 0)
-	{
-		int status;
-		pid_t result = waitpid(pid, &status, WNOHANG);
-		if (result != 0 && result != -1)
-		{
-			this->responseDone = true;
-			this->CgiRunning = false;
+			std::streampos Pos = responseStream.tellg();
+			infile.seekg(Pos, std::ios::beg);
+			bodyStream << infile.rdbuf();
 			close(FDCGIBody);
-			close(pipefd[0]);
-			if (tempFD != -1 && client.request.Method == "POST")
-				close(tempFD), unlink(client.request.files[0].fileName.c_str());
-			if (WIFSIGNALED(status) && WTERMSIG(status) == SIGALRM)
-				return (generateResponse("504"));
-			std::multimap<std::string, std::string>::iterator it = MAPhederscgi.find("Status");
-			std::multimap<std::string, std::string>::iterator end = MAPhederscgi.end();
-			std::string Rstatus;
-			if (it != end)
+			unlink(tempFileName.c_str());
+			FDCGIBody = -1;
+			char tempFile[] = "/tmp/.cgi_body_XXXXXXXXXXX";
+			FDCGIBody = mkstemp(tempFile);
+			if (FDCGIBody == -1)
+				return (generateResponse("500"));
+			tempFileName = tempFile;
+			write(FDCGIBody, bodyStream.str().c_str(), bodyStream.str().length());
+			this->headerCgiReady = true;
+		}
+		else
+		{
+			int status;
+			pid_t result = waitpid(pid, &status, WNOHANG);
+			if (result == -1)
+				return (generateResponse("500"));
+			if (result != 0)
 			{
-				std::vector<std::string> vec = splitString(it->second, " ");
-				if (vec.size() > 0)
-					Rstatus = vec[0];
-			}
-			if (WIFEXITED(status) && (WEXITSTATUS(status) == 0 || !Rstatus.empty()))
-			{
-				this->fptr = fopen(this->tempFileName.c_str(), "rb");
-				if (!this->fptr)
-					return (generateResponse("500"));
-				fseek(this->fptr, 0, SEEK_END);
-				this->fileSize = ftell(this->fptr);
-				fseek(this->fptr, 0, SEEK_SET);
-				std::string resHeaders__;
-				resHeaders__ = generateResponseHeaderCGI(MAPhederscgi, this->fileSize, Rstatus);
-				this->HeaderResponse = resHeaders__;
 				this->responseDone = true;
-				return;
+				this->CgiRunning = false;
+				close(FDCGIBody);
+				close(pipefd[0]);
+				if (tempFD != -1 && client.request.Method == "POST")
+					close(tempFD), unlink(client.request.files[0].fileName.c_str());
+				if (WIFSIGNALED(status) && WTERMSIG(status) == SIGALRM)
+					return (generateResponse("504"));
+				std::multimap<std::string, std::string>::iterator it = MAPhederscgi.find("Status");
+				std::multimap<std::string, std::string>::iterator end = MAPhederscgi.end();
+				std::string Rstatus;
+				if (it != end)
+				{
+					std::vector<std::string> vec = splitString(it->second, " ");
+					if (vec.size() > 0)
+						Rstatus = vec[0];
+				}
+				if (WIFEXITED(status) && (WEXITSTATUS(status) == 0 || !Rstatus.empty()))
+				{
+					this->fptr = fopen(this->tempFileName.c_str(), "rb");
+					if (!this->fptr)
+						return (generateResponse("500"));
+					fseek(this->fptr, 0, SEEK_END);
+					this->fileSize = ftell(this->fptr);
+					fseek(this->fptr, 0, SEEK_SET);
+					std::string resHeaders__;
+					resHeaders__ = generateResponseHeaderCGI(MAPhederscgi, this->fileSize, Rstatus);
+					this->HeaderResponse = resHeaders__;
+					this->responseDone = true;
+					return;
+				}
+				else
+					return (generateResponse("502"));
 			}
-			else
-				return (generateResponse("502"));
 		}
 	}
 }
@@ -609,8 +641,8 @@ std::multimap<std::string, std::string> Response::parseResponseHeader(std::strin
 		if ((pos == std::string::npos) ? (generateResponse("502"), true) : false)
 			break;
 		std::string key = line.substr(0, pos);
-		std::string value = line.substr(pos + 1, line.length() - pos);
-		headers.insert(std::make_pair(key, value));
+		std::string value = line.substr(pos + 1, line.length());
+		headers.insert(std::make_pair(strToLower(key), trim(value, " \t\r\n")));
 	}
 	return headers;
 }
@@ -640,6 +672,9 @@ std::string Response::generateResponseHeaderCGI(std::multimap<std::string, std::
 
 void Response::mergeHeadersValuesCGI(Client &client)
 {
+	if (this->headerMerged)
+		return;
+	this->headerMerged = true;
 	std::multimap<std::string, std::string> newHeaders;
 	std::multimap<std::string, std::string>::iterator it = client.request.mapHeaders.begin();
 	std::multimap<std::string, std::string>::iterator end = client.request.mapHeaders.end();
@@ -658,7 +693,10 @@ void Response::mergeHeadersValuesCGI(Client &client)
 
 void Response::generateEnvCGI(Client &client)
 {
-	std::multimap<std::string, std::string> env;
+	if (this->envCgiReady)
+		return;
+	this->envCgiReady = true;
+	std::multimap<std::string, std::string> env_;
 	std::string SERVER_SOFTWARE = "webserv";
 	std::string SERVER_NAME = this->Config->ServerNames;
 	std::string GATEWAY_INTERFACE = "CGI/1.1";
@@ -678,21 +716,21 @@ void Response::generateEnvCGI(Client &client)
 	if (client.request.mapHeaders.find("content-length") != client.request.mapHeaders.end())
 		CONTENT_LENGTH = client.request.mapHeaders.find("content-length")->second;
 	std::string REDIRECT_STATUS = "CGI";
-	env.insert(std::make_pair("SERVER_SOFTWARE", SERVER_SOFTWARE));
-	env.insert(std::make_pair("SERVER_NAME", SERVER_NAME));
-	env.insert(std::make_pair("GATEWAY_INTERFACE", GATEWAY_INTERFACE));
-	env.insert(std::make_pair("SERVER_PROTOCOL", SERVER_PROTOCOL));
-	env.insert(std::make_pair("SERVER_PORT", SERVER_PORT));
-	env.insert(std::make_pair("REQUEST_METHOD", REQUEST_METHOD));
-	env.insert(std::make_pair("PATH_INFO", PATH_INFO));
-	env.insert(std::make_pair("PATH_TRANSLATED", PATH_TRANSLATED));
-	env.insert(std::make_pair("SCRIPT_NAME", SCRIPT_NAME));
-	env.insert(std::make_pair("SCRIPT_FILENAME", SCRIPT_FILENAME));
-	env.insert(std::make_pair("QUERY_STRING", QUERY_STRING));
-	env.insert(std::make_pair("CONTENT_TYPE", CONTENT_TYPE));
-	env.insert(std::make_pair("CONTENT_LENGTH", CONTENT_LENGTH));
-	env.insert(std::make_pair("REMOTE_ADDR", REMOTE_ADDR));
-	env.insert(std::make_pair("REDIRECT_STATUS", REDIRECT_STATUS));
+	env_.insert(std::make_pair("SERVER_SOFTWARE", SERVER_SOFTWARE));
+	env_.insert(std::make_pair("SERVER_NAME", SERVER_NAME));
+	env_.insert(std::make_pair("GATEWAY_INTERFACE", GATEWAY_INTERFACE));
+	env_.insert(std::make_pair("SERVER_PROTOCOL", SERVER_PROTOCOL));
+	env_.insert(std::make_pair("SERVER_PORT", SERVER_PORT));
+	env_.insert(std::make_pair("REQUEST_METHOD", REQUEST_METHOD));
+	env_.insert(std::make_pair("PATH_INFO", PATH_INFO));
+	env_.insert(std::make_pair("PATH_TRANSLATED", PATH_TRANSLATED));
+	env_.insert(std::make_pair("SCRIPT_NAME", SCRIPT_NAME));
+	env_.insert(std::make_pair("SCRIPT_FILENAME", SCRIPT_FILENAME));
+	env_.insert(std::make_pair("QUERY_STRING", QUERY_STRING));
+	env_.insert(std::make_pair("CONTENT_TYPE", CONTENT_TYPE));
+	env_.insert(std::make_pair("CONTENT_LENGTH", CONTENT_LENGTH));
+	env_.insert(std::make_pair("REMOTE_ADDR", REMOTE_ADDR));
+	env_.insert(std::make_pair("REDIRECT_STATUS", REDIRECT_STATUS));
 	std::multimap<std::string, std::string>::iterator it;
 	std::multimap<std::string, std::string>::iterator end;
 	it = client.request.mapHeaders.begin();
@@ -706,12 +744,13 @@ void Response::generateEnvCGI(Client &client)
 		std::string::iterator ch = keyEnv.begin();
 		for (; ch != keyEnv.end(); ++ch)
 			*ch = std::toupper(*ch);
-		for (std::string::iterator ch = keyEnv.begin(); ch != keyEnv.end(); ++ch)
+		for (std::string::iterator ch = keyEnv.begin(); ch != keyEnv.end(); ch++)
 			*ch = (*ch == '-') ? '_' : *ch;
 		std::string valueEnv = it->second;
-		env.insert(std::pair<std::string, std::string>(keyEnv, valueEnv));
+		env_.insert(std::pair<std::string, std::string>(keyEnv, valueEnv));
 	}
-	this->env = env;
+	this->env = env_;
+	return;
 }
 
 Response::Response()
@@ -719,6 +758,8 @@ Response::Response()
 	// CGI
 	CgiRunning = false;
 	headerCgiReady = false;
+	envCgiReady = false;
+	headerMerged = false;
 	tempFD = -1;
 	FDCGIBody = -1;
 	resCgi.clear();
@@ -758,6 +799,8 @@ void Response::clear()
 	// CGI
 	CgiRunning = false;
 	headerCgiReady = false;
+	headerMerged = false;
+	envCgiReady = false;
 	tempFD = -1;
 	FDCGIBody = -1;
 	resCgi.clear();

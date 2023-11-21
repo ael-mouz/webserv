@@ -105,15 +105,6 @@ void logMessage(LogLevel level, const std::string &host, int fd, const std::stri
 	std::cout << " { " + message + " }" << std::endl;
 }
 
-void printMap(const std::multimap<std::string, std::string> &map)
-{
-	std::cout << std::setfill('-') << std::setw(145) << "-" << std::endl;
-	std::map<std::string, std::string>::const_iterator it1 = map.begin();
-	for (; it1 != map.end(); ++it1)
-		std::cout << "|Key:" << std::setfill(' ') << std::setw(30) << it1->first << "| Value: " << std::setw(100) << it1->second << "|" << std::endl;
-	std::cout << std::setfill('-') << std::setw(145) << "-" << std::endl;
-}
-
 size_t getFreeSpace(const char *path)
 {
 	struct statvfs buf;
@@ -289,33 +280,22 @@ void isCanBeRemoved(const std::string &path)
 void removeDirfolder(const std::string &path, const std::string &root) // add rout in prototype to not delete it
 {
 	if (isRegularFile(path))
-	{
-		std::remove(path.c_str());
-		return;
-	}
+		return(std::remove(path.c_str()),void());
 	DIR *directory = opendir(path.c_str());
 	if (directory == NULL)
-	{
 		throw 403;
-	}
 	dirent *entry;
 	std::string fileName, fullPath;
 	while ((entry = readdir(directory)) != NULL)
 	{
 		fileName = entry->d_name;
 		if (fileName == "." || fileName == "..")
-		{
 			continue;
-		}
 		fullPath = path + "/" + fileName;
 		if (isRegularFile(fullPath))
-		{
 			std::remove(fullPath.c_str());
-		}
 		else if (isDirectory(fullPath))
-		{
 			removeDirfolder(fullPath, root);
-		}
 	}
 	if (path != root)
 		std::remove(path.c_str());
@@ -329,7 +309,6 @@ int deleteMthod(Client &client)
 	try
 	{
 		std::string root = client.response.root;
-		// std::cout << "route : " << root << std::endl;  /////!!!!!
 		isCanBeRemoved(client.response.fullpath);
 		removeDirfolder(client.response.fullpath, root);
 	}
@@ -386,6 +365,17 @@ std::string humanReadableSize(off_t size)
 	return sizeStr.str();
 }
 
+void printMap(const std::multimap<std::string, std::string> &map)
+{
+	std::cout << "╔═════════════════════════════════╦══════════════════════════════════════════════════════════════════╗" << std::endl;
+	std::cout << "║ Key:                            ║ Value:                                                           ║" << std::endl;
+	std::cout << "╠═════════════════════════════════╬══════════════════════════════════════════════════════════════════╣" << std::endl;
+	std::map<std::string, std::string>::const_iterator it1 = map.begin();
+	for (; it1 != map.end(); ++it1)
+		std::cout << "║" << std::setw(37) << ("▻" + it1->first + "◅") << "║" << std::setw(70) << ("▻" + it1->second + "◅")<< "║" << std::endl;
+	std::cout << "╚═════════════════════════════════╩══════════════════════════════════════════════════════════════════╝" << std::endl;
+}
+
 void ft_print_config(int h, ServerConfig &it, bool i)
 {
 	std::cout << "▻" BOLD " " << it.ServerNames << " " RESET_ALL "◅" << std::endl;
@@ -400,6 +390,7 @@ void ft_print_config(int h, ServerConfig &it, bool i)
 	std::cout << "║ ServerNames     ║" << std::setw(58) << "▻" + it.ServerNames << "◅║" << std::endl;
 	std::cout << "║ ErrorPage       ║" << std::setw(58) << "▻" + it.ErrorPage << "◅║" << std::endl;
 	std::cout << "║ LimitBodySize   ║" << std::setw(58) << "▻" + it.LimitClientBodySize << "◅║" << std::endl;
+	std::cout << "║ CgiTimeout      ║" << std::setw(58) << "▻" + it.CgiTimeout << "◅║" << std::endl;
 	std::cout << "║ GlobalRoot      ║" << std::setw(58) << "▻" + it.GlobalRoot << "◅║" << std::endl;
 	std::cout << "╚═════════════════╩═════════════════════════════════════════════════════════╝" << std::endl;
 }

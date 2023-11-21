@@ -10,7 +10,9 @@ class Response
 {
 public:
 	bool CgiRunning;
+	bool headerMerged;
 	bool headerCgiReady;
+	bool envCgiReady;
 	pid_t pid;
 	int tempFD;
 	int FDCGIBody;

@@ -10,6 +10,7 @@ ServerConfig::ServerConfig()
 	this->ServerNames = "webserve";
 	this->GlobalRoot = dir + "/www/";
 	this->GlobalUpload = dir + "/upload/";
+	this->CgiTimeout = "60";
 	this->LimitClientBodySize = "10485760";
 	this->ErrorPage = dir + "/www/error.html";
 	this->phpCgi = dir + "/tests/php-cgi_bin";
