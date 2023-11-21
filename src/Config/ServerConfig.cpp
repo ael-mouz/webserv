@@ -8,7 +8,7 @@ ServerConfig::ServerConfig()
 	this->Port = "8000";
 	this->Host = "127.0.0.1";
 	this->ServerNames = "webserve";
-	this->GlobalRoot = dir + "/www";
+	this->GlobalRoot = dir + "/www/";
 	this->GlobalUpload = dir + "/upload/";
 	this->LimitClientBodySize = "10485760";
 	this->ErrorPage = dir + "/www/error.html";

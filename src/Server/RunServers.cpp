@@ -114,7 +114,7 @@ void RunServers::resetFds()
 	FD_ZERO(&readFds);
 	FD_ZERO(&writeFds);
 	readFds = serverFds;
-	maxFds = maxFdstmp;
+	maxFds = maxFdsServers;
 	for (vector<Client>::iterator it = clients.begin(); it != clients.end(); it++)
 	{
 		if (it->readEvent)
@@ -158,7 +158,7 @@ void RunServers::hardReset()
 	FD_ZERO(&readFds);
 	FD_ZERO(&writeFds);
 	readFds = serverFds;
-	maxFds = maxFdstmp;
+	maxFds = maxFdsServers;
 	for (vector<Client>::iterator it = clients.begin(); it != clients.end();)
 	{
 		shutdown(it->socketClient, SHUT_RDWR);
@@ -241,15 +241,15 @@ RunServers::RunServers(char **av) : numberOfEvents(0)
 	vector<ServerConf> &serverConf = config.getServerConfig();
 	timeout.tv_sec = 300;
 	timeout.tv_usec = 0;
-	maxFdstmp = -1;
+	maxFdsServers = -1;
 	for (vector<ServerConf>::iterator it = serverConf.begin();
 		 it != serverConf.end(); it++)
 	{
 		Server serv;
 		serv.serverConf = *it;
 		int fd = bindSockets(serv);
-		if (fd > maxFdstmp)
-			maxFdstmp = fd;
+		if (fd > maxFdsServers)
+			maxFdsServers = fd;
 		servers.push_back(serv);
 	}
 	FD_ZERO(&serverFds);

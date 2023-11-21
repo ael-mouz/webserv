@@ -121,17 +121,144 @@ bool isDigit(const std::string &str);
 bool isValidURI(const int &c);
 bool isValidKey(const int &c);
 size_t HexaToDicimal(const std::string &hexStr);
-string strToLower(const string& str);
-string getUploadPath(const Client& client);
-bool isRegularFile(const std::string& path);
-bool isDirectory(const std::string& path);
+string strToLower(const string &str);
+string getUploadPath(const Client &client);
+bool isRegularFile(const std::string &path);
+bool isDirectory(const std::string &path);
 bool checkPermission(const std::string path, mode_t permission);
-void isCanBeRemoved(const std::string& path);
-void removeDirfolder(const std::string& path, const std::string& root);
-bool	timeofday(size_t& timeMilSec);
-bool getDiskSpace(const string& path, size_t& freeSpace);
+void isCanBeRemoved(const std::string &path);
+void removeDirfolder(const std::string &path, const std::string &root);
+bool timeofday(size_t &timeMilSec);
+bool getDiskSpace(const string &path, size_t &freeSpace);
 std::string getRealPath(std::string path);
 std::string humanReadableSize(off_t size);
 void ft_print_config(int h, ServerConfig &it, bool i);
 void ft_print_routes(int h, Route &it, std::string name);
 int deleteMthod(Client &client);
+
+#define GENERATE_ERROR_HTML(status, Config)                                            \
+	(                                                                                  \
+		"<!DOCTYPE html>"                                                              \
+		"<html lang=\"en\">"                                                           \
+		"<head>"                                                                       \
+		"<meta charset=\"UTF-8\" />"                                                   \
+		"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />" \
+		"<title>" +                                                                    \
+		status +                                                                       \
+		" Error - " +                                                                  \
+		Config +                                                                       \
+		"</title>"                                                                     \
+		"<style>"                                                                      \
+		"body {"                                                                       \
+		"margin: 0;"                                                                   \
+		"padding: 0;"                                                                  \
+		"font-family: Arial, sans-serif;"                                              \
+		"background-image: url('/images/site42-bg.png');"                              \
+		"background-size: cover;"                                                      \
+		"background-position: center;"                                                 \
+		"height: 100vh;"                                                               \
+		"display: flex;"                                                               \
+		"flex-direction: column;"                                                      \
+		"justify-content: center;"                                                     \
+		"align-items: center;"                                                         \
+		"color: #000000;"                                                              \
+		"}"                                                                            \
+		"h1 {"                                                                         \
+		"font-size: 4rem;"                                                             \
+		"margin-bottom: 20px;"                                                         \
+		"}"                                                                            \
+		"p {"                                                                          \
+		"font-size: 1.5rem;"                                                           \
+		"text-align: center;"                                                          \
+		"}"                                                                            \
+		"</style>"                                                                     \
+		"</head>"                                                                      \
+		"<body>"                                                                       \
+		"<h1>Error " +                                                                 \
+		status +                                                                       \
+		"</h1>"                                                                        \
+		"<p>" +                                                                        \
+		Config +                                                                       \
+		"</p>"                                                                         \
+		"</body>"                                                                      \
+		"</html>")
+
+#define GENERATE_UPLOAD_HTML(files)                         \
+	(                                                       \
+		"<!DOCTYPE html>"                                   \
+		"<html lang=\"en\">"                                \
+		"<head>"                                            \
+		"<title>Upload</title>"                             \
+		"<style>"                                           \
+		"body {"                                            \
+		"font-family: Arial, sans-serif;"                   \
+		"margin: 0;"                                        \
+		"padding: 0;"                                       \
+		"background-image: url(\"/images/site42-bg.png\");" \
+		"background-size: cover;"                           \
+		"background-position: center;"                      \
+		"}"                                                 \
+		".upload-status {"                                  \
+		"max-width: 600px;"                                 \
+		"margin: 20px auto;"                                \
+		"padding: 20px;"                                    \
+		"background-color: #fff;"                           \
+		"box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);"          \
+		"text-align: center;"                               \
+		"}"                                                 \
+		"ul {"                                              \
+		"list-style-type: none;"                            \
+		"padding: 0;"                                       \
+		"}"                                                 \
+		"li {"                                              \
+		"margin-bottom: 8px;"                               \
+		"}"                                                 \
+		"</style>"                                          \
+		"</head>"                                           \
+		"<body>"                                            \
+		"<section class=\"upload-status\">"                 \
+		"<h2>Status: Created (201)</h2>"                    \
+		"<p>The following files were created:</p>"          \
+		"<ul>" +                                            \
+		files +                                             \
+		"</ul>"                                             \
+		"</section>"                                        \
+		"</body>"                                           \
+		"</html>")
+
+#define GENERATE_AUTOINDEX_HTML(fullpath, autoIndexBody)                                          \
+	(                                                                                             \
+		"<!DOCTYPE html>"                                                                         \
+		"<html>"                                                                                  \
+		"<head>"                                                                                  \
+		"<meta charset=\"UTF-8\">"                                                                \
+		"<title>Index of " +                                                                      \
+		fullpath +                                                                                \
+		"</title>"                                                                                \
+		"<style>"                                                                                 \
+		"body { font-family: Arial, sans-serif;background-image: url(\"/images/site42-bg.gif\");" \
+		"background-size: cover;background-position: center; }"                                   \
+		"table { width: 100%; border-collapse: collapse; }"                                       \
+		"th, td { padding: 10px; text-align: left; border-bottom: 1px solid black;}"              \
+		".icon { width: 20px; height: 20px; margin-right: 10px; }"                                \
+		".Directory { color: #0070c0; background:#f2f2f2; }"                                      \
+		".File { color: #000; }"                                                                  \
+		".col { text-align: center; }"                                                            \
+		"a {text-decoration : none;} "                                                            \
+		"</style>"                                                                                \
+		"</head>"                                                                                 \
+		"<body>"                                                                                  \
+		"<table>"                                                                                 \
+		"<tr>"                                                                                    \
+		"<th>Item</th>"                                                                           \
+		"<th class='col'>Type</th>"                                                               \
+		"<th class='col'>Size</th>"                                                               \
+		"<th class='col'>Permissions</th>"                                                        \
+		"<th class='col'>Last access time</th>"                                                   \
+		"<th class='col'>Last modification time</th>"                                             \
+		"<th class='col'>Last status change time</th>"                                            \
+		"</tr>" +                                                                                 \
+		autoIndexBody +                                                                           \
+		"</table>"                                                                                \
+		"</body>"                                                                                 \
+		"</html>")

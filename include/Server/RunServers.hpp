@@ -20,7 +20,7 @@ private:
 	fd_set writeFds;
 	fd_set serverFds;
 	int maxFds;
-	int maxFdstmp;
+	int maxFdsServers;
 	int newSocket;
 	int numberOfEvents;
 	struct timeval timeout;
@@ -31,7 +31,7 @@ private:
 private:
 	int bindSockets(Server &server);
 	void resetFds();
-    void hardReset();
+	void hardReset();
 	void acceptClients();
 	bool receiveData(vector<Client>::iterator &it);
 	bool sendData(vector<Client>::iterator &it);

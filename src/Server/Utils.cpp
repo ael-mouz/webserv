@@ -39,12 +39,14 @@ std::string convertText(std::string a)
 			newbuff += "\e[41m\\r\\n\e[49m\n";
 			i++;
 		}
+		else if (a[i] == '\n')
+			newbuff += "\e[41m\\n\e[49m\n";
 		else if (a[i] == '\t')
-			newbuff += "\\t\t";
+			newbuff += "\e[41m\\t\e[49m";
 		else if (a[i] == '\v')
-			newbuff += "\\v\v";
+			newbuff += "\e[41m\\v\e[49m\v";
 		else if (a[i] == '\f')
-			newbuff += "\\f\f";
+			newbuff += "\e[41m\\f\e[49m\f";
 		else
 			newbuff += a[i];
 		i++;

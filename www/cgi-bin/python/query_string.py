@@ -4,7 +4,6 @@ import cgi
 form = cgi.FieldStorage()
 name = form.getvalue('name')
 email = form.getvalue('email')
-print ("HTTP/1.1 200 OK\r");
 print("Content-type: text/html\n")
 print("<html>")
 print("<head><title>Query String Form</title></head>")

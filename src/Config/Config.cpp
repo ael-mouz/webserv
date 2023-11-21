@@ -17,6 +17,10 @@ std::vector<ServerConf> &Config::getServerConfig()
 }
 
 // === Member Functions ===
+void ConfigErrors(const std::string &filename, int i, const std::string &line, const std::string &errormsg)
+{
+	std::cout << BOLD << filename << ":" << i << ":0: " << FG_RED << "error: " << RESET_ALL << BOLD << errormsg << RESET_ALL << "\n\t" << line << std::endl, exit(1);
+}
 
 void Config::parser(std::string filename)
 {
@@ -39,11 +43,11 @@ void Config::parser(std::string filename)
 			if (line[j] == ';')
 				count++;
 		if (count > 1)
-			std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD "invalide line" RESET_ALL "\n\t" << line << std::endl, exit(1);
+			ConfigErrors(filename, i, line, "Invalide line"); // std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD "invalide line" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		if (!line.empty() && line[0] != '#' && line[line.length() - 1] != ';')
-			std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD "expected ';' at end of declaration" RESET_ALL "\n\t" << line << std::endl, exit(1);
+			ConfigErrors(filename, i, line, "Expected ';' at end of declaration"); // std::cout<< BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD "expected ';' at end of declaration" RESET_ALL "\n\t" << line << std::endl,exit(1);
 		else if ((line == "Server;" && ServerScop == true) || (line == "EndServer;" && ServerScop == false))
-			std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD " server not closed" RESET_ALL "\n\t" << line << std::endl, exit(1);
+			ConfigErrors(filename, i, line, "Server not closed"); // std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD " server not closed" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		else if (line == "Server;" && ServerScop == false)
 		{
 			// NbServer++;
@@ -61,10 +65,10 @@ void Config::parser(std::string filename)
 		else if (ServerScop == true)
 			data += line + "\n";
 		else
-			std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid line" RESET_ALL "\n\t" << line << std::endl, exit(1);
+			ConfigErrors(filename, i, line, "Invalid line"); // std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid line" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	}
 	if (infile.eof() && ServerScop == true)
-		std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD " server not closed" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, i, line, "Server not closed"); // std::cout << BOLD + filename + ":" << i << ":0: " FG_RED "error:" RESET_ALL "" BOLD " server not closed" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	infile.close();
 	checkServerConfig(filename);
 	filterServerConfig();
@@ -84,7 +88,7 @@ void Config::parseServer(const std::string &data, ServerConfig &serverConfig, in
 		if ((line.empty() || line[0] == '#') && RouteScop == false)
 			continue;
 		if ((line == "Route;" && RouteScop == true) || (line == "EndRoute;" && RouteScop == false))
-			std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " route not closed" RESET_ALL "\n\t" << line << std::endl, exit(1);
+			ConfigErrors(filename, start, line, "Route not closed"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " route not closed" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		else if (line == "Route;" && RouteScop == false)
 		{
 			start2 = start;
@@ -115,7 +119,7 @@ void Config::parseServer(const std::string &data, ServerConfig &serverConfig, in
 			else if (key == "Error_Page")
 			{
 				!value.empty() ? serverConfig.ErrorPage = value : serverConfig.ErrorPage = "", e++;
-				parsePath(serverConfig.ErrorPage, start, line, filename, 1);
+				parsePath(serverConfig.ErrorPage, start, line, filename, 1, 0);
 			}
 			else if (key == "Port")
 			{
@@ -128,17 +132,17 @@ void Config::parseServer(const std::string &data, ServerConfig &serverConfig, in
 				parseBodySize(serverConfig.LimitClientBodySize, start, line, filename);
 			}
 			else
-				std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid line" RESET_ALL "\n\t" << line << std::endl, exit(1);
+				ConfigErrors(filename, start, line, "Invalid line"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid line" RESET_ALL "\n\t" << line << std::endl, exit(1);
 			if (p > 1 || h > 1 || s > 1 || e > 1 || l > 1)
-				std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " duplicate line" RESET_ALL "\n\t" << line << std::endl, exit(1);
+				ConfigErrors(filename, start, line, "Duplicate line"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " duplicate line" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		}
 		else if (RouteScop == true)
 			routedata += line + "\n";
 		else
-			std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid line" RESET_ALL "\n\t" << line << std::endl, exit(1);
+			ConfigErrors(filename, start, line, "Invalid line"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid line" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	}
 	if (iss.eof() && RouteScop == true)
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " route not closed" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Route not closed"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " route not closed" RESET_ALL "\n\t" << line << std::endl, exit(1);
 }
 
 void Config::parseRoute(const std::string &data, Route &route, int start, const std::string &filename)
@@ -157,7 +161,7 @@ void Config::parseRoute(const std::string &data, Route &route, int start, const 
 			key = trim(key, " \t");
 			value = trim(value, " \t");
 			if (key != "RoutePath" && p == 0)
-				std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " route need a RoutePath" RESET_ALL "\n\t" << line << std::endl, exit(1);
+				ConfigErrors(filename, start, line, "Route need a RoutePath"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " route need a RoutePath" RESET_ALL "\n\t" << line << std::endl, exit(1);
 			else if (key == "RoutePath")
 			{
 				!value.empty() ? route.RoutePath = value : route.RoutePath = "", p++;
@@ -166,17 +170,17 @@ void Config::parseRoute(const std::string &data, Route &route, int start, const 
 			else if (key == "Root")
 			{
 				!value.empty() ? route.Root = value : route.Root = "", ro++;
-				parsePath(route.Root, start, line, filename, 1);
+				parsePath(route.Root, start, line, filename, 1, 1);
 			}
 			else if (key == "Index")
 			{
 				!value.empty() ? route.Index = value : route.Index = "", i++;
-				parsePath(route.Index, start, line, filename, 0);
+				parsePath(route.Index, start, line, filename, 0, 0);
 			}
 			else if (key == "Cgi_Exec")
 			{
 				!value.empty() ? route.CgiExec = value : route.CgiExec = "", c++;
-				parsePath(route.CgiExec, start, line, filename, 1);
+				parsePath(route.CgiExec, start, line, filename, 1, 0);
 			}
 			else if (key == "Autoindex")
 			{
@@ -186,7 +190,7 @@ void Config::parseRoute(const std::string &data, Route &route, int start, const 
 			else if (key == "Upload_Path")
 			{
 				!value.empty() ? route.UploadPath = value : route.UploadPath = "", u++;
-				parsePath(route.UploadPath, start, line, filename, 1);
+				parsePath(route.UploadPath, start, line, filename, 1, 1);
 			}
 			else if (key == "Redirection")
 			{
@@ -199,63 +203,62 @@ void Config::parseRoute(const std::string &data, Route &route, int start, const 
 				parseMethods(route, start, line, filename);
 			}
 			else
-				std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid line" RESET_ALL "\n\t" << line << std::endl, exit(1);
+				ConfigErrors(filename, start, line, "Invalid line"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid line" RESET_ALL "\n\t" << line << std::endl, exit(1);
 			if (p > 1 || ro > 1 || i > 1 || c > 1 || a > 1 || u > 1 || r > 1 || m > 1)
-				std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " duplicate line" RESET_ALL "\n\t" << line << std::endl, exit(1);
+				ConfigErrors(filename, start, line, "Duplicate line"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " duplicate line" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		}
 	}
 	if (ro + i + c + a + u + r + m < 1)
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalide route must have at least one option" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Invalid route, must have at least one option"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalide route must have at least one option" RESET_ALL "\n\t" << line << std::endl, exit(1);
 }
 
 void Config::parsePort(std::string &port, int start, const std::string &line, const std::string &filename)
 {
 	if (port.empty())
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty port" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Empty port"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty port" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	if (!isDigit(port))
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid port" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Invalid port"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid port" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	int portt = std::atoi(port.c_str());
 	if (portt < 0 || portt > 65535)
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid port" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Invalid port"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid port" RESET_ALL "\n\t" << line << std::endl, exit(1);
 }
 
 void Config::parseServerNameAndHostName(std::string &serverName, int start, const std::string &line, const std::string &filename, int h)
 {
 	std::string validServerNameCharacters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.";
 	if (serverName.empty())
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty Server or host name" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Empty Server or host name"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty Server or host name" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	if (serverName.length() > 253)
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid Server or host name" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Invalid Server or host name"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid Server or host name" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	if (serverName.find_first_not_of(validServerNameCharacters) != std::string::npos)
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid Server or host name" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Invalid Server or host name"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid Server or host name" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	if (h)
 		getIpv4Address(serverName, start, line, filename);
 }
 
-void Config::parsePath(std::string &path, int start, const std::string &line, const std::string &filename, int i)
+void Config::parsePath(std::string &path, int start, const std::string &line, const std::string &filename, int i, int j)
 {
 	std::string validCharacterPath = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 `~!@#$%^&*()_+=-{}[]:;\"\'?/><.,";
 	if (path.empty())
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty path" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Empty path"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty path" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	if (path.find_first_not_of(validCharacterPath) != std::string::npos)
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid character path" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Invalid character path"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid character path" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	path = getRealPath(path);
 	if (i)
-	{
 		if (access(path.c_str(), F_OK) != 0)
-			std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid path" RESET_ALL "\n\t" << line << std::endl, exit(1);
+			ConfigErrors(filename, start, line, "Invalid path"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid path" RESET_ALL "\n\t" << line << std::endl, exit(1);
+	if (j)
 		if (path[path.length() - 1] != '/')
 			path += "/";
-	}
 }
 
 void Config::parseRoutePath(std::string &path, int start, const std::string &line, const std::string &filename)
 {
 	std::string validCharacterPath = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%";
 	if (path.empty())
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty route path" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Empty route path"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty route path" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	if (path.find_first_not_of(validCharacterPath) != std::string::npos)
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid character route path" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Invalid character route path"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid character route path" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	if (path[path.length() - 1] == '/' && path.length() != 1)
 		path.erase(path.end() - 1);
 }
@@ -263,17 +266,17 @@ void Config::parseRoutePath(std::string &path, int start, const std::string &lin
 void Config::parseAutoindex(const std::string &value, int start, const std::string &line, const std::string &filename)
 {
 	if (value.empty())
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty Autoindex" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Empty Autoindex"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty Autoindex" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	if (value != "on")
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid Autoindex" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Invalid Autoindex"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid Autoindex" RESET_ALL "\n\t" << line << std::endl, exit(1);
 }
 
 void Config::parseMethods(Route &route, int start, const std::string &line, const std::string &filename)
 {
 	if (route.Accepted_Methods.empty())
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty Method" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Empty Method"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty Method" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	if (route.Accepted_Methods[route.Accepted_Methods.length() - 1] == ',')
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid Method" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Invalid Method"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid Method" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	std::istringstream methods(route.Accepted_Methods);
 	std::string method;
 	int i = 0;
@@ -284,9 +287,9 @@ void Config::parseMethods(Route &route, int start, const std::string &line, cons
 	{
 		std::string methodss = trim(method, " \t");
 		if (methodss.empty())
-			std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid Method" RESET_ALL "\n\t" << line << std::endl, exit(1);
+			ConfigErrors(filename, start, line, "Invalid Method"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid Method" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		if (methodss != "GET" && methodss != "POST" && methodss != "DELETE")
-			std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid Method" RESET_ALL "\n\t" << line << std::endl, exit(1);
+			ConfigErrors(filename, start, line, "Invalid Method"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid Method" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		if (i == 0)
 			route.Accepted_Methods_ = methodss;
 		else if (i == 1)
@@ -294,7 +297,7 @@ void Config::parseMethods(Route &route, int start, const std::string &line, cons
 		else if (i == 2)
 			route.Accepted_Methods___ = methodss;
 		else if (i > 2)
-			std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid Methods" RESET_ALL "\n\t" << line << std::endl, exit(1);
+			ConfigErrors(filename, start, line, "Invalid Method"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid Methods" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		i++;
 	}
 	route.Accepted_Methods = "on";
@@ -303,9 +306,9 @@ void Config::parseMethods(Route &route, int start, const std::string &line, cons
 void Config::parseRedirection(Route &route, int start, const std::string &line, const std::string &filename)
 {
 	if (route.Redirection.empty())
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty redirection" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Empty redirection"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty redirection" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	if (route.Redirection[route.Redirection.length() - 1] == ',')
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid redirection" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Invalid redirection"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid redirection" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	std::istringstream redirect(route.Redirection);
 	std::string redirects;
 	int i = 0;
@@ -313,20 +316,20 @@ void Config::parseRedirection(Route &route, int start, const std::string &line, 
 	{
 		std::string redirectss = trim(redirects, " \t");
 		if (redirectss.empty())
-			std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid redirection" RESET_ALL "\n\t" << line << std::endl, exit(1);
+			ConfigErrors(filename, start, line, "Invalid redirection"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid redirection" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		if (i == 0)
 		{
 			if (!isDigit(redirectss))
-				std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid redirection status" RESET_ALL "\n\t" << line << std::endl, exit(1);
+				ConfigErrors(filename, start, line, "Invalid redirection"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid redirection status" RESET_ALL "\n\t" << line << std::endl, exit(1);
 			int status = std::atoi(redirectss.c_str());
 			if (status < 300 || status > 307 || status == 306)
-				std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid redirection status" RESET_ALL "\n\t" << line << std::endl, exit(1);
+				ConfigErrors(filename, start, line, "Invalid redirection"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid redirection status" RESET_ALL "\n\t" << line << std::endl, exit(1);
 			route.RedirectionStatus = redirectss;
 		}
 		else if (i == 1)
 			route.RedirectionURL = redirectss;
 		else if (i > 1)
-			std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid redirection" RESET_ALL "\n\t" << line << std::endl, exit(1);
+			ConfigErrors(filename, start, line, "Invalid redirection"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " invalid redirection" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		i++;
 	}
 	route.Redirection = "on";
@@ -335,12 +338,12 @@ void Config::parseRedirection(Route &route, int start, const std::string &line, 
 void Config::parseBodySize(std::string &sizeStr, int start, const std::string &line, const std::string &filename)
 {
 	if (sizeStr.empty())
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty size" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Empty size"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " empty size" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	std::istringstream iss(sizeStr);
 	size_t size = 0;
 	char unit = '\0';
 	if (!(iss >> size))
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid size value" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Invalid size value"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid size value" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	if (iss >> unit)
 	{
 		unit = std::tolower(unit);
@@ -356,12 +359,12 @@ void Config::parseBodySize(std::string &sizeStr, int start, const std::string &l
 			size *= 1024 * 1024 * 1024;
 			break;
 		default:
-			std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Unsupported unit" RESET_ALL "\n\t" << line << std::endl, exit(1);
+			ConfigErrors(filename, start, line, "Unsupported unit"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Unsupported unit" RESET_ALL "\n\t" << line << std::endl, exit(1);
 		}
 	}
 	std::string remaining;
 	if (iss >> remaining)
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid characters in size string" RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, "Invalid characters in size string"); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL "" BOLD " Invalid characters in size string" RESET_ALL "\n\t" << line << std::endl, exit(1);
 	sizeStr = intToString(size);
 }
 
@@ -376,7 +379,7 @@ void Config::getIpv4Address(std::string &hostname, int start, const std::string 
 	hints.ai_socktype = SOCK_STREAM;
 	int status = getaddrinfo(hostname.c_str(), NULL, &hints, &result);
 	if (status != 0)
-		std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL " " BOLD << std::string(gai_strerror(status)) << RESET_ALL "\n\t" << line << std::endl, exit(1);
+		ConfigErrors(filename, start, line, std::string(gai_strerror(status))); // std::cout << BOLD + filename + ":" << start << ":0: " FG_RED "error:" RESET_ALL " " BOLD << std::string(gai_strerror(status)) << RESET_ALL "\n\t" << line << std::endl, exit(1);
 	for (rp = result; rp != NULL; rp = rp->ai_next)
 	{
 		if (rp->ai_family == AF_INET)
@@ -401,13 +404,14 @@ void Config::checkServerConfig(const std::string &filename)
 	std::map<std::string, int> tempmap;
 	std::pair<std::map<std::string, int>::iterator, bool> res;
 	std::vector<ServerConfig>::iterator it;
-	std::string key;
+	std::string key, line;
 	for (it = this->Serverconfig.begin(); it != this->Serverconfig.end(); ++it)
 	{
 		key = it->Host + ":" + it->Port + "|" + it->ServerNames;
 		res = tempmap.insert(std::make_pair(key, 1));
+		line = it->Host + ":" + it->Port + "    ↦   " + it->ServerNames;
 		if (!res.second)
-			std::cout << BOLD + filename + ":0:0: " FG_RED "error:" RESET_ALL " " BOLD "Duplicated server " RESET_ALL "\n\t " << it->Host + ":" + it->Port + "    ↦   " + it->ServerNames << std::endl, exit(1);
+			ConfigErrors(filename, 0, line, "Duplicated server"); // std::cout << BOLD + filename + ":0:0: " FG_RED "error:" RESET_ALL " " BOLD "Duplicated server " RESET_ALL "\n\t " << it->Host + ":" + it->Port + "    ↦   " + it->ServerNames << std::endl, exit(1);
 	}
 	ServerConfig serverConfig;
 	if (this->Serverconfig.size() == 0)
