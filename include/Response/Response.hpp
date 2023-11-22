@@ -49,6 +49,7 @@ public:
 	FILE *fptr;
 	ServerConfig *Config;
 
+public:
 	Response(void);
 	~Response(void);
 	void startResponse(Client &client);
@@ -71,9 +72,6 @@ public:
 	void generateResponse(std::string status);
 	void generateAutoIndex(void);
 	void sendResponse(Client &client);
-	void ft_printroute();
-	void ft_printconfig();
 	std::multimap<std::string, std::string> parseResponseHeader(std::string header);
 	std::string generateResponseHeaderCGI(std::multimap<std::string, std::string> &headers,size_t body_lenght,std::string Rstatus);
-	// std::string buffer);
 };

@@ -10,15 +10,15 @@ enum requestState
 	_URI,
 	URI_SPACE,
 	VERSION,
-    DECODE_URI,
+	DECODE_URI,
 };
 
 class RequestLine
 {
 private:
 	int count;
-    int count_hexa;
-    string hold;
+	int count_hexa;
+	string hold;
 
 public:
 	int read(Request &request, string &buffer, ssize_t &size);

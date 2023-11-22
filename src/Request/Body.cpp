@@ -79,7 +79,7 @@ int Body::multiPart(Client &client, string &buffer, ssize_t &size)
 					int returnValue = createFile(client, hold, file);
 					if (returnValue != 0)
 						return returnValue;
-				    client.request.files.push_back(file);
+					client.request.files.push_back(file);
 				}
 				hold.clear();
 				key.clear();
@@ -156,11 +156,11 @@ int Body::multiPart(Client &client, string &buffer, ssize_t &size)
 			if (writeTofile && fwrite(&hold[0], 1, holdSize, fileF) != holdSize)
 				return statu(client, "System call function failed: fwrite", 500);
 			hold.clear();
-            if (holdChar == '\r')
-            {
-                count = 1;
-                break;
-            }
+			if (holdChar == '\r')
+			{
+				count = 1;
+				break;
+			}
 			if (writeTofile && fputc(holdChar, fileF) != holdChar)
 				return statu(client, "System call function failed: fputc", 500);
 			count = 0;
@@ -208,7 +208,6 @@ int Body::writeBody(Client &client, string &buffer, ssize_t &size)
 	if (fwrite(&buffer[0], 1, size, fileF) != (size_t)size)
 		return statu(client, "System call function failed: fwrite", 500);
 	countLength += size;
-	printf("counlen = %ld len = %ld\n", client.request.contentLength, countLength);
 	if ((isEncodChunk(client) == false && countLength == client.request.contentLength) || (isEncodChunk(client) == true && client.request.getEncodChunkState() == END_LAST_HEXA))
 	{
 		fclose(fileF);
@@ -226,7 +225,6 @@ int Body::writeBody(Client &client, string &buffer, ssize_t &size)
 int Body::skipBody(Client &client, ssize_t &size)
 {
 	countLength += size;
-	// printf("size = %ld\n", size);
 	if ((isEncodChunk(client) == false && countLength == client.request.contentLength) || (isEncodChunk(client) == true && client.request.getEncodChunkState() == END_LAST_HEXA))
 	{
 		if (!client.response.method_allowd)
@@ -243,21 +241,20 @@ int Body::skipBody(Client &client, ssize_t &size)
 int Body::createFile(Client &client, const string &value, File &file)
 {
 	size_t fileNamePos = value.find("filename=");
-	// printf("fileName = |%s|\n", &fileName[0]);//////
 	if (fileNamePos == string::npos)
 		return statu(client, "No file name provided", 400);
 	file.fileName = trim(value.substr(fileNamePos + sizeof("filename")), " \"");
 	if (file.fileName.empty())
 		return statu(client, "No file name provided", 400);
 	file.fileName = getUploadPath(client) + file.fileName;
-    file.fileExists = false;
-    writeTofile = true;
+	file.fileExists = false;
+	writeTofile = true;
 	if (access(file.fileName.c_str(), F_OK) == 0)
-    {
-        file.fileExists = true;
-        writeTofile = false;
-        return 0;
-    }
+	{
+		file.fileExists = true;
+		writeTofile = false;
+		return 0;
+	}
 	fileF = fopen(file.fileName.c_str(), "w");
 	if (!fileF)
 		return statu(client, "Generate file failed for Multipart", 500);
@@ -272,7 +269,6 @@ bool Body::RandomFile(Request &Request, const string &path, const string &extens
 	{
 		randomName = "file-" + intToString(time(NULL));
 		randomName = path + randomName + extension;
-		// printf("randomName = %s\n", &randomName[0]);
 		ifstream inf(randomName.c_str());
 		if (inf.is_open() == false)
 			break;
@@ -323,15 +319,13 @@ void Body::reset()
 	count = 2;
 	countLength = 0;
 	if (fileF != NULL)
-	{
 		fclose(fileF);
-	}
 	fileF = NULL;
 	sizeBoundary = 0;
 	key.clear();
 	hold.clear();
 	boundary.clear();
-    writeTofile = true;
+	writeTofile = true;
 }
 
 Body::Body()
@@ -340,7 +334,7 @@ Body::Body()
 	countLength = 0;
 	sizeBoundary = 0;
 	fileF = NULL;
-    writeTofile = true;
+	writeTofile = true;
 }
 
 Body::~Body() {}

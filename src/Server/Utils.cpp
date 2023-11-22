@@ -28,32 +28,6 @@ std::vector<std::string> splitString(const std::string &input, const std::string
 	return result;
 }
 
-std::string convertText(std::string a)
-{
-	std::string::size_type i = 0;
-	std::string newbuff;
-	while (i < a.length())
-	{
-		if (a[i] == '\r' && i + 1 < a.length() && a[i + 1] == '\n')
-		{
-			newbuff += "\e[41m\\r\\n\e[49m\n";
-			i++;
-		}
-		else if (a[i] == '\n')
-			newbuff += "\e[41m\\n\e[49m\n";
-		else if (a[i] == '\t')
-			newbuff += "\e[41m\\t\e[49m";
-		else if (a[i] == '\v')
-			newbuff += "\e[41m\\v\e[49m\v";
-		else if (a[i] == '\f')
-			newbuff += "\e[41m\\f\e[49m\f";
-		else
-			newbuff += a[i];
-		i++;
-	}
-	return newbuff;
-}
-
 void logMessage(LogLevel level, const std::string &host, int fd, const std::string &message)
 {
 	std::string levelStr;
@@ -105,45 +79,11 @@ void logMessage(LogLevel level, const std::string &host, int fd, const std::stri
 	std::cout << " { " + message + " }" << std::endl;
 }
 
-size_t getFreeSpace(const char *path)
-{
-	struct statvfs buf;
-	size_t free_space_bytes;
-	if (statvfs(path, &buf) == 0)
-	{
-		free_space_bytes = buf.f_frsize * buf.f_bavail;
-		return free_space_bytes;
-	}
-	else
-		return -1;
-}
-
-void replaceAll(std::string &str, const std::string &from, const std::string &to)
-{
-	size_t startPos = 0;
-	while ((startPos = str.find(from, startPos)) != std::string::npos)
-	{
-		str.replace(startPos, from.length(), to);
-		startPos += to.length();
-	}
-}
-
 std::string intToString(size_t number)
 {
 	std::ostringstream oss;
 	oss << number;
 	return oss.str();
-}
-
-int isDirectory(const char *path)
-{
-	struct stat path_stat;
-	if (stat(path, &path_stat) != 0)
-		return -1;
-	if (S_ISDIR(path_stat.st_mode))
-		return 1;
-	else
-		return 2;
 }
 
 std::string getParentDirectories(const std::string &uri)
@@ -181,7 +121,7 @@ bool isValidURI(const int &c)
 	return true;
 }
 
-bool isValidKey(const int &c) //! #$%&'*+-.^_`|~
+bool isValidKey(const int &c)
 {
 	if (isalnum(c) || c == '!' || c == '#' || c == '$' || c == '%' ||
 		c == '&' || c == '\'' || c == '*' || c == '+' ||
@@ -226,6 +166,17 @@ bool isRegularFile(const std::string &path)
 	return false;
 }
 
+int isDirectory(const char *path)
+{
+	struct stat path_stat;
+	if (stat(path, &path_stat) != 0)
+		return -1;
+	if (S_ISDIR(path_stat.st_mode))
+		return 1;
+	else
+		return 2;
+}
+
 bool isDirectory(const std::string &path)
 {
 	struct stat fileStat;
@@ -238,9 +189,7 @@ bool checkPermission(const std::string path, mode_t permission)
 {
 	struct stat fileStat;
 	if (stat(path.c_str(), &fileStat) == 0)
-	{
 		return (fileStat.st_mode & permission) != 0;
-	}
 	return false;
 }
 
@@ -256,18 +205,14 @@ void isCanBeRemoved(const std::string &path)
 	}
 	DIR *directory = opendir(path.c_str());
 	if ((!checkPermission(path, S_IRUSR) && !checkPermission(path, S_IWUSR) && !checkPermission(path, S_IXUSR)) || directory == NULL)
-	{
 		throw 403;
-	}
 	dirent *entry;
 	std::string fileName, fullPath;
 	while ((entry = readdir(directory)) != NULL)
 	{
 		fileName = entry->d_name;
 		if (fileName == "." || fileName == "..")
-		{
 			continue;
-		}
 		fullPath = path + "/" + fileName;
 		if (isRegularFile(fullPath) && !checkPermission(fullPath, S_IWUSR))
 			throw 403;
@@ -277,10 +222,10 @@ void isCanBeRemoved(const std::string &path)
 	closedir(directory);
 }
 
-void removeDirfolder(const std::string &path, const std::string &root) // add rout in prototype to not delete it
+void removeDirfolder(const std::string &path, const std::string &root)
 {
 	if (isRegularFile(path))
-		return(std::remove(path.c_str()),void());
+		return (std::remove(path.c_str()), void());
 	DIR *directory = opendir(path.c_str());
 	if (directory == NULL)
 		throw 403;
@@ -299,8 +244,6 @@ void removeDirfolder(const std::string &path, const std::string &root) // add ro
 	}
 	if (path != root)
 		std::remove(path.c_str());
-	else
-		throw 403;
 	closedir(directory);
 }
 
@@ -351,15 +294,15 @@ std::string getRealPath(std::string path)
 		return path;
 }
 
-std::string humanReadableSize(off_t size)
+std::string ReadableSize(off_t size)
 {
 	std::ostringstream sizeStr;
-	if (size >= (1 << 30))
-		sizeStr << (size / (1 << 30)) << " GB";
-	else if (size >= (1 << 20))
-		sizeStr << (size / (1 << 20)) << " MB";
-	else if (size >= (1 << 10))
-		sizeStr << (size / (1 << 10)) << " KB";
+	if (size >= 1073741824)
+		sizeStr << (size / 1073741824) << " GB";
+	else if (size >= 1048576)
+		sizeStr << (size / 1048576) << " MB";
+	else if (size >= 1024)
+		sizeStr << (size / 1024) << " KB";
 	else
 		sizeStr << size << " B";
 	return sizeStr.str();
@@ -372,7 +315,7 @@ void printMap(const std::multimap<std::string, std::string> &map)
 	std::cout << "╠═════════════════════════════════╬══════════════════════════════════════════════════════════════════╣" << std::endl;
 	std::map<std::string, std::string>::const_iterator it1 = map.begin();
 	for (; it1 != map.end(); ++it1)
-		std::cout << "║" << std::setw(37) << ("▻" + it1->first + "◅") << "║" << std::setw(70) << ("▻" + it1->second + "◅")<< "║" << std::endl;
+		std::cout << "║" << std::setw(37) << ("▻" + it1->first + "◅") << "║" << std::setw(70) << ("▻" + it1->second + "◅") << "║" << std::endl;
 	std::cout << "╚═════════════════════════════════╩══════════════════════════════════════════════════════════════════╝" << std::endl;
 }
 

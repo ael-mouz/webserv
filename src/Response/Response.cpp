@@ -327,7 +327,7 @@ void Response::getFULLpath()
 	if (tmp[tmp.length() - 1] == '/')
 		tmp.erase(tmp.end() - 1);
 	std::string newtmp;
-	if (route.Root != "default" && route.RoutePath != "default" && (this->match == 1 || this->match == 3) && this->extension != tmp )
+	if (route.Root != "default" && route.RoutePath != "default" && (this->match == 1 || this->match == 3) && this->extension != tmp)
 		this->entryPath = this->fullpath,
 		newtmp = this->fullpath.substr(tmp.length(), this->fullpath.length() - tmp.length()),
 		this->fullpath = this->route.Root + newtmp,
@@ -386,7 +386,7 @@ void Response::generateAutoIndex(void)
 		autoIndexBody << "<td class='" << fileType << " col'>" << fileType << "</td>\n";
 		if (stat(path.c_str(), &fileStat) == 0)
 		{
-			std::string sizeStr = humanReadableSize(fileStat.st_size);
+			std::string sizeStr = ReadableSize(fileStat.st_size);
 			autoIndexBody << "<td class='" << fileType << " col'>" << sizeStr << "</td>\n";
 			autoIndexBody << "<td class='" << fileType << " col'>" << std::oct << (fileStat.st_mode & 0777) << "</td>\n";
 			autoIndexBody << "<td class='" << fileType << " col'>" << std::ctime(&fileStat.st_atime) << "</td>\n";
@@ -555,7 +555,7 @@ void Response::handleScriptCGI(Client &client)
 		resCgi.clear();
 		if (!this->headerCgiReady)
 		{
-			std::ifstream infile(tempFileName);
+			std::ifstream infile(tempFileName.c_str());
 			std::stringstream responseStream, bodyStream;
 			responseStream << infile.rdbuf();
 			std::string resHeaders__, resBody__, line;
@@ -763,7 +763,6 @@ void Response::generateEnvCGI(Client &client)
 
 Response::Response()
 {
-	// CGI
 	CgiRunning = false;
 	headerCgiReady = false;
 	envCgiReady = false;
@@ -773,7 +772,6 @@ Response::Response()
 	resCgi.clear();
 	tempFileName.clear();
 	MAPhederscgi.clear();
-	// RESPONSE
 	isCgi = false;
 	isBodySent = false;
 	closeClient = false;
@@ -804,7 +802,6 @@ Response::Response()
 
 void Response::clear()
 {
-	// CGI
 	CgiRunning = false;
 	headerCgiReady = false;
 	headerMerged = false;
@@ -816,7 +813,6 @@ void Response::clear()
 		unlink(tempFileName.c_str());
 	tempFileName.clear();
 	MAPhederscgi.clear();
-	// RESPONSE
 	isCgi = false;
 	isBodySent = false;
 	closeClient = false;

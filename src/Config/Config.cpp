@@ -1,13 +1,9 @@
 #include "../../include/Config/Config.hpp"
 #include "../../include/Server/Utils.hpp"
 
-// === Constructors ===
-
 Config::Config(void) : NbServer(0) {}
 
 Config::~Config(void) {}
-
-// === Getter Methods ===
 
 int Config::getNbServer(void) const { return (this->NbServer); }
 
@@ -16,7 +12,6 @@ std::vector<ServerConf> &Config::getServerConfig()
 	return this->Servers_;
 }
 
-// === Member Functions ===
 void ConfigErrors(const std::string &filename, int i, const std::string &line, const std::string &errormsg)
 {
 	std::cout << BOLD << filename << ":" << i << ":0: " << FG_RED << "error: " << RESET_ALL << BOLD << errormsg << RESET_ALL << "\n\t" << line << std::endl, exit(1);
@@ -226,7 +221,7 @@ void Config::parsePort(std::string &port, int start, const std::string &line, co
 	iss << port;
 	unsigned int portt;
 	iss >> portt;
-	if (iss.fail() || (portt < 0 || portt > 65535))
+	if (iss.fail() || portt > 65535)
 		ConfigErrors(filename, start, line, "Invalid port");
 }
 

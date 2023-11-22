@@ -1,6 +1,5 @@
 #pragma once
 
-// cpp headers
 #include <map>
 #include <ctime>
 #include <fstream>
@@ -14,7 +13,6 @@
 #include <sstream>
 #include <numeric>
 #include <utility>
-// c headers
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
@@ -109,10 +107,8 @@ struct Route
 
 std::string trim(const std::string &str, const std::string &charactersToTrim);
 std::vector<std::string> splitString(const std::string &input, const std::string &delimiter);
-std::string convertText(std::string a);
 void logMessage(LogLevel level, const std::string &host, int fd, const std::string &message);
 void printMap(const std::multimap<std::string, std::string> &map);
-size_t getFreeSpace(const char *path);
 void replaceAll(std::string &str, const std::string &from, const std::string &to);
 std::string intToString(size_t number);
 std::string getParentDirectories(const std::string &uri);
@@ -131,7 +127,7 @@ void removeDirfolder(const std::string &path, const std::string &root);
 bool timeofday(size_t &timeMilSec);
 bool getDiskSpace(const string &path, size_t &freeSpace);
 std::string getRealPath(std::string path);
-std::string humanReadableSize(off_t size);
+std::string ReadableSize(off_t size);
 void ft_print_config(int h, ServerConfig &it, bool i);
 void ft_print_routes(int h, Route &it, std::string name);
 int deleteMthod(Client &client);

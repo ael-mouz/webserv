@@ -12,5 +12,5 @@ for key, value in os.environ.items():
 print("</ul>")
 print("</body>")
 print("</html>")
-# while(1):
-#     print("hello")
+while(1):
+    print("hello")

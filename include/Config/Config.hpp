@@ -23,7 +23,7 @@ public:
 	void parseMethods(Route &route, int start, const std::string &line, const std::string &filename);
 	void parsePort(std::string &port, int start, const std::string &line, const std::string &filename);
 	void parseRedirection(Route &route, int start, const std::string &line, const std::string &filename);
-	void parsePath(std::string &path, int start, const std::string &line, const std::string &filename,int i,int j);
+	void parsePath(std::string &path, int start, const std::string &line, const std::string &filename, int i, int j);
 	void parseRoutePath(std::string &path, int start, const std::string &line, const std::string &filename);
 	void parseAutoindex(const std::string &value, int start, const std::string &line, const std::string &filename);
 	void parseCgiTimeout(std::string &value, int start, const std::string &line, const std::string &filename);
