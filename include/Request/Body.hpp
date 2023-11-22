@@ -4,6 +4,7 @@
 
 class Request;
 class Client;
+struct File;
 
 enum multiPartState
 {
@@ -31,12 +32,13 @@ private:
 	size_t countLength;
     string boundary;
 	int sizeBoundary;
+    bool writeTofile;
 
 public:
 	int multiPart(Client &client, string &buffer, ssize_t &size);
 	int writeBody(Client &client, string &buffer, ssize_t &size);
     int skipBody(Client &client, ssize_t &size);
-	int createFile(Client &client,const string &value, std::string &fileName);
+	int createFile(Client &client,const string &value, File &file);
 	bool RandomFile(Request &Request, const string& path, const string& extension);
     int statu(Client &client, const string& errorMsg, int statu);
     bool isEncodChunk(Client &client);

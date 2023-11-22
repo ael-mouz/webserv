@@ -6,6 +6,7 @@
 - way we set socket to non blocking mode
 - test nonblocking mode
 - port vs ip
+- compile in linux
 
 
 - curl --resolve example.com:8000:127.0.0.1 http://example.com:8000/ > test.html

@@ -19,8 +19,8 @@ private:
 	int count;
 	string key;
     string hold;
-    bool contentType;
-    bool contentLength;
+    bool isContentTypeInHeaders;
+    bool isContentLengthInHeaders;
     int statu(Client &client, const string& errorMsg, int statu);
 	int requestChecker(Client &client);
     int contentLenChecker(Client &client);

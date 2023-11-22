@@ -18,7 +18,7 @@ class ChunkedEncoding
 private:
 	size_t count;
 	string hold;
-	size_t countLength;
+	size_t dicimalLength;
     size_t totalSize;
 	int decodeState;
     int totalSizeChecker(Client &client, size_t totalSize);

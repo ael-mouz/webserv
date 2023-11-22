@@ -150,7 +150,7 @@ void Response::checkErrorsRequest(Client &client)
 		vector<File>::iterator it = client.request.files.begin();
 		vector<File>::iterator end = client.request.files.end();
 		for (; it != end; it++)
-			files << "<li>" + it->fileName + "</li>\n ";
+			files << "<li>" + it->fileName + " " + (it->fileExists ? " : <strong>Not Created (File already exists)</strong>" : ": <strong>Created</strong>") + "</li>\n ";
 		body_ << GENERATE_UPLOAD_HTML(files.str());
 		this->responseStatus = "201";
 		std::string status = "201";

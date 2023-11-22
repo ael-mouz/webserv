@@ -25,22 +25,22 @@ int ChunkedEncoding::read(Client &client, string &buffer, ssize_t &size)
 		case LF_AFTER_HEXA:
 			if (holdChar != '\n' || hold.empty())
 				return statu(client, "Invalid chunked syntax", 400);
-			countLength = HexaToDicimal(hold);
+			dicimalLength = HexaToDicimal(hold);
 			hold.clear();
 			buffer.erase(it);
-			decodeState = countLength != 0 ? SKIP_BODY : END_LAST_HEXA;
+			decodeState = dicimalLength != 0 ? SKIP_BODY : END_LAST_HEXA;
 			continue;
 		case SKIP_BODY:
 		{
 			size_t remainingLen = buffer.end() - it;
-			if (remainingLen <= (countLength - count))
+			if (remainingLen <= (dicimalLength - count))
 			{
 				it = buffer.end() - 1;
 				count += remainingLen;
 			}
 			else
 			{
-				it = buffer.begin() + ((it - buffer.begin()) + countLength - count - 1);
+				it = buffer.begin() + ((it - buffer.begin()) + dicimalLength - count - 1);
 				count = 0;
 				decodeState = BEFOR_HEXA;
 			}
@@ -100,7 +100,7 @@ int ChunkedEncoding::statu(Client &client, const string &errorMsg, int statu)
 void ChunkedEncoding::reset()
 {
 	decodeState = HEXA;
-	countLength = 0;
+	dicimalLength = 0;
 	count = 0;
 	totalSize = 0;
 	hold.clear();
@@ -109,7 +109,7 @@ void ChunkedEncoding::reset()
 ChunkedEncoding::ChunkedEncoding()
 {
 	decodeState = HEXA;
-	countLength = 0;
+	dicimalLength = 0;
 	count = 0;
 	totalSize = 0;
 }

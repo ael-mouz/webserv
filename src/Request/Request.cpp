@@ -19,17 +19,11 @@ void Request::read(Client &client, string &buffer, ssize_t &size)
 	if (decodeFlag == true && (ReqstDone = decode.read(client, buffer, size)) != 0)
 		return;
 	if (mainState == MultiPart)
-	{
 		body.multiPart(client, buffer, size);
-	}
 	else if (mainState == MIMETYPES || mainState == CGI)
-	{
 		body.writeBody(client, buffer, size);
-	}
 	else if (mainState == _SKIP_BODY)
-	{
 		body.skipBody(client, size);
-	}
 }
 
 bool Request::openBodyFile(const string &path, const string &extension)
@@ -119,10 +113,9 @@ void Request::reset(void)
 	mapHeaders.clear();
 	for (vector<File>::iterator it = files.begin(); it != files.end(); it++)
 	{
-		if (deleteFiles == true)
+		if (!it->fileExists && deleteFiles == true)
 			std::remove(&it->fileName[0]);
 		it->fileName.clear();
-		it->Content.clear();
 	}
 	files.clear();
 	mainState = METHOD;

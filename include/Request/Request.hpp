@@ -21,7 +21,7 @@ enum _mainState
 struct File
 {
 	string fileName;
-	multimap<string, string> Content;
+    bool fileExists;
 };
 
 class Request
@@ -47,22 +47,19 @@ public:
 	vector<File> files;
 
     void setBoundary(const string& boundary);
-    string getBoundary(void) const;
     void setSizeBoundary(const int& sizeBoundary);
-    int getSizeBoundary(void) const;
+    void setTimeLastData(const size_t& timeLastData);
     void setDeleteFiles(const bool& deleteFiles);
+    void setReqstDone(const int& ReqstDone);
+    void setErrorMsg(const string& errorMsg);
+    string getBoundary(void) const;
+    int getSizeBoundary(void) const;
+    size_t getTimeLastData(void) const;
     bool getDeleteFiles(void) const;
     void setDecodeFlag(const bool& decodeFlag);
     bool getDecodeFlag(void) const;
-    void setTimeLastData(const size_t& timeLastData);
-    size_t getTimeLastData(void) const;
-    // void setContentLength(const size_t& contentLength);
-    // size_t getContentLength(void) const;
-    void setReqstDone(const int& ReqstDone);
     int getReqstDone(void) const;
-    void setErrorMsg(const string& errorMsg);
     string getErrorMsg(void) const;
-
 	void read(Client &client, string &buffer, ssize_t &size);
 	void reset(void);
     bool openBodyFile(const string &path, const string &extension);

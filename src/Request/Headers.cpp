@@ -87,7 +87,7 @@ int Headers::requestChecker(Client &client)
 		return returnValue;
 	if (client.request.Method != "POST")
 	{
-		if (contentType == true && contentLength == false)
+		if (isContentTypeInHeaders == true && isContentLengthInHeaders == false)
 			return statu(client, "Unknown body length", 411);
 		if ((client.request.getDecodeFlag() == false && client.request.contentLength > 0) ||
 			(client.request.getDecodeFlag() == true))
@@ -127,7 +127,7 @@ int Headers::contentLenChecker(Client &client)
 
 	it = client.request.mapHeaders.find("content-length");
 	if (client.request.Method != "POST" && it == client.request.mapHeaders.end())
-		return contentLength = false, 0;
+		return isContentLengthInHeaders = false, 0;
 	else if (it == client.request.mapHeaders.end())
 		return statu(client, "Unknown body length", 411);
 	stream << it->second;
@@ -148,7 +148,7 @@ int Headers::contentLenChecker(Client &client)
 		if (diskSpace <= client.request.contentLength)
 			return statu(client, "No space left", 507);
 	}
-	return contentLength = true, 0;
+	return isContentLengthInHeaders = true, 0;
 }
 
 int Headers::contentTypeChecker(Client &client)
@@ -170,7 +170,7 @@ int Headers::contentTypeChecker(Client &client)
 			return returnValue;
 	}
 	else
-		contentType = (it == client.request.mapHeaders.end()) ? false : true;
+		isContentTypeInHeaders = (it == client.request.mapHeaders.end()) ? false : true;
 	return 0;
 }
 
@@ -219,10 +219,10 @@ void Headers::reset()
 	count = 0;
 	key.clear();
 	hold.clear();
-	contentType = false;
-	contentLength = false;
+	isContentTypeInHeaders = false;
+	isContentLengthInHeaders = false;
 }
 
-Headers::Headers() : count(0), contentType(false), contentLength(false) {}
+Headers::Headers() : count(0), isContentTypeInHeaders(false), isContentLengthInHeaders(false) {}
 
 Headers::~Headers() {}
