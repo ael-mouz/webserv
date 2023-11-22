@@ -40,6 +40,6 @@ private:
 
 public:
 	void runing();
-	RunServers(char **av);
+	RunServers(const char *av);
 	~RunServers();
 };

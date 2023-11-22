@@ -11,7 +11,6 @@ void RunServers::runing()
 		numberOfEvents = select(maxFds + 1, &readFds, &writeFds, NULL, &timeout);
 		if (numberOfEvents == -1)
 		{
-			std::cout << "Error in select function\n"; ///!!
 			hardReset();
 			continue;
 		}
@@ -53,9 +52,6 @@ bool RunServers::receiveData(vector<Client>::iterator &it)
 		return false;
 	}
 	string buffer(recvbuffer, size);
-	// std::ofstream outf("/Users/yettabaa/Desktop/webservemerge/www/DebugFile.txt", std::ios::out | std::ios::app | std::ios::binary);
-	// outf << "-----------------------------------\n";
-	// outf << buffer;
 	size_t timeMilSec;
 	it->request.setTimeLastData((timeofday(timeMilSec)) ? timeMilSec : 0);
 	it->request.read(*it, buffer, size);
@@ -201,40 +197,33 @@ void RunServers::timeoutChecker()
 
 int RunServers::bindSockets(Server &server)
 {
-	// Create a socket
 	if ((server.socketServer = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		throw std::runtime_error("Error: Failed to create socket");
-	// Enable socket address reuse
 	int enableReuse = 1;
 	if (setsockopt(server.socketServer, SOL_SOCKET, SO_REUSEADDR, &enableReuse,
 				   sizeof(enableReuse)) < 0)
 		throw std::runtime_error("Error: Failed to setsockopt for reuse");
-	// Define and configure the server address
 	struct sockaddr_in serverAddr;
 	std::memset(&serverAddr, 0, sizeof(serverAddr));
-	serverAddr.sin_family = AF_INET; // Set the address family to AF_INET (for IPv4)
+	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_port = htons(std::atoi(server.serverConf.DefaultServerConfig.Port.c_str()));
 	inet_pton(AF_INET, server.serverConf.DefaultServerConfig.Host.c_str(), &serverAddr.sin_addr);
-	// Bind the socket to the server address
 	if (::bind(server.socketServer, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0)
 		throw std::runtime_error("Error: Failed to bind socket to address");
-	// Listen for incoming connections
 	if (listen(server.socketServer, SOMAXCONN) < 0)
 		throw std::runtime_error("Error: Failed to listen on socket");
-	// Set the socket to non-blocking mode
 	if (fcntl(server.socketServer, F_SETFL, O_NONBLOCK, FD_CLOEXEC) < 0)
 		throw std::runtime_error("Error: Failed to set socket to non-blocking mode");
-	// Disable SIGPIPE to prevent the program from being terminated when writing to a closed socket.
 	signal(SIGPIPE, SIG_IGN);
 	std::string host = "http://" + server.serverConf.DefaultServerConfig.Host + ":" + server.serverConf.DefaultServerConfig.Port;
 	logMessage(SINFO, host, server.socketServer, "Server start listening");
 	return server.socketServer;
 }
 
-RunServers::RunServers(char **av) : numberOfEvents(0)
+RunServers::RunServers(const char *av) : numberOfEvents(0)
 {
 	Config config;
-	config.parser(av[1]);
+	config.parser(av);
 #ifdef DEBUG_C
 	config.printServers();
 #endif

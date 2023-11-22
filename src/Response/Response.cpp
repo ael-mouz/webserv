@@ -37,8 +37,10 @@ void Response::sendResponse(Client &client)
 		else
 			responseSent = isBodySent = true;
 		if (responseString.length() > 0)
+		{
 			if (send(client.socketClient, responseString.c_str(), responseString.length(), 0) <= 0)
 				closeClient = responseSent = true;
+		}
 	}
 	if (responseSent)
 		if (client.request.mapHeaders.find("connection") != client.request.mapHeaders.end())
@@ -309,7 +311,6 @@ void Response::checkerPath(Client &clinet)
 			this->fullpath += "/index.html";
 		else
 			this->fullpath = this->fullpath + "/" + this->route.Index;
-		std::cout << this->fullpath << std::endl;
 		dirr = isDirectory(this->fullpath.c_str());
 		if (dirr == -1 || dirr == 1)
 			return (generateResponse("404"));
@@ -452,6 +453,7 @@ void Response::generateResponse(std::string status)
 		header_ << "Content-Type: " + this->Config->mime.getMimeType(extension_) + "\r\n";
 		header_ << "Content-Length: " + intToString(this->fileSize) + "\r\n\r\n";
 		this->HeaderResponse = header_.str();
+		this->BodyResponse.clear();
 		this->responseDone = true;
 		this->error_page = true;
 	}
@@ -543,7 +545,11 @@ void Response::handleScriptCGI(Client &client)
 	while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
 		resCgi.append(buffer, bytesRead);
 	if (resCgi.length() > 0)
-		write(FDCGIBody, resCgi.c_str(), resCgi.length());
+	{
+		ssize_t sizew = write(FDCGIBody, resCgi.c_str(), resCgi.length());
+		if (sizew == -1)
+			return (generateResponse("500"));
+	}
 	if (bytesRead == 0)
 	{
 		resCgi.clear();
@@ -579,7 +585,9 @@ void Response::handleScriptCGI(Client &client)
 			if (FDCGIBody == -1)
 				return (generateResponse("500"));
 			tempFileName = tempFile;
-			write(FDCGIBody, bodyStream.str().c_str(), bodyStream.str().length());
+			ssize_t sizeW = write(FDCGIBody, bodyStream.str().c_str(), bodyStream.str().length());
+			if (sizeW == -1)
+				return (generateResponse("500"));
 			this->headerCgiReady = true;
 		}
 		else

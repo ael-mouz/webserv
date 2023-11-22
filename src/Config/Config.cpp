@@ -232,7 +232,7 @@ void Config::parsePort(std::string &port, int start, const std::string &line, co
 
 void Config::parseServerNameAndHostName(std::string &serverName, int start, const std::string &line, const std::string &filename, int h)
 {
-	std::string validServerNameCharacters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.";
+	std::string validServerNameCharacters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.:";
 	if (serverName.empty())
 		ConfigErrors(filename, start, line, "Empty Server or host name");
 	if (serverName.length() > 253)
@@ -359,11 +359,17 @@ void Config::parseBodySize(std::string &sizeStr, int start, const std::string &l
 {
 	if (sizeStr.empty())
 		ConfigErrors(filename, start, line, "Empty size");
-	char unit = sizeStr[sizeStr.length() - 1];
-	sizeStr.erase(sizeStr.end() - 1);
+	char unit = '\0';
 	if (!isDigit(sizeStr))
-		ConfigErrors(filename, start, line, "Invalid characters in size string");
-	unit = std::tolower(unit);
+	{
+		unit = sizeStr[sizeStr.length() - 1];
+		unit = std::tolower(unit);
+		sizeStr.erase(sizeStr.end() - 1);
+		if (!isDigit(sizeStr))
+			ConfigErrors(filename, start, line, "Invalid characters in size string");
+	}
+	else
+		unit = 'b';
 	size_t size = 0;
 	std::istringstream iss(sizeStr);
 	iss >> size;
@@ -371,6 +377,11 @@ void Config::parseBodySize(std::string &sizeStr, int start, const std::string &l
 		ConfigErrors(filename, start, line, "Invalid size value");
 	switch (unit)
 	{
+	case 'b':
+		if (size > 1073741824000)
+			ConfigErrors(filename, start, line, "Size too long > 1073741824000 B");
+		size *= 1;
+		break;
 	case 'k':
 		if (size > 1048576000)
 			ConfigErrors(filename, start, line, "Size too long > 1048576000 K");

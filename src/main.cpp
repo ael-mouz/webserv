@@ -8,10 +8,12 @@ int main(int ac, char **av)
 {
 	try
 	{
-		if (ac != 2)
+		if (ac == 2)
+			RunServers(av[1]).runing();
+		else if(ac == 1)
+			RunServers("./config/Default.conf").runing();
+		else
 			throw std::invalid_argument("Usage: ./webserv [configuration file]");
-		RunServers servers(av);
-		servers.runing();
 	}
 	catch (const std::exception &e)
 	{
