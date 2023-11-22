@@ -6,6 +6,7 @@ int Body::multiPart(Client &client, string &buffer, ssize_t &size)
 	unsigned char holdChar;
 
 	countLength += size;
+    // printf("%ld\n", countLength);
 	if (isEncodChunk(client) == false && countLength > client.request.contentLength)
 		return statu(client, "Body length higher than content length", 400);
 	for (string::iterator it = buffer.begin(); it != buffer.end(); it++)
@@ -123,47 +124,53 @@ int Body::multiPart(Client &client, string &buffer, ssize_t &size)
 			}
 			return statu(client, "Multipart Headers must end with LF (Line Feed)", 400);
 		case WRITE_DATA:
-		{
-			if (count < sizeBoundary && holdChar == boundary[count])
-			{
-				count++;
-				if (count == sizeBoundary)
-					client.request.subState = AFTER_BOUNDARY;
-				break;
-			}
-			if (count == 0)
-			{
-				if (buffer.end() - it > sizeBoundary + 4)
-				{
-					size_t index = it - buffer.begin();
-					size_t posBoundary = buffer.find(boundary, index);
-					if (posBoundary == string::npos)
-					{
-						if (fwrite(&buffer[index], 1, size - sizeBoundary - index, fileF) != (size - sizeBoundary - index))
-							return statu(client, "System call function failed: fwrite", 500);
-						it = buffer.begin() + (size - sizeBoundary - 1);
-					}
-					else
-					{
-						if (fwrite(&buffer[index], 1, posBoundary - index, fileF) != (posBoundary - index))
-							return statu(client, "System call function failed: fwrite", 500);
-						it = buffer.begin() + posBoundary - 1;
-					}
-					continue;
-				}
-				if (fputc(holdChar, fileF) != holdChar)
-					return statu(client, "System call function failed: fputc", 500);
-				continue;
-			}
-			size_t holdSize = hold.size();
-			if (fwrite(&hold[0], 1, holdSize, fileF) != holdSize)
-				return statu(client, "System call function failed: fwrite", 500);
-			if (fputc(holdChar, fileF) != holdChar)
-				return statu(client, "System call function failed: fputc", 500);
-			hold.clear();
-			count = 0;
-			continue;
-		}
+                // printf("count = %d holdChar %d boundary[count] = %d\n",count, holdChar, boundary[count]);
+            // if (holdChar == '\r')
+            //     count = 0;
+		    if (count < sizeBoundary  && holdChar == boundary[count]) {
+                count++;
+                if (count == sizeBoundary)
+                {
+                    client.request.subState = AFTER_BOUNDARY;
+                    continue;
+                }
+                break;
+            }
+            if (count == 0) {
+                if (buffer.end() - it > sizeBoundary + 4) {
+                    int index = it - buffer.begin();
+                    size_t posBoundary = buffer.find(boundary, index);
+                    if (posBoundary == string::npos) {
+                        fwrite(&buffer[index], 1, size - sizeBoundary - index, fileF);
+                        // countLength += size - sizeBoundary - index;
+                        it = buffer.begin() + (size - sizeBoundary -1);
+                    } else {
+                        fwrite(&buffer[index], 1, posBoundary - index, fileF);
+                        // countLength += posBoundary - index;
+                        it = buffer.begin() + posBoundary - 1;
+                    }
+                    continue;
+                }
+                fputc(holdChar, fileF);
+                // countLength += 1;
+                continue;
+            }
+            else {
+                fwrite(&hold[0], 1, hold.size(), fileF);
+                // countLength += Request.hold.size();
+                hold.clear();
+                if (holdChar == '\r')
+                {
+                    puts("ss");
+                    count = 1;
+                    break;
+                }
+                fputc(holdChar, fileF);
+                // countLength += 1;
+                count = 0;
+                continue;
+            }
+
 		case CHECK_END:
 			if (holdChar == '-')
 			{
@@ -198,6 +205,7 @@ int Body::multiPart(Client &client, string &buffer, ssize_t &size)
 		}
 		hold += holdChar;
 	}
+    // puts("ssss");
 	return statu(client, "", 0);
 }
 
@@ -248,9 +256,9 @@ int Body::createFile(Client &client, const string &value, string &fileName)
 	if (fileName.empty())
 		return statu(client, "No file name provided", 400);
 	fileName = getUploadPath(client) + fileName;
-	if (access(fileName.c_str(), F_OK) == 0)
-		return statu(client, "File already exists", 400);
-	;
+	// if (access(fileName.c_str(), F_OK) == 0)
+	// 	return statu(client, "File already exists", 400);
+	// ;
 	fileF = fopen(fileName.c_str(), "w");
 	if (!fileF)
 		return statu(client, "Generate file failed for Multipart", 500);

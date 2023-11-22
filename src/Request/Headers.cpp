@@ -111,8 +111,8 @@ int Headers::requestChecker(Client &client)
 	{
         if (contentType == true && contentLength == false)
             return statu(client, "Unknown body length", 411);
-		if ((client.request.getDecodeFlag() == false && client.request.contentLength > 0)
-        || (client.request.getDecodeFlag() == true))
+		if ((client.request.getDecodeFlag() == false && client.request.contentLength > 0) ||
+            (client.request.getDecodeFlag() == true))
 		{
 			client.request.mainState = _SKIP_BODY;
 			return 0;

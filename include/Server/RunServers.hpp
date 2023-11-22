@@ -5,7 +5,7 @@
 #include "../../include/Server/Client.hpp"
 #include "../../include/Server/Utils.hpp"
 #include <poll.h>
-#define CLIENT_BODY_TIMEOUT 3000
+#define CLIENT_BODY_TIMEOUT 60000
 
 struct Server
 {

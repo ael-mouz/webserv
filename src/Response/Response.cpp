@@ -189,17 +189,17 @@ void Response::sendResponse(Client &client)
 		if (responseString.length() > 0)
 		{
             // usleep(500);
-            for(size_t i = 0; i < responseString.size(); i++)
-            {
-                usleep(1);
-			    size_t size;
-			    if ((size = send(client.socketClient, responseString.c_str() +i, 1, 0)) <= 0)
-			    	closeClient = responseSent = true;
+            // for(size_t i = 0; i < responseString.size(); i++)
+            // {
+            //     usleep(1);
+			//     size_t size;
+			//     if ((size = send(client.socketClient, responseString.c_str() +i, 1, 0)) <= 0)
+			//     	closeClient = responseSent = true;
 
-            }
-			// size_t size;
-			// if ((size = send(client.socketClient, responseString.c_str(), responseString.length(), 0)) <= 0)
-			// 	closeClient = responseSent = true;
+            // }
+			ssize_t size;
+			if ((size = send(client.socketClient, responseString.c_str(), responseString.length(), 0)) <= 0)
+				closeClient = responseSent = true;
 		}
 	}
 	if (responseSent)
@@ -550,7 +550,7 @@ void Response::handleScriptCGI(Client &client)
 			close(pipefd[0]);
 			dup2(pipefd[1], STDOUT_FILENO);
 			close(pipefd[1]);
-			alarm(50);
+			alarm(1000000);
 			if (tempFD != -1 && client.request.Method == "POST")
 				dup2(tempFD, STDIN_FILENO);
 			close(tempFD);

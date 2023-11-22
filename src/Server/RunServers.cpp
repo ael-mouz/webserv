@@ -74,6 +74,7 @@ bool RunServers::receiveData(vector<Client>::iterator &it)
 		clients.erase(it);
 		return false;
 	}
+    // printf("size = %ld\n", size);
 	string buffer(recvbuffer, size);
 	// std::ofstream outf("/Users/yettabaa/Desktop/webservemerge/www/DebugFile.txt", std::ios::out | std::ios::app | std::ios::binary);
 	// outf << "-----------------------------------\n";
