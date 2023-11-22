@@ -291,7 +291,6 @@ void Response::genrateRederiction(Client &client)
 		Headers__ << "Location: " << std::string("http://") + this->Config->Host + ":" + this->Config->Port + this->entryPath + std::string("/") << "\r\n";
 		Headers__ << "\r\n";
 		this->HeaderResponse = Headers__.str();
-		// std::cout << convertText(this->HeaderResponse) << std::endl;
 		this->responseStatus = status;
 		this->responseDone = true;
 		return;
@@ -350,10 +349,6 @@ void Response::getFULLpath()
 		this->fullpath = this->Config->GlobalRoot + this->fullpath,
 		this->path_translated = this->Config->GlobalRoot + this->path_info,
 		this->root = this->Config->GlobalRoot;
-	// std::cout << "debug " << entryPath << std::endl;
-	// std::cout << "debug " << fullpath << std::endl;
-	// std::cout << "debug " << path_translated << std::endl;
-	// std::cout << "debug " << root << std::endl;
 }
 
 void Response::generateAutoIndex(void)

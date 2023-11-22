@@ -13,7 +13,7 @@ ServerConfig::ServerConfig()
 	this->CgiTimeout = "60";
 	this->LimitClientBodySize = "10485760";
 	this->ErrorPage = dir + "/www/error.html";
-	this->phpCgi = dir + "/tests/php-cgi_bin";
+	this->phpCgi = dir + "/bin/php-cgi_bin";
 	this->pythonCgi = "/usr/bin/python3";
 	this->rubyCgi = "/usr/bin/ruby";
 	this->perlCgi = "/usr/bin/perl";
