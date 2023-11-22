@@ -1,7 +1,8 @@
 CXX = c++
-CXXFLAGS = -std=c++98 -Wall -Wextra -Werror -g -fsanitize=address
-TARGET = webserv
+CXXFLAGS = -std=c++98 -Wall -Wextra -Werror #-g -fsanitize=address
+NAME = webserv
 BIN = obj/
+RM = rm -rf
 
 V			=	$(shell tput -Txterm setaf 5)
 W			=	$(shell tput -Txterm setaf 7)
@@ -53,26 +54,26 @@ FLAG =	" $(G)██$(Y)╗    $(G)██$(Y)╗$(G)███████$(Y)╗$
 		"		made by ($(Y)ael-mouz$(W)) and ($(Y)yettabaa$(W)) \n"\
 		"		generate executable ($(V)webserv$(W))"
 
+SPINNER = ⠿ ⠷ ⠶ ⠦ ⠤ ⠴ ⠾ ⠇ ⠿ ⠷ ⠶ ⠦ ⠤ ⠴ ⠾ ⠇ ⠿
 
-all: $(TARGET)
+all: $(NAME)
 
 ip:
 	@echo $(IP_ADDRESS)
 
 debug: CXXFLAGS += -DDEBUG_C
 debug: re
-SPINNER = ⠿ ⠷ ⠶ ⠦ ⠤ ⠴ ⠾ ⠇ ⠿ ⠷ ⠶ ⠦ ⠤ ⠴ ⠾ ⠇ ⠿
 
 export IP_ADDRESS
 
-$(TARGET): $(OBJS)
+$(NAME): $(OBJS)
 	@$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
 	@for i in $(SPINNER); do \
 		printf "$(Y)$$i  $(V)Compiling:$(W) $@\r"; \
 		sleep 0.1;\
 	done
 	@reset
-	@echo  $(FLAG)
+	@echo $(FLAG)
 
 
 NUM_FILES	:=	$(words $(SRC))
@@ -87,15 +88,24 @@ $(BIN)%.o: %.cpp $(HEADERS)
 	@printf "%-3s $(Y)%-32s$(W) $(G)compiled successfully ✓$(W)\n" "$(RES)%" "$<"
 
 clean:
-	@rm -rf $(BIN)
+	@reset
+	@echo "Cleaning up object files:"
+	@for obj in $(OBJS); do \
+		echo "$(R)	- $$obj $(W)"; \
+		$(RM) $$obj; \
+	done
+	@echo "Cleaning up object directory:"
+	@echo "$(R)	- $(BIN)$(W)"
+	@$(RM) $(BIN)
 
 fclean: clean
-	@rm -f $(TARGET)
+	@echo "Cleaning up executable file:"
+	@echo "$(R)	- $(NAME) $(W)";
+	@$(RM) $(NAME)
 
 re: fclean all
 
 exec: all
-	@ ./webserv ./config/Default.conf
+	@ ./webserv
 
-fds:
-	@ while true; do pgrep -o -x webserv | xargs -I{} lsof -p {} ; sleep 1 ;clear; done
+.PHONY : all clean fclean re ip debug exec

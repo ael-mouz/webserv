@@ -95,6 +95,8 @@ int Headers::requestChecker(Client &client)
 			client.request.mainState = _SKIP_BODY;
 			return 0;
 		}
+		if (!client.response.method_allowd)
+			return statu(client, "Method not allowed", 405);
 		if (client.request.Method == "DELETE")
 			return deleteMthod(client);
 		else if (client.request.Method != "GET")
