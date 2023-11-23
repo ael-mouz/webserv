@@ -1,6 +1,5 @@
 import cgi
 import os
-import sys
 
 form = cgi.FieldStorage()
 destination_directory = "/tmp/"

@@ -476,6 +476,8 @@ void Response::handleScriptCGI(Client &client)
 		if (pid == 0)
 		{
 			close(pipefd[0]);
+			if (fcntl(pipefd[1], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1)
+				exit(EXIT_FAILURE);
 			dup2(pipefd[1], STDOUT_FILENO);
 			close(pipefd[1]);
 			std::stringstream iss;
@@ -483,7 +485,7 @@ void Response::handleScriptCGI(Client &client)
 			unsigned int alarmValue;
 			iss >> alarmValue;
 			if (iss.fail())
-				return (generateResponse("500"));
+				exit(EXIT_FAILURE);
 			alarm(alarmValue);
 			if (tempFD != -1 && client.request.Method == "POST")
 				dup2(tempFD, STDIN_FILENO);

@@ -200,8 +200,7 @@ int RunServers::bindSockets(Server &server)
 	if ((server.socketServer = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		throw std::runtime_error("Error: Failed to create socket");
 	int enableReuse = 1;
-	if (setsockopt(server.socketServer, SOL_SOCKET, SO_REUSEADDR, &enableReuse,
-				   sizeof(enableReuse)) < 0)
+	if (setsockopt(server.socketServer, SOL_SOCKET, SO_REUSEADDR, &enableReuse, sizeof(enableReuse)) < 0)
 		throw std::runtime_error("Error: Failed to setsockopt for reuse");
 	struct sockaddr_in serverAddr;
 	std::memset(&serverAddr, 0, sizeof(serverAddr));

@@ -16,10 +16,5 @@ $content .="</html>\n";
 
 my $content_length = length($content);
 
-print $cgi->header(
-	-type => 'text/plain',
-	-charset => 'UTF-8',
-	-content_length => $content_length,
-);
-
+print $cgi->header(-type => 'text/plain');
 print $content
