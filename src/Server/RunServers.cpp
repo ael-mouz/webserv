@@ -207,7 +207,8 @@ int RunServers::bindSockets(Server &server)
 	std::memset(&serverAddr, 0, sizeof(serverAddr));
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_port = htons(std::atoi(server.serverConf.DefaultServerConfig.Port.c_str()));
-	inet_pton(AF_INET, server.serverConf.DefaultServerConfig.Host.c_str(), &serverAddr.sin_addr);
+	if (inet_pton(AF_INET, server.serverConf.DefaultServerConfig.Host.c_str(), &serverAddr.sin_addr) <= 0)
+		throw std::runtime_error("Error: Not a valid IP address");
 	if (::bind(server.socketServer, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0)
 		throw std::runtime_error("Error: Failed to bind socket to address");
 	if (listen(server.socketServer, SOMAXCONN) < 0)
@@ -228,7 +229,7 @@ RunServers::RunServers(const char *av) : numberOfEvents(0)
 	config.printServers();
 #endif
 	vector<ServerConf> &serverConf = config.getServerConfig();
-	timeout.tv_sec = 300;
+	timeout.tv_sec = 60;
 	timeout.tv_usec = 0;
 	maxFdsServers = -1;
 	for (vector<ServerConf>::iterator it = serverConf.begin();

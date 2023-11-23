@@ -139,7 +139,8 @@ int deleteMthod(Client &client);
 		"<head>"                                                                       \
 		"<meta charset=\"UTF-8\" />"                                                   \
 		"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />" \
-		"<title>" +                                                                    \
+		"<link rel=\"icon\" type=\"image/x-icon\" href=\"/favicon.ico\">"              \
+        "<title>" +                                                                    \
 		status +                                                                       \
 		" Error - " +                                                                  \
 		Config +                                                                       \
@@ -185,6 +186,7 @@ int deleteMthod(Client &client);
 		"<html lang=\"en\">"                                \
 		"<head>"                                            \
 		"<title>Upload</title>"                             \
+        "<link rel=\"icon\" type=\"image/x-icon\" href=\"/favicon.ico\">"              \
 		"<style>"                                           \
 		"body {"                                            \
 		"font-family: Arial, sans-serif;"                   \
@@ -228,6 +230,7 @@ int deleteMthod(Client &client);
 		"<html>"                                                                                  \
 		"<head>"                                                                                  \
 		"<meta charset=\"UTF-8\">"                                                                \
+        "<link rel=\"icon\" type=\"image/x-icon\" href=\"/favicon.ico\">"              \
 		"<title>Index of " +                                                                      \
 		fullpath +                                                                                \
 		"</title>"                                                                                \
