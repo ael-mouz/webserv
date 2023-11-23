@@ -476,8 +476,6 @@ void Response::handleScriptCGI(Client &client)
 		if (pid == 0)
 		{
 			close(pipefd[0]);
-			if (fcntl(pipefd[1], F_SETFL, O_NONBLOCK, FD_CLOEXEC) == -1)
-				exit(EXIT_FAILURE);
 			dup2(pipefd[1], STDOUT_FILENO);
 			close(pipefd[1]);
 			std::stringstream iss;
